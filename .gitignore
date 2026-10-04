@@ -1,0 +1,18 @@
+# Build output
+.build/
+.swiftpm/
+build/
+*.xcodeproj/xcuserdata/
+DerivedData/
+
+# Release artefacts (published as GitHub Releases instead)
+dist/*.dmg
+dist/*.zip
+dist/*.json
+dist/notary-log*
+
+# Local test files (third-party PSDs and Photoshop re-saves; not ours to publish)
+PSD export check*/
+
+# macOS
+.DS_Store
