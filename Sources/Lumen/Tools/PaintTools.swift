@@ -15,14 +15,7 @@ final class BrushTool: Tool {
 
     override var cursor: NSCursor { .crosshair }
 
-    private var settings: BrushSettings {
-        switch kind {
-        case .pencil: return app.pencil
-        case .eraser: return app.eraser
-        case .historyBrush: return app.historyBrush
-        default: return app.brush
-        }
-    }
+    private var settings: BrushSettings { app.brushSettings(for: kind) }
 
     private var isPencilLike: Bool { kind == .pencil || (kind == .eraser && app.eraserMode != .brush) }
 
@@ -67,10 +60,13 @@ final class BrushTool: Tool {
         st.dynamics = eng
         blockDab = nil
         if e.shift, let last = lastStrokeEnd {
+            // Shift-click: a straight line from the end of the last stroke (no smoothing on it)
             var p0 = PenSample(e)
             p0.p = last
             eng.begin(p0)
-            eng.move(PenSample(e), final: true)
+            var p1 = PenSample(e)
+            p1.direct = true
+            eng.move(p1)
         } else {
             eng.begin(PenSample(e))
         }
@@ -161,20 +157,7 @@ final class BrushTool: Tool {
 
     override func keyDown(_ e: NSEvent) -> Bool { BrushTool.handleBracketKeys(e) }
 
-    static func handleBracketKeys(_ e: NSEvent) -> Bool {
-        guard let ch = e.charactersIgnoringModifiers else { return false }
-        let app = AppModel.shared
-        var s = app.activeBrushSettings
-        switch ch {
-        case "]": s.size = min(5000, s.size < 10 ? s.size + 1 : s.size < 100 ? s.size + 5 : s.size * 1.15)
-        case "[": s.size = max(1, s.size <= 10 ? s.size - 1 : s.size <= 100 ? s.size - 5 : s.size / 1.15)
-        case "}": s.hardness = min(1, s.hardness + 0.25)
-        case "{": s.hardness = max(0, s.hardness - 0.25)
-        default: return false
-        }
-        app.activeBrushSettings = s
-        return true
-    }
+    static func handleBracketKeys(_ e: NSEvent) -> Bool { BrushKeys.handleBrackets(e) }
 }
 
 // MARK: - Clone stamp / Healing brush / Spot healing
@@ -195,10 +178,11 @@ final class CloneTool: Tool {
     private var sourceBuffer: (PixelBuffer, IPoint)?
     private var strokeStart: CGPoint?
     private var currentPoint: CGPoint?
+    private var dynamics = DabDynamics()
 
     override var cursor: NSCursor { .crosshair }
 
-    private var settings: BrushSettings { kind == .cloneStamp ? app.clone : app.healing }
+    private var settings: BrushSettings { app.brushSettings(for: kind) }
 
     override func mouseDown(_ e: ToolEvent) {
         if e.option && kind != .spotHealing {
@@ -209,7 +193,7 @@ final class CloneTool: Tool {
         }
         if kind != .spotHealing && sourcePoint == nil {
             status("Option-click to define a source point to clone from.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         guard let (d, id, target) = requirePixelTarget() else { return }
@@ -230,20 +214,21 @@ final class CloneTool: Tool {
         }
         strokeStart = e.doc
         placer = DabPlacer(spacing: max(1, s.size * max(0.05, s.spacing)), smoothing: s.smoothing)
-        for (p, pr) in placer.begin(e.doc, pressure: e.pressure) { place(p, pr) }
+        dynamics = DabDynamics()
+        for smp in placer.begin(PenSample(e)) { place(smp) }
         st.flush()
     }
 
     override func mouseDragged(_ e: ToolEvent) {
         currentPoint = e.doc
         guard let st = stroke else { return }
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure) { place(p, pr) }
+        for smp in placer.move(PenSample(e)) { place(smp) }
         st.flush()
     }
 
     override func mouseUp(_ e: ToolEvent) {
         guard let st = stroke else { return }
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure, final: true) { place(p, pr) }
+        for smp in placer.move(PenSample(e), final: true) { place(smp) }
         st.flush()
         st.applyToWorking()
         if kind == .healing || kind == .spotHealing {
@@ -254,22 +239,22 @@ final class CloneTool: Tool {
         currentPoint = nil
     }
 
-    private func place(_ p: CGPoint, _ pressure: Double) {
+    private func place(_ smp: PenSample) {
         guard let st = stroke, let (src, so) = sourceBuffer else { return }
         let s = settings
-        var size = s.size
-        if s.pressureSize { size *= max(0.05, pressure) }
-        guard let m = BrushTips.mask(diameter: size, hardness: s.hardness, roundness: s.roundness, angle: s.angle, tipID: s.tipID) else { return }
+        let p = smp.p
+        let dab = dynamics.dab(smp, s)   // size / angle / roundness / opacity from pressure, tilt, rotation, …
+        guard let m = BrushTips.mask(diameter: dab.size, hardness: s.hardness, roundness: dab.roundness, angle: dab.angle, tipID: s.tipID) else { return }
         if kind == .spotHealing {
             // paint a marker (the region to heal); pixels are filled at the end
             if let img = BrushTips.colored(m, color: RGBA(r: 0.5, g: 0.5, b: 0.5)) { st.dab(img, at: p, alpha: 1) }
             return
         }
         if CloneSources.shared.needsTransform, let t = CloneSources.shared.slot.destToSource {
-            st.transformedDab(mask: m, at: p, source: src, sourceOrigin: so, destToSource: t, alpha: s.flow)
+            st.transformedDab(mask: m, at: p, source: src, sourceOrigin: so, destToSource: t, alpha: s.flow * dab.alpha)
             return
         }
-        st.maskedDab(mask: m, at: p, source: src, sourceOrigin: so, offset: offset ?? .zero, alpha: s.flow)
+        st.maskedDab(mask: m, at: p, source: src, sourceOrigin: so, offset: offset ?? .zero, alpha: s.flow * dab.alpha)
     }
 
     /// Low-frequency color matching (healing) of the stroke area.
@@ -370,6 +355,8 @@ final class RetouchTool: Tool {
     private var d: Document?
     /// Transparency lock: Blur and Smudge change colours only, the alpha stays.
     private var lockAlpha = false
+    private var dynamics = DabDynamics()
+    private var brush: BrushSettings { app.brushSettings(for: kind) }
 
     override var cursor: NSCursor { .crosshair }
 
@@ -382,33 +369,37 @@ final class RetouchTool: Tool {
         origin = o
         selection = target == .quickMask ? nil : doc.state.selection
         pickup = []
-        let s = app.retouchBrush
+        let s = brush
         placer = DabPlacer(spacing: max(1, s.size * 0.15), smoothing: s.smoothing)
-        for (p, pr) in placer.begin(e.doc, pressure: e.pressure) { process(p, pr) }
+        dynamics = DabDynamics()
+        for smp in placer.begin(PenSample(e)) { process(smp) }
         w.markDirty()
         doc.setNeedsRender()
     }
 
     override func mouseDragged(_ e: ToolEvent) {
         guard let w = working else { return }
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure) { process(p, pr) }
+        for smp in placer.move(PenSample(e)) { process(smp) }
         w.markDirty()
         d?.setNeedsRender()
     }
 
     override func mouseUp(_ e: ToolEvent) {
-        guard working != nil else { return }
+        guard let w = working else { return }
+        for smp in placer.move(PenSample(e), final: true) { process(smp) }   // the stroke ends where the pen does
+        w.markDirty()
         d?.commit(kind.displayName.replacingOccurrences(of: " Tool", with: ""))
         working = nil
         d = nil
     }
 
-    private func process(_ p: CGPoint, _ pressure: Double) {
+    private func process(_ smp: PenSample) {
         guard let w = working else { return }
-        let s = app.retouchBrush
+        let p = smp.p
+        let s = brush
         let rs = app.retouch
-        var size = s.size
-        if s.pressureSize { size *= max(0.05, pressure) }
+        let dab = dynamics.dab(smp, s)
+        let size = dab.size
         let radius = size / 2
         let cx = Double(p.x) - Double(origin.x), cy = Double(p.y) - Double(origin.y)
         let x0 = max(0, Int(floor(cx - radius))), x1 = min(w.width - 1, Int(ceil(cx + radius)))
@@ -419,7 +410,7 @@ final class RetouchTool: Tool {
         let data = w.data.assumingMemoryBound(to: UInt8.self)
         let bpr = w.bytesPerRow
         let hard = s.hardness
-        let strength = rs.strength * (s.pressureOpacity ? pressure : 1)
+        let strength = rs.strength * dab.alpha
 
         // snapshot for neighborhood ops
         let rw = x1 - x0 + 1, rh = y1 - y0 + 1
@@ -566,6 +557,6 @@ final class RetouchTool: Tool {
         }
     }
 
-    override func drawOverlay(_ ctx: CGContext) { drawBrushCursor(ctx, size: app.retouchBrush.size) }
+    override func drawOverlay(_ ctx: CGContext) { drawBrushCursor(ctx, size: brush.size, hardness: brush.hardness) }
     override func keyDown(_ e: NSEvent) -> Bool { BrushTool.handleBracketKeys(e) }
 }

@@ -30,7 +30,7 @@ final class ColorSamplerTool: Tool {
         guard d.state.canvasCGRect.contains(e.doc) else { return }
         guard d.state.toolData.colorSamplers.count < ColorSamplerTool.maxSamplers else {
             status("You can place up to \(ColorSamplerTool.maxSamplers) color samplers.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         d.state.toolData.colorSamplers.append(CGPoint(x: floor(e.doc.x) + 0.5, y: floor(e.doc.y) + 0.5))
@@ -166,7 +166,7 @@ final class RulerTool: Tool {
 
     /// Rotates the selected layers so the ruler line becomes horizontal (or vertical if closer).
     static func straightenLayer(_ d: Document) {
-        guard let l = line(d), l.0.distance(to: l.1) > 1 else { NSSound.beep(); return }
+        guard let l = line(d), l.0.distance(to: l.1) > 1 else { Beep.play(); return }
         let a = StraightenCropTool.correction(for: l.0, l.1)
         let ids = d.orderedSelection.isEmpty ? (d.activeLayerID.map { [$0] } ?? []) : d.orderedSelection
         let sp = CanvasSpace(width: d.state.width, height: d.state.height)
@@ -178,7 +178,7 @@ final class RulerTool: Tool {
             d.updateLayer(id) { $0 = LayerTransformer.apply(Homography(affine: t), to: layer, space: sp) }
             changed = true
         }
-        guard changed else { NSSound.beep(); return }
+        guard changed else { Beep.play(); return }
         ToolsSettings.shared.rulerLines[d.id] = nil
         d.commit("Straighten Layer")
     }
@@ -591,7 +591,7 @@ enum MeasurementActions {
     /// Records measurements for the current selection, ruler line and/or count marks.
     @discardableResult
     static func record(_ doc: Document? = nil) -> [MeasurementRecord] {
-        guard let d = doc ?? AppActions.doc else { NSSound.beep(); return [] }
+        guard let d = doc ?? AppActions.doc else { Beep.play(); return [] }
         let sc = d.state.toolData.measurementScale
         let k = sc.unitsPerPixel
         let scaleText = sc.isDefault ? "1 pixel = 1.0000 pixels" : String(format: "%.0f pixels = %.4f %@", sc.pixels, sc.length, sc.units)
@@ -617,7 +617,7 @@ enum MeasurementActions {
         }
         if out.isEmpty {
             AppModel.shared.setStatus("Nothing to measure: make a selection, draw a ruler line or place count marks.")
-            NSSound.beep()
+            Beep.play()
             return []
         }
         log.records += out

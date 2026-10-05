@@ -37,7 +37,7 @@ enum ArtboardsModule {
         let hasBoards = { doc.map { !ArtboardOps.boards($0.state).isEmpty } ?? false }
         let selected = { boardsSelected() }
         func onSel(_ f: @escaping (Document, [UUID]) -> Void) -> () -> Void {
-            { if let d = doc { let ids = ArtboardOps.selectedBoards(d); if ids.isEmpty { NSSound.beep() } else { f(d, ids) } } }
+            { if let d = doc { let ids = ArtboardOps.selectedBoards(d); if ids.isEmpty { Beep.play() } else { f(d, ids) } } }
         }
         let groupSelected = {
             guard let d = doc, d.selectedLayerIDs.count == 1, let l = d.activeLayer else { return false }

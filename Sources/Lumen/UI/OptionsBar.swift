@@ -54,6 +54,7 @@ struct OptionsBar: View {
         case .blur, .sharpen, .smudge, .dodge, .burn, .sponge: RetouchOptions()
         case .pen, .freeformPen:
             ToolModePicker(tool: app.tool)
+            if app.penMode == .shape { ShapeFillStrokeControls() }
             Text("Click to add points, drag for curves, click the first point to close. ⌘-click to finish.").foregroundStyle(Theme.textDim)
         case .directSelect, .pathSelect: PathOptions()
         case .text, .verticalText: TextOptions()
@@ -275,8 +276,8 @@ struct BrushOptions: View {
         CompactSlider(label: "Opacity", value: s.opacity, range: 0...1, unit: "%", scale: 100)
         CompactSlider(label: "Flow", value: s.flow, range: 0.01...1, unit: "%", scale: 100)
         CompactSlider(label: "Smoothing", value: s.smoothing, range: 0...0.95, unit: "%", scale: 100)
-        IconButton(symbol: "hand.draw", help: "Pressure controls size", active: s.wrappedValue.pressureSize) { s.wrappedValue.pressureSize.toggle() }
-        IconButton(symbol: "circle.lefthalf.striped.horizontal", help: "Pressure controls opacity", active: s.wrappedValue.pressureOpacity) { s.wrappedValue.pressureOpacity.toggle() }
+        SmoothingOptionsMenu()
+        PressureButtons(settings: s)
         if app.tool == .cloneStamp {
             Toggle2(label: "Aligned", on: $app.cloneAligned)
             Toggle2(label: "Sample All Layers", on: $app.cloneSampleAll)
@@ -295,17 +296,19 @@ struct RetouchOptions: View {
     @Bindable var app = AppModel.shared
     @State private var showBrushes = false
     var body: some View {
+        // each retouch tool remembers its own brush (Blur, Smudge, Dodge, …)
+        let s = Binding(get: { app.activeBrushSettings }, set: { app.activeBrushSettings = $0 })
         Button { showBrushes.toggle() } label: {
             HStack(spacing: 4) {
-                BrushTipPreview(settings: app.retouchBrush).frame(width: 22, height: 22)
-                Text("\(Int(app.retouchBrush.size))").font(Theme.mono)
+                BrushTipPreview(settings: s.wrappedValue).frame(width: 22, height: 22)
+                Text("\(Int(s.wrappedValue.size))").font(Theme.mono)
                 Image(systemName: "chevron.down").font(.system(size: 7))
             }
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(RoundedRectangle(cornerRadius: 3).fill(Theme.fieldBG))
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $showBrushes, arrowEdge: .bottom) { BrushSettingsView(settings: $app.retouchBrush).frame(width: 300).padding(10) }
+        .popover(isPresented: $showBrushes, arrowEdge: .bottom) { BrushSettingsView(settings: s).frame(width: 300).padding(10) }
         switch app.tool {
         case .dodge, .burn:
             Picker("Range", selection: $app.retouch.range) {
@@ -324,6 +327,34 @@ struct RetouchOptions: View {
         default:
             CompactSlider(label: "Strength", value: $app.retouch.strength, range: 0.01...1, unit: "%", scale: 100)
         }
+        CompactSlider(label: "Smoothing", value: s.smoothing, range: 0...0.95, unit: "%", scale: 100)
+        SmoothingOptionsMenu()
+        PressureButtons(settings: s, opacityHelp: "Pressure controls strength")
+    }
+}
+
+/// Photoshop's Smoothing options (gear next to Smoothing): pulled-string mode and catch-up behaviour.
+struct SmoothingOptionsMenu: View {
+    @Bindable var tablet = TabletSettings.shared
+    var body: some View {
+        Menu {
+            Toggle("Pulled String Mode", isOn: $tablet.prefs.smoothing.pulledString)
+            Toggle("Stroke Catch-up", isOn: $tablet.prefs.smoothing.strokeCatchUp)
+            Toggle("Catch-up on Stroke End", isOn: $tablet.prefs.smoothing.catchUpOnEnd)
+            Toggle("Adjust for Zoom", isOn: $tablet.prefs.smoothing.adjustForZoom)
+        } label: { Image(systemName: "gearshape") }
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
+        .help("Smoothing options")
+    }
+}
+
+/// The options-bar pressure buttons: on, pen pressure drives size / opacity whatever the Brush Settings panel says.
+struct PressureButtons: View {
+    let settings: Binding<BrushSettings>
+    var opacityHelp = "Pressure controls opacity (overrides Brush Settings)"
+    var body: some View {
+        IconButton(symbol: "hand.draw", help: "Pressure controls size (overrides Brush Settings)", active: settings.wrappedValue.pressureSize) { settings.wrappedValue.pressureSize.toggle() }
+        IconButton(symbol: "circle.lefthalf.striped.horizontal", help: opacityHelp, active: settings.wrappedValue.pressureOpacity) { settings.wrappedValue.pressureOpacity.toggle() }
     }
 }
 
@@ -571,24 +602,21 @@ struct ShapeOptions: View {
     @Bindable var app = AppModel.shared
     var body: some View {
         ToolModePicker(tool: app.tool)
+        switch app.shapeTool.mode {
+        case .shape:
+            ShapeFillStrokeControls()
+            ShapeSizeFields()
+        case .path:
+            EmptyView()   // Make: Selection… / Mask / Shape come with the mode picker; nothing is painted, so no Fill / Stroke
+        case .pixels:
+            ShapePixelsOptions()
+        }
         if app.shapeTool.mode != .pixels {
             PathOperationMenu(current: app.shapeTool.operation, allowNew: true) { app.shapeTool.operation = $0 }
+            PathAlignmentMenu()
+            ShapePathOptionsButton()
         }
         if app.tool == .libraryShape { ShapeLibraryPicker(id: $app.shapeTool.libraryID) }
-        if app.shapeTool.mode == .shape {
-            Text("Fill").foregroundStyle(Theme.textDim)
-            PaintStylePicker(paint: $app.shapeTool.fill)
-            Text("Stroke").foregroundStyle(Theme.textDim)
-            PaintStylePicker(paint: $app.shapeTool.stroke)
-            NumberField(label: "", value: Binding(get: { app.shapeTool.strokeWidth }, set: { v in
-                // dashes typed in px keep their length when the width changes
-                var s = ShapeStrokeOptionsButton.toolStroke(app.shapeTool); s.setWidth(v)
-                app.shapeTool.strokeWidth = s.width
-                if app.shapeTool.strokeOptions != nil { s.paint = .none; app.shapeTool.strokeOptions = s }
-            }), width: 34)
-            Text("px").foregroundStyle(Theme.textFaint)
-            ShapeStrokeOptionsButton()
-        }
         switch app.tool {
         case .roundedRect: NumberField(label: "Radius", value: $app.shapeTool.cornerRadius, width: 40)
         case .polygon: NumberField(label: "Sides", value: Binding(get: { Double(app.shapeTool.sides) }, set: { app.shapeTool.sides = max(3, min(100, Int($0))) }), width: 34)
@@ -660,9 +688,21 @@ struct PaintStylePicker: View {
         Button { open.toggle() } label: { PaintStyleSwatch(paint: paint).frame(width: 30, height: 18) }
             .buttonStyle(.plain)
             .popover(isPresented: $open, arrowEdge: .bottom) {
-                PaintStyleEditor(paint: $paint).padding(10).frame(width: 280)
+                PaintStylePopoverContent(paint: $paint)
                     .onDisappear { onCommit?() }
             }
+    }
+}
+
+/// The Fill / Stroke popover: the editor at its natural size (the popover is sized from it), never narrower than the
+/// colour picker, so switching between solid, gradient and pattern keeps the width; opaque background.
+struct PaintStylePopoverContent: View {
+    @Binding var paint: PaintStyle
+    static let minWidth: CGFloat = 300
+    var body: some View {
+        PaintStyleEditor(paint: $paint)
+            .frame(minWidth: Self.minWidth, alignment: .topLeading)
+            .colorPopoverContent()
     }
 }
 
@@ -810,6 +850,7 @@ struct ColorReplacementOptions: View {
     @Bindable var app = AppModel.shared
     var body: some View {
         CompactSlider(label: "Size", value: $app.colorReplaceBrush.size, range: 1...1000, unit: " px")
+        PressureButtons(settings: $app.colorReplaceBrush)
         Picker("Mode", selection: $app.colorReplace.mode) {
             Text("Hue").tag(BlendMode.hue); Text("Saturation").tag(BlendMode.saturation); Text("Color").tag(BlendMode.color); Text("Luminosity").tag(BlendMode.luminosity)
         }.frame(width: 150)
@@ -822,6 +863,8 @@ struct MixerOptions: View {
     @Bindable var app = AppModel.shared
     var body: some View {
         CompactSlider(label: "Size", value: $app.mixerBrushSettings.size, range: 1...1000, unit: " px")
+        PressureButtons(settings: $app.mixerBrushSettings)
+        CompactSlider(label: "Smoothing", value: $app.mixerBrushSettings.smoothing, range: 0...0.95, unit: "%", scale: 100)
         Toggle2(label: "Load after stroke", on: $app.mixer.loadEachStroke)
         Toggle2(label: "Clean after stroke", on: $app.mixer.cleanEachStroke)
         CompactSlider(label: "Wet", value: $app.mixer.wet, range: 0...100, unit: "%")

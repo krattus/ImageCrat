@@ -111,6 +111,7 @@ enum FeatureModules {
         ZoomFXModule.register()
         DocFixesTests.register()
         UIFixesSelfTest.register()   // QA fixes: dialogs, numeric fields, keyboard focus, menu wiring
+        ShapeFillBarSelfTest.register()   // shape tools' Fill / Stroke per mode (Shape / Path / Pixels), bar edits of the selected shape, ⌥⌫, colour popover layout (selftest: shapefill; runs early: it hosts SwiftUI windows)
         PSDFidelitySelfTest.register()
         PSDOpenModule.register()     // last: its headless-only run needs every format and open type registered
         ZoomUISelfTest.register()    // status-bar zoom control, zoom presets and shortcuts
@@ -123,9 +124,15 @@ enum FeatureModules {
         PanelSizeSelfTest.register()   // panel content vs. the room its group gives it, hosting frames; LUMEN_PANEL_TOUR=<dir> real-window tour (selftest: panelsize)
         BlurGallery2SelfTest.register()   // blur filters and the Blur Gallery with a feathered selection, masked layers, smart objects (selftest: blurgallery2)
         EyeDragSelfTest.register()   // Layers panel eyes: drag across eyes, ⌥-click solo / restore, eye menu (UI/Panels/LayersPanelEyeDrag.swift; selftest: eyedrag)
+        BeepSelfTest.register()   // automated runs make no sound; no raw NSSound.beep() (App/Beep.swift)
         MaskTargetSelfTest.register()   // ask whether filters on a selected mask mean the picture (App/MaskTargetPrompt.swift)
         PathsModule.register()       // paths as non-printing outlines (Path mode, Paths panel, conversions) and type on a path (selftests: typepath, paths2)
         BevelFXSelfTest.register()   // inner effects stay inside the layer, smooth bevel shading (selftest: bevelfx)
+        PSDFXAddSelfTest.register()  // adding effects to layers imported from PSD with a style (selftest: psdfxadd)
         EmojiSelfTest.register()     // emoji: Character Viewer insertText, text drops, ⌘V, Glyphs panel, emoji rendering and round trips (selftest: emoji)
+        LiquifyBoundsSelfTest.register()   // Liquify never crops: layer grows over the canvas, off-canvas pixels kept, smart filter on smart objects (selftest: liquifybounds)
+        TabletSelfTest.register()    // drawing tablets: pressure / tilt / rotation / wheel, pen eraser, curve, smoothing, ⌃⌥-drag HUD, keys, quick picker (selftest: tablet)
+        FilterCenterSelfTest.register()   // Center option of Twirl / Pinch / Spherize / radial blurs …: Object, Selection, Canvas, Custom (selftest: filtercenter)
+        BrushLibraryModule.register()   // brush library: import (.abr .tpl .brush(set) .gbr .gih .kpp .icbrushes), folders, export, Define Brush (selftest: brushlib)
     }
 }

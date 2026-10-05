@@ -130,7 +130,7 @@ enum RecipeActions {
 
     /// Filter ▸ Recipe Filter… on a layer that is not a smart object: offers to convert (or to apply destructively to pixel layers).
     static func applyRecipeFilterInteractive(_ graph: RecipeGraph, openEditor: Bool) {
-        guard let d = doc, let l = d.activeLayer else { NSSound.beep(); return }
+        guard let d = doc, let l = d.activeLayer else { Beep.play(); return }
         if l.isSmartObject {
             addRecipeFilter(graph, openEditor: openEditor)
             return
@@ -198,7 +198,7 @@ enum RecipeActions {
     static func openEditor(_ t: RecipeTarget? = nil) {
         guard let d = doc else { return }
         if let t { RecipeEditorWindow.shared.open(document: d, target: t); return }
-        guard let l = d.activeLayer, let tt = target(for: l) else { NSSound.beep(); return }
+        guard let l = d.activeLayer, let tt = target(for: l) else { Beep.play(); return }
         RecipeEditorWindow.shared.open(document: d, target: tt)
     }
 

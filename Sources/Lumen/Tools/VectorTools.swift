@@ -63,16 +63,14 @@ enum VectorEditing {
         }
     }
 
-    static func newShapeLayer(_ d: Document, geometry: ShapeGeometry, name: String) -> UUID {
+    /// A new shape layer with exactly the Fill and Stroke the options bar shows (`ShapeBar.style`: the selected shape
+    /// layer's, else the tool's). `foregroundFill` (Make Shape from a path, where the bar shows no Fill): filled with the
+    /// foreground colour and stroked with the tool's stroke.
+    static func newShapeLayer(_ d: Document, geometry: ShapeGeometry, name: String, foregroundFill: Bool = false) -> UUID {
         let app = AppModel.shared
-        var fill = app.shapeTool.fill
-        if case .color = fill { fill = .color(app.foreground) }
-        var stroke = StrokeStyle(paint: app.shapeTool.stroke, width: app.shapeTool.strokeWidth, alignment: app.shapeTool.strokeAlignment)
-        if let o = app.shapeTool.strokeOptions {   // Stroke Options (caps, corners, dashes) set in the options bar
-            stroke.cap = o.cap; stroke.join = o.join; stroke.miterLimit = o.miterLimit
-            stroke.dash = o.dash; stroke.dashPhase = o.dashPhase; stroke.dashAlignment = o.dashAlignment; stroke.dashUnit = o.dashUnit
-        }
-        if app.shapeTool.stroke.isNone { stroke.paint = .none }
+        var (fill, stroke) = foregroundFill ? ShapeBar.style(nil) : ShapeBar.style(d)
+        if foregroundFill { fill = .color(app.foreground) }
+        else if ShapeBar.target(d) != nil { ShapeBar.remember(fill: fill, stroke: stroke) }
         let content = ShapeContent(geometry: geometry, fill: fill, stroke: stroke)
         let layer = Layer(name: d.nextLayerName(name), content: .shape(content))
         d.addLayer(layer)
@@ -583,6 +581,8 @@ final class ShapeTool: Tool {
     override func mouseDown(_ e: ToolEvent) {
         start = canvas.snap(e.doc)
         current = start
+        constrain = e.shift || app.shapeTool.constrainProportions
+        fromCenter = e.option || app.shapeTool.fromCenter
     }
 
     /// Path mode: Return / Esc deselect (hide) the active path, like the path tools.
@@ -594,8 +594,8 @@ final class ShapeTool: Tool {
 
     override func mouseDragged(_ e: ToolEvent) {
         current = canvas.snap(e.doc)
-        constrain = e.shift
-        fromCenter = e.option
+        constrain = e.shift || app.shapeTool.constrainProportions   // the gear's options, or ⇧ / ⌥ held
+        fromCenter = e.option || app.shapeTool.fromCenter
     }
 
     override func mouseUp(_ e: ToolEvent) {
@@ -623,18 +623,7 @@ final class ShapeTool: Tool {
             }
             d.commit("Work Path")
         case .pixels:
-            guard let (dd, id, tgt) = requirePixelTarget(), let (w, o) = dd.beginPixelEdit(layerID: id, target: tgt) else { return }
-            let ctx = w.context
-            ctx.saveGState()
-            ctx.translateBy(x: CGFloat(-o.x), y: CGFloat(-o.y))
-            if let sel = dd.editSelection { w.clip(toMask: sel.makeCGImage(), in: dd.state.canvasCGRect) }
-            let rp = g.vectorPath.resolved
-            ctx.addPath(rp.path)
-            ctx.setFillColor((tgt.isMask ? RGBA(gray: app.foreground.luminance) : app.foreground).cgColor)
-            if rp.evenOdd { ctx.fillPath(using: .evenOdd) } else { ctx.fillPath() }
-            ctx.restoreGState()
-            w.markDirty()
-            dd.commit(kind.displayName.replacingOccurrences(of: " Tool", with: ""))
+            ShapePixels.paint(self, g.vectorPath, name: kind.displayName.replacingOccurrences(of: " Tool", with: ""))
         }
     }
 
@@ -665,7 +654,7 @@ extension VectorEditing {
 
     /// Merge Shape Components: bakes the Boolean result into plain combined outlines.
     static func mergeComponents() {
-        guard let d = AppActions.doc, let t = currentTarget(d), let p = path(d, t), PathBoolean.needsResolve(p) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let t = currentTarget(d), let p = path(d, t), PathBoolean.needsResolve(p) else { Beep.play(); return }
         setPath(d, t, PathBoolean.merged(p))
         PathSelectTool.selectedComponent = nil
         d.commit("Merge Shape Components")

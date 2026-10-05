@@ -743,7 +743,7 @@ enum PaletteIndex {
                             keywords: t.rawValue) { app.tool = t })
         }
         // 3. filters & adjustments (skipped when the menu already has them)
-        for k in FilterKind.allCases where k != .neuralFilter {
+        for k in FilterKind.allCases where k != .neuralFilter && k != .liquify {
             add(PaletteItem(id: "filter:" + k.rawValue, title: k.displayName + (k.isImmediate ? "" : "…"), subtitle: "Filter ▸ " + k.category.rawValue, category: .filter,
                             enabled: hasDoc, keywords: k.rawValue) { FilterLauncher.launch(k) }, dedupeTitle: true)
         }
@@ -793,10 +793,12 @@ enum PaletteIndex {
             }
         }
         // 8. presets
-        for p in BrushPreset.builtIn + BrushPreset.dynamicPresets + app.customBrushPresets {
-            add(PaletteItem(id: "brush:" + p.id, title: "Brush: \(p.name)", subtitle: "Brush preset · \(Int(p.size)) px", category: .preset, symbol: "paintbrush.pointed") {
-                if !app.tool.isPainting { app.tool = .brush }
-                var s = app.activeBrushSettings; p.apply(to: &s); app.activeBrushSettings = s
+        let brushLib = BrushLibrary.shared
+        for r in brushLib.orderedBrushes {
+            let folder = brushLib.index.folderID(ofBrush: r.id).map { brushLib.index.path(ofFolder: $0).joined(separator: " ▸ ") } ?? ""
+            add(PaletteItem(id: "brush:" + r.id, title: "Brush: \(r.name)", subtitle: "Brush preset · \(Int(r.params.size)) px" + (folder.isEmpty ? "" : " · " + folder),
+                            category: .preset, symbol: "paintbrush.pointed", keywords: folder) {
+                brushLib.select(r.id)
             })
         }
         for p in ToolPresetStore.shared.presets {

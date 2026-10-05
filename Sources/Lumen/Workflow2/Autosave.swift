@@ -424,7 +424,7 @@ enum FileVersions {
     /// File ▸ Revert to Saved: reloads the file as a new history step (so the revert itself can be undone).
     @discardableResult
     static func revertToSaved(_ doc: Document? = nil, confirm: Bool = true) -> Bool {
-        guard let d = doc ?? AppActions.doc, canRevert(d), let url = d.fileURL else { Workflow2Util.beep(); return false }
+        guard let d = doc ?? AppActions.doc, canRevert(d), let url = d.fileURL else { Beep.play(); return false }
         if confirm, !FilesModule.headless, d.isDirty,
            !AppActions.confirm("Revert to the last saved version of “\(d.name)”?", "Your unsaved changes stay in the History panel and can be brought back with Undo.", ok: "Revert") { return false }
         AppActions.canvas?.commitCurrentTool()

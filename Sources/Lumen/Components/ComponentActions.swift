@@ -343,7 +343,7 @@ enum ComponentActions {
     @discardableResult
     static func selectInstances(_ d: Document, component: UUID) -> Int {
         let ids = ComponentEngine.instances(of: component, in: d.state).map(\.id)
-        guard let last = ids.last else { NSSound.beep(); return 0 }
+        guard let last = ids.last else { Beep.play(); return 0 }
         d.selectedLayerIDs = Set(ids)
         d.activeLayerID = last
         d.editTarget = .content

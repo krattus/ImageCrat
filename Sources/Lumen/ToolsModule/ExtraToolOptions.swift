@@ -22,6 +22,7 @@ struct ExtraToolOptions: View {
         case .backgroundEraser: BackgroundEraserOptions()
         case .curvaturePen:
             ToolModePicker(tool: app.tool)
+            if app.penMode == .shape { ShapeFillStrokeControls() }
             Text("Click to add points; the curve passes through them. Double-click a point for a corner; click the first point to close.").foregroundStyle(Theme.textDim)
         case .addAnchor: Text("Click a path segment to add an anchor point.").foregroundStyle(Theme.textDim)
         case .deleteAnchor: Text("Click an anchor point to delete it.").foregroundStyle(Theme.textDim)

@@ -44,6 +44,8 @@ package struct FilterInstance: Codable, Equatable, Identifiable {
     /// Smart filter mask (document coordinates, gray): where the filter shows. Added from the selection that was
     /// active when the smart filter was created, like Photoshop's filter mask; nil = everywhere.
     package var mask: LayerMask? = nil
+    /// Displacement mesh of a Liquify smart filter (`kind == .liquify`).
+    package var liquify: LiquifyMesh? = nil
 
     package init(kind: FilterKind, colors: [RGBA] = []) {
         self.kind = kind
@@ -79,6 +81,8 @@ package enum FilterKind: String, Codable, CaseIterable, Identifiable {
     case neuralFilter
     // Recipe filter: a node graph (`FilterInstance.recipe`) evaluated on the smart object's content
     case recipe
+    // Liquify as a smart filter (mesh in `FilterInstance.liquify`); has its own menu item and dialog
+    case liquify
 
     package var id: String { rawValue }
 
@@ -100,6 +104,7 @@ package enum FilterKind: String, Codable, CaseIterable, Identifiable {
         case .dustAndScratches: return .noise
         case .fieldBlur, .irisBlur, .pathBlur: return .blurGallery
         case .neuralFilter, .recipe: return .other
+        case .liquify: return .distort
         }
     }
 
@@ -177,6 +182,7 @@ package enum FilterKind: String, Codable, CaseIterable, Identifiable {
         case .pathBlur: return "Path Blur"
         case .neuralFilter: return "Neural Filters"
         case .recipe: return "Recipe Filter"
+        case .liquify: return "Liquify"
         }
     }
 
@@ -345,17 +351,17 @@ package enum FilterKind: String, Codable, CaseIterable, Identifiable {
         case .offset: return [FilterParam(key: "dx", label: "Horizontal", kind: .slider(-2000...2000), defaultValue: 100, unit: "px"),
                               FilterParam(key: "dy", label: "Vertical", kind: .slider(-2000...2000), defaultValue: 100, unit: "px"),
                               FilterParam(key: "wrap", label: "Wrap Around", kind: .toggle, defaultValue: 1)]
-        case .neuralFilter, .recipe: return []
+        case .neuralFilter, .recipe, .liquify: return []
         }
     }
 
     /// Filters that don't need a parameter dialog.
-    package var isImmediate: Bool { params.isEmpty && self != .filterGallery && self != .fieldBlur && self != .irisBlur && self != .pathBlur }
+    package var isImmediate: Bool { params.isEmpty && self != .filterGallery && self != .liquify && self != .fieldBlur && self != .irisBlur && self != .pathBlur }
 
     /// Render filters that need the foreground/background colors.
     package var usesColors: Bool { self == .clouds || self == .differenceClouds }
 
-    package static func byCategory(_ c: FilterCategory) -> [FilterKind] { allCases.filter { $0.category == c && $0 != .neuralFilter && $0 != .recipe } }
+    package static func byCategory(_ c: FilterCategory) -> [FilterKind] { allCases.filter { $0.category == c && $0 != .neuralFilter && $0 != .recipe && $0 != .liquify } }
 }
 
 // MARK: - Filter Gallery & pins
@@ -383,7 +389,7 @@ package struct FilterPin: Codable, Equatable, Identifiable {
 }
 
 extension FilterInstance {
-    private enum Keys: String, CodingKey { case id, kind, values, colors, enabled, opacity, blendMode, gallery, points, payload, recipe, mask }
+    private enum Keys: String, CodingKey { case id, kind, values, colors, enabled, opacity, blendMode, gallery, points, payload, recipe, mask, liquify }
 
     package init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: Keys.self)
@@ -399,6 +405,7 @@ extension FilterInstance {
         payload = try c.decodeIfPresent(PixelBuffer.self, forKey: .payload)
         recipe = try? c.decodeIfPresent(RecipeGraph.self, forKey: .recipe)
         mask = try? c.decodeIfPresent(LayerMask.self, forKey: .mask)
+        liquify = try? c.decodeIfPresent(LiquifyMesh.self, forKey: .liquify)
     }
 
     package func encode(to encoder: Encoder) throws {
@@ -409,12 +416,14 @@ extension FilterInstance {
         try c.encodeIfPresent(payload, forKey: .payload)
         try c.encodeIfPresent(recipe, forKey: .recipe)
         try c.encodeIfPresent(mask, forKey: .mask)
+        try c.encodeIfPresent(liquify, forKey: .liquify)
     }
 
     package static func == (a: FilterInstance, b: FilterInstance) -> Bool {
         a.id == b.id && a.kind == b.kind && a.values == b.values && a.colors == b.colors && a.enabled == b.enabled && a.opacity == b.opacity &&
             a.blendMode == b.blendMode && a.gallery == b.gallery && a.points == b.points && a.payload === b.payload && a.recipe == b.recipe &&
-            a.mask?.buffer === b.mask?.buffer && a.mask?.origin == b.mask?.origin && a.mask?.isEnabled == b.mask?.isEnabled
+            a.mask?.buffer === b.mask?.buffer && a.mask?.origin == b.mask?.origin && a.mask?.isEnabled == b.mask?.isEnabled &&
+            a.liquify == b.liquify
     }
 }
 

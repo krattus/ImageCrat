@@ -520,8 +520,8 @@ private struct PSpriteSection: View {
                 }
             case .image:
                 PRow(label: "Image") {
-                    Button("From Active Layer") { if let p = ParticleSources.spriteFromActiveLayer(editor.doc) { s.spriteImagePNG = p } else { NSSound.beep() } }.buttonStyle(PanelButtonStyle())
-                    Button("From Brush Tip") { if let p = ParticleSources.spriteFromBrushTip() { s.spriteImagePNG = p } else { NSSound.beep() } }.buttonStyle(PanelButtonStyle())
+                    Button("From Active Layer") { if let p = ParticleSources.spriteFromActiveLayer(editor.doc) { s.spriteImagePNG = p } else { Beep.play() } }.buttonStyle(PanelButtonStyle())
+                    Button("From Brush Tip") { if let p = ParticleSources.spriteFromBrushTip() { s.spriteImagePNG = p } else { Beep.play() } }.buttonStyle(PanelButtonStyle())
                 }
                 if s.spriteImagePNG == nil { Text("No image yet — a soft disc is used.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
             default: EmptyView()

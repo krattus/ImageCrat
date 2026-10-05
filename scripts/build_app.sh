@@ -89,6 +89,14 @@ cat > "$APP/Contents/Info.plist" <<PLIST
       <key>UTTypeTagSpecification</key>
       <dict><key>public.filename-extension</key><array><string>imagecrat</string></array></dict>
     </dict>
+    <dict>
+      <!-- ImageCrat's own brush sets (Brushes panel ▸ Export): a zip of manifest.json + PNG tips -->
+      <key>UTTypeIdentifier</key><string>app.imagecrat.brushes</string>
+      <key>UTTypeDescription</key><string>ImageCrat Brushes</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string><string>public.content</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>icbrushes</string></array></dict>
+    </dict>
   </array>
   <key>UTImportedTypeDeclarations</key>
   <array>
@@ -107,6 +115,56 @@ cat > "$APP/Contents/Info.plist" <<PLIST
       <key>UTTypeConformsTo</key><array><string>public.image</string><string>public.data</string></array>
       <key>UTTypeTagSpecification</key>
       <dict><key>public.filename-extension</key><array><string>psb</string></array></dict>
+    </dict>
+    <!-- brush files: imported into the Brushes panel (BrushLibrary.importInBackground), never opened as documents -->
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.adobe.photoshop-brush</string>
+      <key>UTTypeDescription</key><string>Photoshop Brushes</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>abr</string></array></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.adobe.photoshop-tool-preset</string>
+      <key>UTTypeDescription</key><string>Photoshop Tool Presets</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>tpl</string></array></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>org.gimp.gbr</string>
+      <key>UTTypeDescription</key><string>GIMP Brush</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>gbr</string></array></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>org.gimp.gih</string>
+      <key>UTTypeDescription</key><string>GIMP Image Pipe Brush</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>gih</string></array></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.savage.procreate.brush</string>
+      <key>UTTypeDescription</key><string>Procreate Brush</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>brush</string></array></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>com.savage.procreate.brushset</string>
+      <key>UTTypeDescription</key><string>Procreate Brush Set</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>brushset</string></array></dict>
+    </dict>
+    <dict>
+      <key>UTTypeIdentifier</key><string>org.krita.kpp</string>
+      <key>UTTypeDescription</key><string>Krita Brush Preset</string>
+      <key>UTTypeConformsTo</key><array><string>public.data</string></array>
+      <key>UTTypeTagSpecification</key>
+      <dict><key>public.filename-extension</key><array><string>kpp</string></array></dict>
     </dict>
   </array>
   <key>CFBundleDocumentTypes</key>
@@ -134,6 +192,23 @@ cat > "$APP/Contents/Info.plist" <<PLIST
         <string>public.png</string><string>public.jpeg</string><string>public.tiff</string><string>public.heic</string>
         <string>com.compuserve.gif</string><string>com.microsoft.bmp</string><string>com.adobe.photoshop-image</string><string>com.adobe.photoshop-large-image</string><string>org.webmproject.webp</string><string>public.svg-image</string><string>com.adobe.pdf</string><string>com.adobe.illustrator.ai-image</string>
       </array>
+    </dict>
+    <dict>
+      <!-- Importer: double-clicking / dropping these on the Dock icon imports them into the Brushes panel. (Launch
+           Services knows Editor / Viewer / Shell / None roles; Viewer is the one that doesn't claim to save them.) -->
+      <key>CFBundleTypeName</key><string>Brushes</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Alternate</string>
+      <key>LSItemContentTypes</key>
+      <array>
+        <string>com.adobe.photoshop-brush</string><string>com.adobe.photoshop-tool-preset</string><string>org.gimp.gbr</string><string>org.gimp.gih</string><string>com.savage.procreate.brush</string><string>com.savage.procreate.brushset</string><string>org.krita.kpp</string>
+      </array>
+    </dict>
+    <dict>
+      <key>CFBundleTypeName</key><string>ImageCrat Brushes</string>
+      <key>CFBundleTypeRole</key><string>Viewer</string>
+      <key>LSHandlerRank</key><string>Owner</string>
+      <key>LSItemContentTypes</key><array><string>app.imagecrat.brushes</string></array>
     </dict>
   </array>
 </dict>

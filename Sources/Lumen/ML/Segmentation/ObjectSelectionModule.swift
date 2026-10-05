@@ -125,7 +125,7 @@ enum ObjectSelectionModule {
         guard !t.isEmpty, let d = AppActions.doc, let img = engine.prepare(d) else { return }
         guard SegModels.florenceInstalled || SAM3Engine.isAvailable else {
             AppModel.shared.setStatus("Text prompts need the Florence-2 model — use “Get text model” in the options bar.")
-            NSSound.beep(); return
+            Beep.play(); return
         }
         settings.busy = "Finding “\(t)”…"
         let engineChoice = settings.textEngine, opts = settings.options
@@ -135,13 +135,13 @@ enum ObjectSelectionModule {
                 await MainActor.run {
                     settings.busy = nil
                     guard let u = SegMask.union(matches.map(\.mask)) else {
-                        AppModel.shared.setStatus("Nothing matching “\(t)” was found."); NSSound.beep(); return
+                        AppModel.shared.setStatus("Nothing matching “\(t)” was found."); Beep.play(); return
                     }
                     d.setSelection(SelectionOps.combine(d.state.selection, u, mode: mode), commitName: "Select “\(t)”")
                     AppModel.shared.setStatus("Selected \(matches.count) match(es) for “\(t)”.")
                 }
             } catch {
-                await MainActor.run { settings.busy = nil; AppModel.shared.setStatus(error.localizedDescription); NSSound.beep() }
+                await MainActor.run { settings.busy = nil; AppModel.shared.setStatus(error.localizedDescription); Beep.play() }
             }
         }
     }
@@ -190,7 +190,7 @@ enum ObjectSelectionModule {
             done(nil); return
         }
         let base = mask ?? d.state.selection
-        guard let base else { NSSound.beep(); done(nil); return }
+        guard let base else { Beep.play(); done(nil); return }
         let q = quality ?? settings.hairQuality
         engine.run("Refining hair…", { img in try SegMatting.refine(mask: base, image: img, quality: q) }, done: done)
     }

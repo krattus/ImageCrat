@@ -119,7 +119,7 @@ final class ObjectSelectTool: SelectionToolBase {
     override func mouseUp(_ e: ToolEvent) {
         defer { start = nil; current = nil; lassoPts = [] }
         guard let d = doc, let s = start, let c = current else { return }
-        guard settings.busy == nil else { NSSound.beep(); return }
+        guard settings.busy == nil else { Beep.play(); return }
         let mode = combine
         let opts = settings.options
         engine.prepare(d)
@@ -151,7 +151,7 @@ final class ObjectSelectTool: SelectionToolBase {
     private func finish(_ m: PixelBuffer?, mode: SelectionCombine) {
         guard let m, m.opaqueBounds(threshold: 20) != nil else {
             status("No object found in the selected area.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         combine = mode

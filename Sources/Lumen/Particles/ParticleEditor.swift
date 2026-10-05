@@ -119,7 +119,7 @@ final class ParticleEditor {
 
     /// Opens the editor with an effect (or swaps the effect of the session that is already open).
     static func open(_ effect: ParticleEffect, presetID: String? = nil) {
-        guard let d = AppActions.doc else { NSSound.beep(); return }
+        guard let d = AppActions.doc else { Beep.play(); return }
         if let cur = current, !cur.closed, cur.doc === d, cur.reeditLayerID == nil {
             var e = effect
             // keep the output choices of the running session
@@ -139,7 +139,7 @@ final class ParticleEditor {
     }
 
     static func open(presetID: String) {
-        guard let d = AppActions.doc else { NSSound.beep(); return }
+        guard let d = AppActions.doc else { Beep.play(); return }
         guard let e = ParticlePresets.effect(presetID, aspect: Double(d.state.width) / Double(max(1, d.state.height))) else { return }
         open(e, presetID: presetID)
     }

@@ -148,3 +148,76 @@ extension LayerEffects {
     /// Listed effects that are drawn when the master switch is on.
     package var shownCount: Int { listedSlots.filter { isShown($0) }.count }
 }
+
+// MARK: - Adding effects to an existing style
+
+extension LayerEffects {
+    /// Adds effect `s` to the style (the Layer Style dialog's checkbox, the fx menu): it is listed and shown, and the
+    /// Effects of the layer are shown too, as in Photoshop: a style imported with its Effects hidden would otherwise
+    /// swallow the new effect. An effect that was not in the style yet and uses Global Light starts with the light's
+    /// direction as its own angle, so unchecking Use Global Light later keeps it pointing the same way.
+    package mutating func addToStyle(_ s: EffectSlot, light: GlobalLight) {
+        let wasListed = item(s)?.isListed == true
+        modify(s) { $0.setInStyle(true) }
+        enabled = true
+        if !wasListed { adoptGlobalLight(s, light) }
+    }
+
+    /// Copies the Global Light into the own angle (and altitude) of effect `s` if it uses Global Light.
+    package mutating func adoptGlobalLight(_ s: EffectSlot, _ light: GlobalLight) {
+        guard light.angle.isFinite, light.altitude.isFinite else { return }
+        modify(s) { e in
+            if var x = e as? ShadowEffect, x.useGlobalLight { x.angle = light.angle; e = x }
+            if var b = e as? BevelEffect, b.useGlobalLight { b.angle = light.angle; b.altitude = light.altitude; e = b }
+        }
+    }
+
+    /// Removes effect instance `s` from the style: an extra instance goes away, a primary instance with extras is
+    /// replaced by the first extra, any other effect is taken out of the style (settings kept, as the dialog's checkbox).
+    package mutating func removeFromStyle(_ s: EffectSlot) {
+        func drop<T: LayerEffectItem>(_ primary: WritableKeyPath<LayerEffects, T>, _ extras: WritableKeyPath<LayerEffects, [T]>) {
+            if s.index > 0 {
+                if self[keyPath: extras].indices.contains(s.index - 1) { self[keyPath: extras].remove(at: s.index - 1) }
+            } else if !self[keyPath: extras].isEmpty {
+                self[keyPath: primary] = self[keyPath: extras].removeFirst()
+            } else {
+                self[keyPath: primary].setInStyle(false)
+            }
+        }
+        switch s.kind {
+        case .dropShadow: drop(\.dropShadow, \.extraDropShadows)
+        case .innerShadow: drop(\.innerShadow, \.extraInnerShadows)
+        case .colorOverlay: drop(\.colorOverlay, \.extraColorOverlays)
+        case .gradientOverlay: drop(\.gradientOverlay, \.extraGradientOverlays)
+        case .stroke: drop(\.stroke, \.extraStrokes)
+        default: modify(s) { $0.setInStyle(false) }
+        }
+    }
+
+    /// Adds instance `s` of `other` to this style, keeping what is there: a kind that allows several instances gets one
+    /// more (or fills its unused primary), any other kind is replaced. Shown or hidden as it was in `other`. Returns the
+    /// slot the effect landed in.
+    @discardableResult
+    package mutating func insert(_ s: EffectSlot, from other: LayerEffects) -> EffectSlot? {
+        guard other.item(s) != nil else { return nil }
+        func put<T: LayerEffectItem>(_ primary: WritableKeyPath<LayerEffects, T>, _ extras: WritableKeyPath<LayerEffects, [T]>) -> EffectSlot {
+            let v = s.index == 0 ? other[keyPath: primary] : other[keyPath: extras][s.index - 1]
+            if !self[keyPath: primary].isListed { self[keyPath: primary] = v; return EffectSlot(kind: s.kind) }
+            self[keyPath: extras].append(v)
+            return EffectSlot(kind: s.kind, index: self[keyPath: extras].count)
+        }
+        switch s.kind {
+        case .dropShadow: return put(\.dropShadow, \.extraDropShadows)
+        case .innerShadow: return put(\.innerShadow, \.extraInnerShadows)
+        case .colorOverlay: return put(\.colorOverlay, \.extraColorOverlays)
+        case .gradientOverlay: return put(\.gradientOverlay, \.extraGradientOverlays)
+        case .stroke: return put(\.stroke, \.extraStrokes)
+        case .bevel: bevel = other.bevel
+        case .innerGlow: innerGlow = other.innerGlow
+        case .satin: satin = other.satin
+        case .patternOverlay: patternOverlay = other.patternOverlay
+        case .outerGlow: outerGlow = other.outerGlow
+        }
+        return EffectSlot(kind: s.kind)
+    }
+}

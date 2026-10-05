@@ -1,6 +1,6 @@
 # ImageCrat for Windows: porting plan
 
-Status as of 2026-10-03: step 1 is done. The portable core library `ImageCratCore` exists, and a Windows 11 on Arm development VM is being set up. Everything below the "Done" section is the plan.
+Status as of 2026-10-05: the portable core library `ImageCratCore` **builds and passes its unit tests on Windows 11 on Arm** (Swift 6.3.3, in the dev VM). Everything below the "Done" section is the plan.
 
 ## Why this is a port and not a recompile
 
@@ -95,11 +95,18 @@ Relative effort: Phase 0 = 1 unit, about 3–4 weeks of focused work.
 
 ### Development VM
 
-- **Setup:** UTM, a "Windows 11 Dev" VM running Windows 11 on Arm, with 16 GB of RAM, 8 cores, 128 GB of disk, TPM and Secure Boot.
-- **Build tools:** `setup.ps1` installs Git, Visual Studio 2022 Build Tools (Arm64 and x64 C++, Windows SDK) and Swift 6.3.x, and enables SSH from the Mac with a key only.
+- **Setup:** UTM, a "Windows 11 Dev" VM running Windows 11 Pro on Arm, with 16 GB of RAM, 8 cores, 128 GB of disk, TPM and Secure Boot.
+- **Build tools:** `setup.ps1` installs Git, Visual Studio 2022 Build Tools (Arm64 and x64 C++, Windows SDK) and Swift 6.3.3, and enables SSH from the Mac with a key only.
+
+### First Windows build (2026-10-05)
+
+- `Package.swift` declares only `ImageCratCore` and its tests when not on macOS, so the same checkout builds on Windows.
+- **Build:** `swift build` on Windows needed one fix (an `@inlinable` method in the `CGAffineTransform` stand-in).
+- **Tests:** `swift test` runs **62 tests, 0 failures**. The 63rd, which compares the stand-in with CoreGraphics, only runs on the Mac. That covers the document model and `PixelBuffer`, PSD byte read/write, the brush formats (ABR, GIMP, Procreate, Krita, `.icbrushes`, zip, inflate/deflate, PNG), inpaint and content-aware scale, and the stroke and pressure maths.
+- **From the Mac:** `scripts/test_core_windows.sh` copies the core into the VM, builds it and runs the tests.
 
 ## Next steps
-1. Build `ImageCratCore` and run `swift test` in the Windows VM, then fix what swift-corelibs-foundation lacks.
+1. ~~Build `ImageCratCore` and run `swift test` in the Windows VM~~ (done).
 2. Add a portable LZFSE decoder so the core can read Mac documents.
 3. Phase 0 spike: interface plumbing in the VM; GPU and AI timings need real Windows hardware.
 4. Move the remaining Core Graphics drawing and `CGPath` code out of the core's callers, starting with path booleans and stroke geometry.

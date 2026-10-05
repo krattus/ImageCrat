@@ -213,7 +213,7 @@ enum AssistSubject {
     static func removeBackgroundsAction() {
         guard let d = AppActions.doc else { return }
         let ids = d.orderedSelection.flatMap { d.state.layer($0)?.allIDs ?? [] }.filter { d.state.layer($0).map { $0.isRaster || $0.isSmartObject } ?? false }
-        guard !ids.isEmpty else { NSSound.beep(); AppModel.shared.setStatus("Select one or more image layers."); return }
+        guard !ids.isEmpty else { Beep.play(); AppModel.shared.setStatus("Select one or more image layers."); return }
         Assist.run("Removing the background of \(ids.count) layer\(ids.count == 1 ? "" : "s")…", { await removeBackgrounds(d, ids: ids) }) { done in
             AppModel.shared.setStatus(done.isEmpty ? "No subject found in the selected layers." :
                 "Masked \(done.count) of \(ids.count) layer\(ids.count == 1 ? "" : "s") (non-destructive layer masks).")

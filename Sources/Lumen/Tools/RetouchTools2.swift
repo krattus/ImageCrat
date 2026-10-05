@@ -56,6 +56,7 @@ final class RemoveTool: Tool {
     private var stroke: PaintStroke?
     private var placer = DabPlacer(spacing: 1, smoothing: 0)
     private var markBuffer: PixelBuffer?     // canvas-size gray of painted area
+    private var dynamics = DabDynamics()
     override var cursor: NSCursor { .crosshair }
 
     override func mouseDown(_ e: ToolEvent) {
@@ -65,18 +66,21 @@ final class RemoveTool: Tool {
         markBuffer = PixelBuffer(width: d.state.width, height: d.state.height, format: .gray)
         let s = app.removeBrush
         placer = DabPlacer(spacing: max(1, s.size * 0.1), smoothing: s.smoothing)
-        for (p, pr) in placer.begin(e.doc, pressure: e.pressure) { mark(p, pr) }
+        dynamics = DabDynamics()
+        for smp in placer.begin(PenSample(e)) { mark(smp) }
         updatePreview()
     }
 
     override func mouseDragged(_ e: ToolEvent) {
         guard markBuffer != nil else { return }
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure) { mark(p, pr) }
+        for smp in placer.move(PenSample(e)) { mark(smp) }
         updatePreview()
     }
 
     override func mouseUp(_ e: ToolEvent) {
-        guard let d = doc, let id = d.activeLayerID, let m = markBuffer else { return }
+        guard let d = doc, let id = d.activeLayerID, let m0 = markBuffer else { return }
+        for smp in placer.move(PenSample(e), final: true) { mark(smp) }
+        let m = m0
         markBuffer = nil
         d.displayOverride = nil
         var hole = m
@@ -96,10 +100,10 @@ final class RemoveTool: Tool {
         d.setNeedsRender()
     }
 
-    private func mark(_ p: CGPoint, _ pressure: Double) {
+    private func mark(_ smp: PenSample) {
         guard let m = markBuffer else { return }
-        let s = app.removeBrush
-        let r = s.size / 2 * (s.pressureSize ? max(0.1, pressure) : 1)
+        let p = smp.p
+        let r = dynamics.dab(smp, app.removeBrush).size / 2
         m.context.setFillColor(gray: 1, alpha: 1)
         m.context.fillEllipse(in: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r))
         m.markDirty()
@@ -113,7 +117,7 @@ final class RemoveTool: Tool {
         d.setNeedsRender()
     }
 
-    override func drawOverlay(_ ctx: CGContext) { drawBrushCursor(ctx, size: app.removeBrush.size) }
+    override func drawOverlay(_ ctx: CGContext) { drawBrushCursor(ctx, size: app.removeBrush.size, hardness: app.removeBrush.hardness) }
     override func keyDown(_ e: NSEvent) -> Bool { BrushTool.handleBracketKeys(e) }
 }
 
@@ -192,7 +196,7 @@ final class PatchTool: SelectionToolBase {
     private func applyPatch(_ d: Document, delta: CGPoint) {
         guard let id = d.activeLayerID, let l = d.state.layer(id) else { return }
         guard pixelsEditable(l) else { return }
-        guard let (img, _) = healedImage(d, delta: delta), let (w, o) = d.beginPixelEdit(layerID: id, target: .content) else { NSSound.beep(); return }
+        guard let (img, _) = healedImage(d, delta: delta), let (w, o) = d.beginPixelEdit(layerID: id, target: .content) else { Beep.play(); return }
         let space = CanvasSpace(width: d.state.width, height: d.state.height)
         let placed = space.place(w, at: o)
         let result = img.composited(over: placed)
@@ -253,7 +257,7 @@ final class ContentAwareMoveTool: SelectionToolBase {
     }
 
     private func applyMove(_ d: Document, delta: CGPoint) {
-        guard let id = d.activeLayerID, let l = d.state.layer(id), l.isRaster, let sel = d.state.selection else { NSSound.beep(); return }
+        guard let id = d.activeLayerID, let l = d.state.layer(id), l.isRaster, let sel = d.state.selection else { Beep.play(); return }
         guard pixelsEditable(l) else { return }
         let space = CanvasSpace(width: d.state.width, height: d.state.height)
         let layerImg = Compositor.shared.contentImage(l, space: space)!.cropped(to: space.ciCanvas).composited(over: CIImage.clearImage.cropped(to: space.ciCanvas))
@@ -342,25 +346,27 @@ final class ColorReplacementTool: Tool {
     private var placer = DabPlacer(spacing: 1, smoothing: 0)
     private var sampled: (Double, Double, Double)?
     private var d: Document?
+    private var dynamics = DabDynamics()
     override var cursor: NSCursor { .crosshair }
 
     override func mouseDown(_ e: ToolEvent) {
         guard let (doc, id, target) = requirePixelTarget(), target == .content, let (w, o) = doc.beginPixelEdit(layerID: id, target: .content) else { return }
         d = doc; working = w; origin = o
+        dynamics = DabDynamics()
         let s = app.colorReplace
         sampled = nil
         if s.sampling == .backgroundSwatch { let b = app.background; sampled = (b.r, b.g, b.b) } else { sampled = sample(e.doc) }
         let bs = app.colorReplaceBrush
         placer = DabPlacer(spacing: max(1, bs.size * 0.12), smoothing: bs.smoothing)
-        for (p, pr) in placer.begin(e.doc, pressure: e.pressure) { dab(p, pr) }
+        for smp in placer.begin(PenSample(e)) { dab(smp) }
         w.markDirty(); doc.setNeedsRender()
     }
 
     override func mouseDragged(_ e: ToolEvent) {
         guard let w = working else { return }
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure) {
-            if app.colorReplace.sampling == .continuous { sampled = sample(p) }
-            dab(p, pr)
+        for smp in placer.move(PenSample(e)) {
+            if app.colorReplace.sampling == .continuous { sampled = sample(smp.p) }
+            dab(smp)
         }
         w.markDirty(); d?.setNeedsRender()
     }
@@ -378,11 +384,13 @@ final class ColorReplacementTool: Tool {
         return (Double(r) / 255, Double(g) / 255, Double(b) / 255)
     }
 
-    private func dab(_ p: CGPoint, _ pressure: Double) {
+    private func dab(_ smp: PenSample) {
         guard let w = working, let ref = sampled else { return }
+        let p = smp.p
         let bs = app.colorReplaceBrush
         let s = app.colorReplace
-        let radius = bs.size / 2 * (bs.pressureSize ? max(0.1, pressure) : 1)
+        let dd = dynamics.dab(smp, bs)
+        let radius = dd.size / 2
         let cx = Double(p.x) - Double(origin.x), cy = Double(p.y) - Double(origin.y)
         let x0 = max(0, Int(cx - radius)), x1 = min(w.width - 1, Int(cx + radius))
         let y0 = max(0, Int(cy - radius)), y1 = min(w.height - 1, Int(cy + radius))
@@ -417,7 +425,7 @@ final class ColorReplacementTool: Tool {
                 case .luminosity: out = RGBA(h: hsl.h, s: hsl.s, l: fgHSL.l)
                 default: out = RGBA(h: fgHSL.h, s: fgHSL.s, l: hsl.l)
                 }
-                let k = wgt * bs.opacity
+                let k = wgt * bs.opacity * dd.alpha
                 data[i] = UInt8(clamp(r + (out.r - r) * k, 0, 1) * a)
                 data[i + 1] = UInt8(clamp(g + (out.g - g) * k, 0, 1) * a)
                 data[i + 2] = UInt8(clamp(b + (out.b - b) * k, 0, 1) * a)
@@ -426,7 +434,7 @@ final class ColorReplacementTool: Tool {
     }
 
     override func drawOverlay(_ ctx: CGContext) {
-        drawBrushCursor(ctx, size: app.colorReplaceBrush.size)
+        drawBrushCursor(ctx, size: app.colorReplaceBrush.size, hardness: app.colorReplaceBrush.hardness)
         if let m = canvas.lastMouseView {
             ctx.setStrokeColor(NSColor.white.cgColor)
             ctx.move(to: CGPoint(x: m.x - 3, y: m.y)); ctx.addLine(to: CGPoint(x: m.x + 3, y: m.y))
@@ -448,6 +456,7 @@ final class MixerBrushTool: Tool {
     private var d: Document?
     private var composite: PixelBuffer?
     private var lockAlpha = false
+    private var dynamics = DabDynamics()
     override var cursor: NSCursor { .crosshair }
 
     override func mouseDown(_ e: ToolEvent) {
@@ -459,18 +468,21 @@ final class MixerBrushTool: Tool {
         composite = m.sampleAll ? AppActions.sampleSource(allLayers: true) : nil
         let bs = app.mixerBrushSettings
         placer = DabPlacer(spacing: max(1, bs.size * bs.spacing), smoothing: bs.smoothing)
-        for (p, pr) in placer.begin(e.doc, pressure: e.pressure) { dab(p, pr) }
+        dynamics = DabDynamics()
+        for smp in placer.begin(PenSample(e)) { dab(smp) }
         w.markDirty(); doc.setNeedsRender()
     }
 
     override func mouseDragged(_ e: ToolEvent) {
         guard let w = working else { return }
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure) { dab(p, pr) }
+        for smp in placer.move(PenSample(e)) { dab(smp) }
         w.markDirty(); d?.setNeedsRender()
     }
 
     override func mouseUp(_ e: ToolEvent) {
-        guard working != nil else { return }
+        guard let w = working else { return }
+        for smp in placer.move(PenSample(e), final: true) { dab(smp) }
+        w.markDirty()
         d?.commit("Mixer Brush")
         if app.mixer.cleanEachStroke { loadLeft = 0 }
         working = nil; d = nil; composite = nil
@@ -497,11 +509,13 @@ final class MixerBrushTool: Tool {
         return RGBA(r: sr / n / 255, g: sg / n / 255, b: sb / n / 255, a: sa / n / 255)
     }
 
-    private func dab(_ p: CGPoint, _ pressure: Double) {
+    private func dab(_ smp: PenSample) {
         guard let w = working else { return }
+        let p = smp.p
         let bs = app.mixerBrushSettings
         let m = app.mixer
-        let size = bs.size * (bs.pressureSize ? max(0.1, pressure) : 1)
+        let dd = dynamics.dab(smp, bs)
+        let size = dd.size
         let wet = m.wet / 100, mix = m.mix / 100
         if let under = canvasColor(p, radius: size / 2) {
             // pick up canvas paint into the reservoir
@@ -509,8 +523,8 @@ final class MixerBrushTool: Tool {
         }
         let loadRate = 1 - m.load / 100
         loadLeft = max(0, loadLeft - loadRate * 0.01)
-        let paintAlpha = bs.flow * (0.3 + 0.7 * (1 - wet * 0.5)) * max(0.05, loadLeft)
-        guard let mask = BrushTips.mask(diameter: size, hardness: bs.hardness, roundness: bs.roundness, angle: bs.angle, tipID: bs.tipID),
+        let paintAlpha = bs.flow * dd.alpha * (0.3 + 0.7 * (1 - wet * 0.5)) * max(0.05, loadLeft)
+        guard let mask = BrushTips.mask(diameter: size, hardness: bs.hardness, roundness: dd.roundness, angle: dd.angle, tipID: bs.tipID),
               let img = BrushTips.colored(mask, color: reservoir) else { return }
         let c = CGPoint(x: p.x - CGFloat(origin.x), y: p.y - CGFloat(origin.y))
         let r = CGRect(x: c.x - CGFloat(img.width) / 2, y: c.y - CGFloat(img.height) / 2, width: CGFloat(img.width), height: CGFloat(img.height))
@@ -521,7 +535,7 @@ final class MixerBrushTool: Tool {
         ctx.restoreGState()
     }
 
-    override func drawOverlay(_ ctx: CGContext) { drawBrushCursor(ctx, size: app.mixerBrushSettings.size) }
+    override func drawOverlay(_ ctx: CGContext) { drawBrushCursor(ctx, size: app.mixerBrushSettings.size, hardness: app.mixerBrushSettings.hardness) }
     override func keyDown(_ e: NSEvent) -> Bool { BrushTool.handleBracketKeys(e) }
 }
 

@@ -308,7 +308,7 @@ enum AssistCrop {
             AppModel.shared.setStatus(String(format: "Straightened %.1f° and cropped (pixels kept).", t))
         } else {
             AppModel.shared.setStatus("Auto-Straighten: no tilted horizon detected.")
-            NSSound.beep()
+            Beep.play()
         }
     }
 }

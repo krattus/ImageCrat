@@ -267,7 +267,10 @@ extension RecipeLibrary {
         }
     }
 
-    static let filterNodes: [RecipeNodeSpec] = FilterKind.allCases.filter { $0 != .neuralFilter && $0 != .recipe && $0 != .filterGallery }.map { kind in
+    /// Recipe filter nodes' Center choice (0 = the node's point, 1 = the input's object).
+    static let centerOnKey = "centerOn"
+
+    static let filterNodes: [RecipeNodeSpec] = FilterKind.allCases.filter { $0 != .neuralFilter && $0 != .recipe && $0 != .filterGallery && $0 != .liquify }.map { kind in
         var params = filterParams(kind.params)
         var inputs = [image]
         if kind.usesColors || kind == .pointillize {
@@ -280,6 +283,9 @@ extension RecipeLibrary {
         case .pathBlur: params.append(.point("start", "Path Start", CGPoint(x: 0.3, y: 0.5))); params.append(.point("end", "Path End", CGPoint(x: 0.7, y: 0.5)))
         default: break
         }
+        // Center option (FilterCenter.swift): the node's own point (Center X / Y, else the canvas middle) or the middle
+        // of its input's pixels, the radius then sized from them. "Point" first: graphs saved before keep their look.
+        if kind.usesCenter { params.append(.choice(centerOnKey, "Center", ["Point", "Object"], 0)) }
         let generator = kind == .clouds
         return RecipeNodeSpec(type: "filter." + kind.rawValue, name: kind.displayName, category: .filter, group: kind.category.rawValue,
                               inputs: inputs, params: params, keywords: ["filter", kind.category.rawValue.lowercased()], bypass: "Image") { ev in
@@ -310,6 +316,9 @@ extension RecipeLibrary {
                 let a = ev.point("start"), b = ev.point("end")
                 inst.points = [FilterPin(x: a.x, y: a.y, value: 0), FilterPin(x: b.x, y: b.y, value: 0)]
             default: break
+            }
+            if kind.usesCenter && ev.int(centerOnKey) == 1, let ob = FilterCenterResolver.alphaBounds(img, canvas: ev.canvas) {
+                inst.resolveCenter(FilterCenterContext(canvasWidth: Double(ev.canvas.width), canvasHeight: Double(ev.canvas.height), object: ob), mode: .object)
             }
             ev.set(inst.apply(img, canvas: ev.canvas))
         }

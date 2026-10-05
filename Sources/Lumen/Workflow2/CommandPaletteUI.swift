@@ -47,7 +47,7 @@ final class PaletteModel {
             query = text
             return .inserted
         }
-        guard r.item.enabled else { Workflow2Util.beep(); return .disabled }
+        guard r.item.enabled else { Beep.play(); return .disabled }
         if FilesModule.headless, PaletteIndex.isGenerative(r.item) { return .disabled }     // never from automated runs
         if r.item.category != .calc { frecency?.bump(r.item.id) }
         let action = r.item.run
@@ -98,7 +98,7 @@ final class CommandPalette: NSObject, NSWindowDelegate {
 
     func open() {
         guard panel == nil else { return }
-        if AppModel.shared.dialog != nil { Workflow2Util.beep(); return }     // a dialog owns the keyboard
+        if AppModel.shared.dialog != nil { Beep.play(); return }     // a dialog owns the keyboard
         if AppModel.shared.textEditingActive { AppActions.canvas?.commitCurrentTool() }
         let m = PaletteModel(items: PaletteIndex.build(), frecency: frecency)
         m.onClose = { [weak self] in self?.close() }

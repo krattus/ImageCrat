@@ -380,9 +380,11 @@ struct ArtboardOptions: View {
 // MARK: - Small dialogs
 
 struct ArtboardBackgroundDialog: View {
+    /// Wide enough for the colour picker's full layout (square, hue strip and the value column) plus the frame's margins.
+    static let width: CGFloat = 380
     @State private var color = RGBA(gray: 0.5)
     var body: some View {
-        DialogFrame(title: "Artboard Background Color", width: 300, onOK: {
+        DialogFrame(title: "Artboard Background Color", width: Self.width, onOK: {
             guard let d = AppActions.doc else { return }
             ArtboardOps.setBackground(d, ArtboardOps.selectedBoards(d), color)
         }) {
@@ -414,7 +416,7 @@ struct ArtboardRenameDialog: View {
 enum ArtboardActions {
     static func convertToGroup(_ d: Document, _ ids: [UUID]) {
         let boards = ids.filter { d.state.layer($0)?.isArtboard == true }
-        guard !boards.isEmpty else { NSSound.beep(); return }
+        guard !boards.isEmpty else { Beep.play(); return }
         for id in boards {
             d.updateLayer(id) { l in
                 guard case .group(var g) = l.content else { return }

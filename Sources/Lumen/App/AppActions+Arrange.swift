@@ -17,7 +17,7 @@ extension AppActions {
     static func resetSmartObject(_ ids: [UUID]? = nil, keepRotation: Bool) {
         guard let d = doc else { return }
         let targets = (ids ?? d.orderedSelection).filter { d.state.layer($0)?.isSmartObject == true }
-        guard !targets.isEmpty else { NSSound.beep(); return }
+        guard !targets.isEmpty else { Beep.play(); return }
         for id in targets {
             d.updateLayer(id) { l in
                 guard var s = l.smart else { return }
@@ -129,7 +129,7 @@ enum BatchRename {
     static func apply(_ s: BatchRenameSettings) {
         guard let d = AppActions.doc else { return }
         let layers = targets(d, topToBottom: s.topToBottom)
-        guard !layers.isEmpty else { NSSound.beep(); return }
+        guard !layers.isEmpty else { Beep.play(); return }
         let new = names(for: layers, s, state: d.state)
         for (l, n) in zip(layers, new) where l.name != n { d.updateLayer(l.id) { $0.name = n } }
         d.commit(layers.count == 1 ? "Rename Layer" : "Rename \(layers.count) Layers")

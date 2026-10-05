@@ -464,7 +464,7 @@ struct AltField: View {
 
 enum WebCopyCommands {
     static func copyCSS() {
-        guard let d = AppActions.doc, let l = d.activeLayer else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let l = d.activeLayer else { Beep.play(); return }
         let css = HTMLExporter.css(for: l, in: d.state)
         ClipboardHistory.shared.recordText(css)
         ClipboardHistory.shared.writeToPasteboard(text: css)
@@ -479,7 +479,7 @@ enum WebCopyCommands {
 
     static func copySVG() {
         guard let d = AppActions.doc, let l = d.activeLayer, let svg = LayerSVGExport.svg(for: l, in: d.state) else {
-            NSSound.beep()
+            Beep.play()
             AppModel.shared.setStatus("Copy as SVG works on shape and type layers (or groups of them).")
             return
         }

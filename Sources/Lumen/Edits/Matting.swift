@@ -138,7 +138,7 @@ enum Matting {
 
     /// Runs `f` on the active raster layer's pixels as one undoable step.
     static func run(_ name: String, _ f: (PixelBuffer) -> Void) {
-        guard let d = AppActions.doc, let id = d.activeLayerID, let l = d.state.layer(id) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let id = d.activeLayerID, let l = d.state.layer(id) else { Beep.play(); return }
         if !l.isRaster { AppActions.offerRasterize(layer: id); return }
         guard let (w, _) = d.beginPixelEdit(layerID: id, target: .content, coverCanvas: false) else { return }
         f(w)

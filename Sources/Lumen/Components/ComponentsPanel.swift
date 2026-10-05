@@ -42,27 +42,27 @@ enum ComponentCommands {
     }
 
     static func create() {
-        guard let d = doc, !d.orderedSelection.isEmpty else { NSSound.beep(); return }
+        guard let d = doc, !d.orderedSelection.isEmpty else { Beep.play(); return }
         AppActions.canvas?.commitCurrentTool()
         if let id = ComponentActions.createComponent(d) {
             ComponentsPanelState.shared.selected = id
             WorkspaceManager.shared.reveal("components")
             AppModel.shared.setStatus("Created component “\(d.state.components[id]?.name ?? "")”. Double-click the instance to edit the main component.")
-        } else { NSSound.beep() }
+        } else { Beep.play() }
     }
 
     static func editMain() {
-        guard let (d, _, i) = activeInstance else { NSSound.beep(); return }
+        guard let (d, _, i) = activeInstance else { Beep.play(); return }
         ComponentActions.editMain(d, component: i.componentID, variant: i.variantID)
     }
 
     static func detach() {
-        guard let d = doc, ComponentActions.detach(d) > 0 else { NSSound.beep(); return }
+        guard let d = doc, ComponentActions.detach(d) > 0 else { Beep.play(); return }
     }
 
     static func resetAll() { if let (d, l, _) = activeInstance { ComponentActions.resetAll(d, layer: l.id) } }
     static func push() {
-        guard let (d, l, i) = activeInstance, !i.overrides.isEmpty else { NSSound.beep(); return }
+        guard let (d, l, i) = activeInstance, !i.overrides.isEmpty else { Beep.play(); return }
         let n = ComponentEngine.usageCount(i.componentID, in: d.state)
         if !FilesModule.headless, n > 1,
            !AppActions.confirm("Push this instance's overrides to the main component?", "All \(n) instances of “\(d.state.components[i.componentID]?.name ?? "")” will change.", ok: "Push") { return }
@@ -74,7 +74,7 @@ enum ComponentCommands {
     }
 
     static func saveAsVariant() {
-        guard let (d, l, i) = activeInstance, !i.overrides.isEmpty else { NSSound.beep(); return }
+        guard let (d, l, i) = activeInstance, !i.overrides.isEmpty else { Beep.play(); return }
         if let name = ComponentPrompts.text("New Variant from Overrides", info: "The instance's current look becomes a named variant of the component.", initial: "Variant", ok: "Create") {
             ComponentActions.saveOverridesAsVariant(d, layer: l.id, name: name)
         }
@@ -109,7 +109,7 @@ enum ComponentCommands {
 
     static func updateFromLibrary(_ d: Document, _ id: UUID) {
         var st = d.state
-        guard ComponentLibraries.update(id, in: &st) else { NSSound.beep(); return }
+        guard ComponentLibraries.update(id, in: &st) else { Beep.play(); return }
         d.state = st
         d.commit("Update from Library")
     }

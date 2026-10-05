@@ -68,7 +68,7 @@ extension AppActions {
                 rect = IRect(enclosing: cb).intersection(d.state.canvasRect)
             }
         }
-        guard !rect.isEmpty else { NSSound.beep(); return }
+        guard !rect.isEmpty else { Beep.play(); return }
         let buf = RenderEngine.renderBuffer(img, docRect: rect, space: sp)
         let pb = pasteboard
         pb.clearContents()
@@ -101,7 +101,7 @@ extension AppActions {
         guard let b = buf else {
             // text (from Notes, Safari, the Character Viewer…) pastes as a new type layer in the centre of the view
             if let s = TypeInput.text(from: pb), let c = canvas, c.document != nil, TypeInput.insert(s, canvas: c, actionName: "Paste") { return }
-            NSSound.beep()
+            Beep.play()
             return
         }
         guard let d = doc else {
@@ -144,7 +144,7 @@ extension AppActions {
         if target == .content && !l.isRaster { offerRasterize(layer: id); return }
         if l.locks.pixelsLocked || !l.isVisible {       // like the painting tools
             app.setStatus(l.isVisible ? "The layer is locked." : "The layer is hidden.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         guard let (w, o) = d.beginPixelEdit(layerID: id, target: target) else { return }
@@ -178,7 +178,7 @@ extension AppActions {
         if d.quickMask {            // Quick Mask mode fills the mask, whatever the layer
             target = .quickMask
             l = nil
-            if contents == .contentAware { NSSound.beep(); return }
+            if contents == .contentAware { Beep.play(); return }
         } else {
             guard let id = d.activeLayerID, let al = d.state.layer(id) else { return }
             target = d.editTarget == .mask && al.mask != nil ? .mask : .content
@@ -225,7 +225,7 @@ extension AppActions {
     }
 
     static func strokeSelection(width: Double, color: RGBA, location: StrokeLocation, opacity: Double, mode: BlendMode) {
-        guard let d = doc, let sel = d.editSelection, let id = d.activeLayerID, let l = d.state.layer(id) else { NSSound.beep(); return }
+        guard let d = doc, let sel = d.editSelection, let id = d.activeLayerID, let l = d.state.layer(id) else { Beep.play(); return }
         if !l.isRaster { offerRasterize(layer: id); return }
         let region: PixelBuffer
         switch location {
@@ -248,7 +248,7 @@ extension AppActions {
 
     /// Simple content-aware fill: iterative diffusion from surrounding pixels plus texture from a nearby patch.
     static func contentAwareFill() {
-        guard let d = doc, let sel = d.editSelection, let id = d.activeLayerID, let l = d.state.layer(id), l.isRaster else { NSSound.beep(); return }
+        guard let d = doc, let sel = d.editSelection, let id = d.activeLayerID, let l = d.state.layer(id), l.isRaster else { Beep.play(); return }
         Healing.contentAwareFill(d, layerID: id, hole: SelectionOps.expand(sel, by: 2), sampleAll: false, name: "Content-Aware Fill")
     }
 
@@ -273,7 +273,7 @@ extension AppActions {
         let ids = d.withoutDescendants(d.withLinked(d.orderedSelection)).filter { d.state.layer($0).map { !$0.locks.positionLocked } ?? false }
         var u: CGRect? = nil
         for id in ids { if let l = d.state.layer(id), let b = Compositor.shared.contentBounds(l, state: d.state) { u = u.map { $0.union(b) } ?? b } }
-        guard let bounds = u else { NSSound.beep(); return }
+        guard let bounds = u else { Beep.play(); return }
         let h = make(bounds)
         let sp = space(d)
         for id in ids {
@@ -316,24 +316,7 @@ extension AppActions {
         app.setStatus("Pattern defined (\(rect.width)×\(rect.height)).")
     }
 
-    static func defineBrush() {
-        guard let d = doc else { return }
-        let sp = space(d)
-        let rect = d.state.selection?.opaqueBounds() ?? d.state.canvasRect
-        let img = Compositor.shared.composite(d).composited(over: CIImage.color(.white, sp.ciCanvas))
-        let rgba = RenderEngine.renderBuffer(img, docRect: rect, space: sp)
-        let gray = SelectionOps.invert(rgba.toGray())
-        // square it
-        let side = max(gray.width, gray.height)
-        let sq = PixelBuffer(width: side, height: side, format: .gray)
-        sq.copyPixels(from: gray, at: IPoint(x: (side - gray.width) / 2, y: (side - gray.height) / 2))
-        sq.markDirty()
-        let id = "tip-\(UUID().uuidString.prefix(8))"
-        app.customBrushTips[id] = sq
-        let preset = BrushPreset(id: id, name: "Custom Brush \(app.customBrushPresets.count + 1)", size: Double(min(side, 500)), hardness: 1, spacing: 0.25, tipID: id)
-        app.customBrushPresets.append(preset)
-        app.brush.tipID = id
-        app.brush.size = preset.size
-        app.setStatus("Brush preset defined.")
-    }
+    /// Edit ▸ Define Brush Preset…: the selection (any shape) or the visible image becomes a brush in the library.
+    static func defineBrush() { DefineBrush.run(.visible) }
+
 }

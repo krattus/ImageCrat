@@ -120,7 +120,7 @@ final class SliceTool: Tool {
             if g.isVertical, g.position > 0, g.position < W { xs.insert(g.position.rounded()) }
             if !g.isVertical, g.position > 0, g.position < H { ys.insert(g.position.rounded()) }
         }
-        guard xs.count > 2 || ys.count > 2 else { AppModel.shared.setStatus("There are no guides to create slices from."); NSSound.beep(); return }
+        guard xs.count > 2 || ys.count > 2 else { AppModel.shared.setStatus("There are no guides to create slices from."); Beep.play(); return }
         let sx = xs.sorted(), sy = ys.sorted()
         var out: [DocSlice] = []
         for j in 0..<(sy.count - 1) {
@@ -224,7 +224,7 @@ enum SliceExport {
     }
 
     static func exportWithPanel() {
-        guard AppActions.doc != nil else { NSSound.beep(); return }
+        guard AppActions.doc != nil else { Beep.play(); return }
         DialogRegistry.show("exportSlices")
     }
 }

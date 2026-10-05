@@ -12,6 +12,7 @@ enum SelfTest {
         try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
         FeatureModules.registerAll()
         run(out)
+        print("beeps silenced during this run: \(Beep.suppressedCount)")   // App/Beep.swift: none reached the speakers
         print("SELFTEST COMPLETE")   // a log without this line ended early (crash, or the app quit mid-run)
         exit(0)
     }
@@ -37,7 +38,23 @@ enum SelfTest {
     }
 
     static func run(_ out: URL) {
-        runTypeTests(out)
+        // Every suite runs inside `SelfTestSuites.run`, which tears down what the suite left behind (robot canvases,
+        // offscreen windows, hosting views, open documents) so memory and SwiftUI graph state stay bounded over the run.
+        SelfTestSuites.run("type") { runTypeTests(out) }
+        SelfTestSuites.run("core") { runCoreRenders(out) }
+        SelfTestSuites.run("workflow") { runWorkflowTests(out) }
+        SelfTestSuites.run("animation") { runAnimationTests(out) }
+        SelfTestSuites.run("adjust") { AdjustSelfTest.run(out) }
+        SelfTestSuites.run("brush") { BrushSelfTest.run(out) }
+        for (name, t) in FeatureModules.selfTests where ProcessInfo.processInfo.environment["LUMEN_SELFTEST_ONLY"].map({ name.hasPrefix($0) }) ?? true {
+            SelfTestSuites.run(name) { t(out) }
+        }
+        SelfTestSuites.summary()
+        print("done")
+    }
+
+    /// Effects, blending, text, blend modes, adjustments, filters, smart objects, selections, warps, Liquify, Camera Raw renders.
+    static func runCoreRenders(_ out: URL) {
         // Effects
         var effects: [(String, (inout LayerEffects) -> Void)] = [
             ("fx_dropshadow", { $0.dropShadow.enabled = true; $0.dropShadow.distance = 12; $0.dropShadow.size = 14 }),
@@ -315,12 +332,6 @@ enum SelfTest {
             s2.layers = [Layer.raster(name: "L", buffer: RenderEngine.renderBuffer(res, docRect: st.canvasRect, space: sp))]
             save(s2, "camera_raw", out)
         }
-        runWorkflowTests(out)
-        runAnimationTests(out)
-        AdjustSelfTest.run(out)
-        BrushSelfTest.run(out)
-        for (name, t) in FeatureModules.selfTests where ProcessInfo.processInfo.environment["LUMEN_SELFTEST_ONLY"].map({ name.hasPrefix($0) }) ?? true { t(out) }
-        print("done")
     }
 }
 
@@ -370,6 +381,7 @@ enum PerfTest {
         t("finish") { stroke!.finish(name: "Brush") }
         t("thumbnail") { _ = Thumbnails.shared.layer(d.state.layers[1], doc: d, size: 30) }
         BrushSelfTest.perf()
+        TabletSelfTest.perf(quick: false)   // 300 px soft brush, tablet reports through the canvas event path
         exit(0)
     }
 }

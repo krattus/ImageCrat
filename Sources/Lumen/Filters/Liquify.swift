@@ -132,26 +132,51 @@ final class DisplacementField {
         return (a * (1 - tx) + b * tx) * (1 - ty) + (c * (1 - tx) + e * tx) * ty
     }
 
-    /// CI-space displacement image (r = dx, g = dy in doc space) covering the canvas.
+    /// CI-space displacement image (r = dx, g = dy in doc space): the field over the canvas it was painted on, zero
+    /// outside it, so pixels of the layer beyond the canvas are never moved (Photoshop keeps them as they were).
     func ciImage(space: CanvasSpace) -> CIImage {
+        DisplacementField.displacementImage(gw: gw, gh: gh, step: step, width: width, height: height, placement: .identity, space: space) { i in
+            self.d[i] + self.face[i]
+        }
+    }
+
+    /// The displacement image of a grid (cell (gx, gy) at doc (gx·step, gy·step) of a `width` × `height` canvas), its
+    /// vectors and positions carried into the current doc space by the affine `placement` (doc → doc, y down), in the CI
+    /// space of `space`. Zero outside the (placed) painting canvas.
+    static func displacementImage(gw: Int, gh: Int, step: Int, width: Int, height: Int, placement t: CGAffineTransform, space: CanvasSpace,
+                                  value: (Int) -> SIMD2<Float>) -> CIImage {
+        let zero = CIImage(color: CIColor(red: 0, green: 0, blue: 0, alpha: 1))
+        guard gw > 0, gh > 0, step > 0 else { return zero }
         var floats = [Float](repeating: 0, count: gw * gh * 4)
+        let la = Float(t.a), lb = Float(t.b), lc = Float(t.c), ld = Float(t.d)
         // Bitmap row 0 is the top of the CI image.
         for gy in 0..<gh {
-            let row = gy
             for gx in 0..<gw {
-                let v = d[gy * gw + gx] + face[gy * gw + gx]
-                let o = (row * gw + gx) * 4
-                floats[o] = v.x; floats[o + 1] = v.y; floats[o + 3] = 1
+                let i = gy * gw + gx
+                let v = value(i)
+                let o = i * 4
+                floats[o] = la * v.x + lc * v.y; floats[o + 1] = lb * v.x + ld * v.y; floats[o + 3] = 1
             }
         }
         let data = floats.withUnsafeBufferPointer { Data(buffer: $0) }
         let img = CIImage(bitmapData: data, bytesPerRow: gw * 16, size: CGSize(width: gw, height: gh), format: .RGBAf, colorSpace: nil)
-        // Grid cell (gx, gy) sits at doc (gx*step, gy*step) → CI (x, H - y)
-        let s = CGFloat(step)
-        let top = CGFloat(space.height)
-        // cell centers: (gx, gy) → CI (gx*s, H - gy*s)
-        let t = CGAffineTransform(a: s, b: 0, c: 0, d: s, tx: -0.5 * s, ty: top - (CGFloat(gh) - 0.5) * s)
-        return img.transformed(by: t).clampedToExtent()
+        // Grid cell (gx, gy) sits at doc (gx*step, gy*step) → CI of the painting canvas (x, H - y): cell centres
+        // (gx, gy) → (gx*s, H - gy*s).
+        let s = CGFloat(step), refH = CGFloat(height)
+        let toRef = CGAffineTransform(a: s, b: 0, c: 0, d: s, tx: -0.5 * s, ty: refH - (CGFloat(gh) - 0.5) * s)
+        var disp = img.transformed(by: toRef).clampedToExtent().cropped(to: CGRect(x: 0, y: 0, width: width, height: height))
+        // painting-canvas CI → its doc space → placement → current doc space → current CI
+        let m = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: refH)
+            .concatenating(t)
+            .concatenating(CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: CGFloat(space.height)))
+        if !m.isIdentity { disp = disp.transformed(by: m) }
+        return disp.composited(over: zero)
+    }
+
+    /// Where a displacement image built with `placement` can be non-zero, in the CI space of `space`.
+    static func reach(width: Int, height: Int, placement t: CGAffineTransform, space: CanvasSpace) -> CGRect {
+        let docRect = CGRect(x: 0, y: 0, width: width, height: height).applying(t)
+        return space.ciRect(docRect).integral
     }
 
     static let kernel = CIKernel(source: """
@@ -162,13 +187,74 @@ final class DisplacementField {
     }
     """)
 
+    /// The warped layer. Like Photoshop, the whole canvas is the working area: the result covers the source *and* the
+    /// canvas, so pixels pushed into empty, transparent parts of the canvas are kept (the layer grows) instead of being
+    /// clipped to the layer's old bounds; pixels outside the canvas stay as they are.
     func warp(_ src: CIImage, space: CanvasSpace) -> CIImage {
-        guard !isIdentity, let k = DisplacementField.kernel else { return src }
-        let ext = src.extent
-        let disp = ciImage(space: space)
-        let clampedSrc = src.clampedToExtent()
-        return k.apply(extent: ext, roiCallback: { i, r in i == 0 ? ext.insetBy(dx: -2, dy: -2) : r.insetBy(dx: -CGFloat(self.step) * 2, dy: -CGFloat(self.step) * 2) },
-                       arguments: [clampedSrc, disp])?.cropped(to: ext) ?? src
+        guard !isIdentity else { return src }
+        return DisplacementField.warp(src, disp: ciImage(space: space), reach: DisplacementField.reach(width: width, height: height, placement: .identity, space: space), step: step)
+    }
+
+    /// `src` warped by a displacement image whose non-zero part lies within `reach` (CI). The result's extent is the
+    /// source's plus `reach`; outside the source the warp samples transparency.
+    static func warp(_ src: CIImage, disp: CIImage, reach: CGRect, step: Int) -> CIImage {
+        guard let k = kernel, !src.extent.isInfinite else { return src }
+        let ext = (src.extent.isEmpty ? reach : src.extent.union(reach)).integral
+        guard !ext.isEmpty else { return src }
+        let padded = src.composited(over: CIImage.clearImage.cropped(to: ext)).clampedToExtent()
+        let pad = CGFloat(step) * 2
+        return k.apply(extent: ext, roiCallback: { i, r in i == 0 ? ext.insetBy(dx: -2, dy: -2) : r.insetBy(dx: -pad, dy: -pad) },
+                       arguments: [padded, disp])?.cropped(to: ext) ?? src
+    }
+
+    /// The field as a smart-filter mesh, painted with the smart object at `reference`.
+    func mesh(reference: Quad) -> LiquifyMesh {
+        var dx = [Float](repeating: 0, count: gw * gh), dy = dx
+        for i in 0..<(gw * gh) { let v = d[i] + face[i]; dx[i] = v.x; dy[i] = v.y }
+        return LiquifyMesh(width: width, height: height, step: step, gw: gw, gh: gh, dx: dx, dy: dy, reference: reference)
+    }
+
+    /// A field for a `width` × `height` canvas holding what `mesh` does there now (carried by `placement`): re-editing a
+    /// Liquify smart filter after the object was moved or scaled starts from the effect as it shows.
+    convenience init(width: Int, height: Int, mesh: LiquifyMesh, placement: CGAffineTransform) {
+        self.init(width: width, height: height)
+        for gy in 0..<gh { for gx in 0..<gw {
+            let (x, y) = mesh.displacement(at: CGPoint(x: gx * step, y: gy * step), placement: placement)
+            d[gy * gw + gx] = SIMD2(Float(x), Float(y))
+        } }
+    }
+}
+
+/// Liquify as a smart filter (Photoshop's way on a smart object): the stored mesh is applied to the smart object's
+/// placed content in document space, so the result is not limited to the object's original or untransformed bounds —
+/// it can reach anywhere on the canvas — and it follows the object when it is moved or scaled later.
+enum LiquifySmartFilter {
+    private struct Entry { let mesh: LiquifyMesh; let placement: CGAffineTransform; let height: Int; let image: CIImage }
+    private static var cache: [UUID: Entry] = [:]
+    private static let lock = NSLock()
+
+    static func apply(_ f: FilterInstance, _ img: CIImage, space: CanvasSpace, quad: Quad?) -> CIImage {
+        guard let mesh = f.liquify, mesh.isValid, !mesh.isIdentity, !img.extent.isInfinite else { return img }
+        let t = quad.map { mesh.placement(to: $0) } ?? .identity
+        let disp = displacement(f.id, mesh, t, space)
+        // the working area is the canvas: the result may grow beyond the object up to (and only up to) the canvas
+        let reach = DisplacementField.reach(width: mesh.width, height: mesh.height, placement: t, space: space)
+            .intersection(space.ciCanvas.union(img.extent))
+        guard !reach.isNull, !reach.isEmpty else { return img }   // the mesh's area is nowhere near: nothing moves
+        return DisplacementField.warp(img, disp: disp, reach: reach, step: mesh.step)
+    }
+
+    private static func displacement(_ id: UUID, _ mesh: LiquifyMesh, _ t: CGAffineTransform, _ space: CanvasSpace) -> CIImage {
+        lock.lock()
+        if let e = cache[id], e.mesh == mesh, e.placement == t, e.height == space.height { lock.unlock(); return e.image }
+        lock.unlock()
+        let img = DisplacementField.displacementImage(gw: mesh.gw, gh: mesh.gh, step: mesh.step, width: mesh.width, height: mesh.height,
+                                                      placement: t, space: space) { i in SIMD2(mesh.dx[i], mesh.dy[i]) }
+        lock.lock()
+        if cache.count > 32 { cache.removeAll() }
+        cache[id] = Entry(mesh: mesh, placement: t, height: space.height, image: img)
+        lock.unlock()
+        return img
     }
 }
 
@@ -185,6 +271,10 @@ final class LiquifyPreviewView: NSView {
     var mode: LiquifyMode = .forward
     var brushSize: Double = 100
     var pressure: Double = 0.5
+    /// Photoshop's "Stylus Pressure": the pen's pressure scales the brush pressure (a mouse counts as full).
+    var useStylus = true
+    /// Pen pressure of the current sample (Preferences ▸ Tablet curve applied).
+    private(set) var penPressure: Double = 1
     var showMask = true
     var onChange: (() -> Void)?
     private var last: CGPoint?
@@ -270,7 +360,14 @@ final class LiquifyPreviewView: NSView {
     override func mouseMoved(with event: NSEvent) { mouse = convert(event.locationInWindow, from: nil); needsDisplay = true }
     override func mouseExited(with event: NSEvent) { mouse = nil; needsDisplay = true }
 
+    private func readPen(_ e: NSEvent, _ phase: TabletInput.Phase) {
+        let r = TabletInput.shared.reading(e, phase: phase)
+        penPressure = useStylus && r.isTablet ? r.pressure : 1
+    }
+
     override func mouseDown(with event: NSEvent) {
+        TabletInput.shared.beginStroke(painting: true)
+        readPen(event, .down)
         let v = convert(event.locationInWindow, from: nil)
         last = toDoc(v)
         mouse = v
@@ -278,6 +375,7 @@ final class LiquifyPreviewView: NSView {
     }
 
     override func mouseDragged(with event: NSEvent) {
+        readPen(event, .drag)
         let v = convert(event.locationInWindow, from: nil)
         mouse = v
         let p = toDoc(v)
@@ -292,12 +390,13 @@ final class LiquifyPreviewView: NSView {
         last = p
     }
 
-    override func mouseUp(with event: NSEvent) { last = nil; onChange?() }
+    override func mouseUp(with event: NSEvent) { last = nil; TabletInput.shared.endStroke(); onChange?() }
+    override func tabletPoint(with event: NSEvent) { if last != nil { mouseDragged(with: event) } }
 
     private func stamp(at p: CGPoint, delta: CGPoint) {
         guard let f = field else { return }
         if mode == .forward && delta == .zero { needsDisplay = true; return }
-        f.apply(mode: mode, center: p, delta: delta, radius: brushSize / 2, pressure: pressure)
+        f.apply(mode: mode, center: p, delta: delta, radius: brushSize / 2, pressure: pressure * penPressure)
         needsDisplay = true
     }
 
@@ -316,6 +415,7 @@ struct LiquifyPreview: NSViewRepresentable {
     var mode: LiquifyMode
     var brushSize: Double
     var pressure: Double
+    var useStylus = true
     var showMask = true
     var tick = 0
 
@@ -326,7 +426,7 @@ struct LiquifyPreview: NSViewRepresentable {
         return v
     }
     func updateNSView(_ v: LiquifyPreviewView, context: Context) {
-        v.mode = mode; v.brushSize = brushSize; v.pressure = pressure; v.showMask = showMask
+        v.mode = mode; v.brushSize = brushSize; v.pressure = pressure; v.useStylus = useStylus; v.showMask = showMask
         v.needsDisplay = true
     }
 }
@@ -343,6 +443,7 @@ struct LiquifyDialog: View {
     @State private var mode: LiquifyMode = .forward
     @State private var size: Double = 150
     @State private var pressure: Double = 0.5
+    @State private var stylusPressure = true
     @State private var field: DisplacementField
     @State private var resetToken = 0
     @State private var showMask = true
@@ -355,27 +456,64 @@ struct LiquifyDialog: View {
     /// What OK keeps the warp to (see `AppActions.restrict`).
     let selection: CIImage?
     let lockAlpha: Bool
+    /// A smart object: OK adds (or, with `editingFilter`, updates) a Liquify smart filter instead of changing pixels.
+    let smartLayer: UUID?
+    let editingFilter: UUID?
 
-    init() {
+    init(smartLayer: UUID? = nil, editingFilter: UUID? = nil) {
         let d = AppActions.doc
         let sp = CanvasSpace(width: d?.state.width ?? 1, height: d?.state.height ?? 1)
         space = sp
-        var img = CIImage.clearImage.cropped(to: sp.ciCanvas)
-        if let d, let l = d.activeLayer, let c = Compositor.shared.contentImage(l, space: sp) {
-            img = c.cropped(to: sp.ciCanvas).composited(over: CIImage.clearImage.cropped(to: sp.ciCanvas))
+        let src = LiquifyDialog.workingSource(d, smartLayer: smartLayer, editingFilter: editingFilter)
+        self.smartLayer = src.smartLayer
+        self.editingFilter = src.smartLayer == nil ? nil : editingFilter
+        source = src.image
+        selection = src.selection
+        lockAlpha = src.lockAlpha
+        faces = FaceLandmarks.detect(src.image, space: sp)
+        _field = State(initialValue: src.field ?? DisplacementField(width: sp.width, height: sp.height))
+    }
+
+    /// What the dialog warps, exactly what OK will warp (so the preview is the result): the active layer's pixels — all
+    /// of them, including any outside the canvas, on a transparent canvas-size area the warp may push them into — or,
+    /// for a smart object, its placed content after the smart filters below this one.
+    static func workingSource(_ d: Document?, smartLayer: UUID? = nil, editingFilter: UUID? = nil)
+        -> (image: CIImage, selection: CIImage?, lockAlpha: Bool, smartLayer: UUID?, field: DisplacementField?) {
+        let sp = CanvasSpace(width: d?.state.width ?? 1, height: d?.state.height ?? 1)
+        let clear = CIImage.clearImage.cropped(to: sp.ciCanvas)
+        guard let d else { return (clear, nil, false, nil, nil) }
+        func materialized(_ c: CIImage) -> CIImage {
+            let rect = (c.extent.isInfinite || c.extent.isEmpty ? sp.ciCanvas : c.extent.union(sp.ciCanvas)).integral
+            let img = c.composited(over: CIImage.clearImage.cropped(to: rect)).cropped(to: rect)
             // materialize once for speed
-            if let cg = RenderEngine.cgImage(img, rect: sp.ciCanvas) { img = CIImage(cgImage: cg) }
+            if let cg = RenderEngine.cgImage(img, rect: rect) { return CIImage(cgImage: cg).translated(rect.minX, rect.minY) }
+            return img
         }
-        source = img
-        selection = d?.state.selection?.ciImage
-        lockAlpha = d?.activeLayer?.locks.transparency == true
-        faces = FaceLandmarks.detect(img, space: sp)
-        _field = State(initialValue: DisplacementField(width: sp.width, height: sp.height))
+        let sid = smartLayer ?? (!d.quickMask && d.activeLayer?.isSmartObject == true ? d.activeLayerID : nil)
+        if let sid, let l = d.state.layer(sid), let so = l.smart {
+            let index = editingFilter.flatMap { e in so.filters.firstIndex { $0.id == e } } ?? so.filters.count
+            let img = materialized(Compositor.shared.smartImage(sid, so, space: sp, filtersBelow: index))
+            var sel = d.state.selection?.ciImage
+            var field: DisplacementField? = nil
+            if so.filters.indices.contains(index), editingFilter != nil {
+                let f = so.filters[index]
+                sel = f.mask.map { m in
+                    sp.place(m.buffer, at: m.origin).composited(over: CIImage.color(RGBA(gray: Double(m.outsideValue) / 255), sp.ciCanvas))
+                }
+                if let mesh = f.liquify, mesh.isValid {
+                    field = DisplacementField(width: sp.width, height: sp.height, mesh: mesh, placement: mesh.placement(to: so.quad))
+                }
+            }
+            return (img, sel, false, sid, field)
+        }
+        var img = clear
+        if let l = d.activeLayer, let c = Compositor.shared.contentImage(l, space: sp) { img = materialized(c) }
+        return (img, d.state.selection?.ciImage, d.activeLayer?.locks.transparency == true, nil, nil)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Liquify").font(.system(size: 13, weight: .semibold))
+            Text(smartLayer != nil ? "Liquify (Smart Filter)" : "Liquify").font(.system(size: 13, weight: .semibold))
             HStack(alignment: .top, spacing: 12) {
                 VStack(spacing: 4) {
                     ForEach(LiquifyMode.allCases) { m in
@@ -383,7 +521,7 @@ struct LiquifyDialog: View {
                     }
                 }
                 LiquifyPreview(source: source, space: space, field: field, selection: selection, lockAlpha: lockAlpha,
-                               mode: mode, brushSize: size, pressure: pressure, showMask: showMask, tick: tick)
+                               mode: mode, brushSize: size, pressure: pressure, useStylus: stylusPressure, showMask: showMask, tick: tick)
                     .id(resetToken)
                     .frame(width: 820, height: 540)
                     .clipShape(RoundedRectangle(cornerRadius: 4))
@@ -392,6 +530,7 @@ struct LiquifyDialog: View {
                     Text(mode.rawValue).font(Theme.fontBold)
                     ValueSlider(label: "Size", value: $size, range: 5...2000, unit: " px", labelWidth: 54)
                     ValueSlider(label: "Pressure", value: Binding(get: { pressure * 100 }, set: { pressure = $0 / 100 }), range: 1...100, unit: "%", labelWidth: 54)
+                    Toggle2(label: "Stylus Pressure", on: $stylusPressure)
                     Divider()
                     Caption("Mask Options")
                     HStack(spacing: 4) {
@@ -442,9 +581,9 @@ struct LiquifyDialog: View {
                 Spacer()
                 Button("Cancel") { AppModel.shared.dialog = nil }.buttonStyle(PanelButtonStyle()).keyboardShortcut(.cancelAction)
                 Button("OK") {
-                    let f = field, sp = space
+                    let f = field, sl = smartLayer, ef = editingFilter
                     AppModel.shared.dialog = nil
-                    if !f.isIdentity { AppActions.applyToActiveLayer(name: "Liquify", layerPixels: true) { f.warp($0, space: sp) } }
+                    AppActions.applyLiquify(f, smartLayer: sl, editingFilter: ef)
                 }.buttonStyle(PanelButtonStyle(prominent: true)).keyboardShortcut(.defaultAction)
             }
         }

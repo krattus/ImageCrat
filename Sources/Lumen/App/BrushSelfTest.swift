@@ -101,8 +101,40 @@ enum BrushSelfTest {
         } catch { print("BrushSettings codable FAIL \(error)") }
     }
 
+    /// Brush presets (library `BrushParams`) and per-tool brush memory (`BrushMemory.copyTip`) agree on what a preset
+    /// owns: everything but the tool settings and the pressure buttons.
+    static func presetModelCheck() {
+        func check(_ ok: Bool, _ msg: String) { print("\(ok ? "PASS" : "FAIL") brush: \(msg)") }
+        var src = BrushSettings(size: 77, hardness: 0.35, opacity: 0.4, flow: 0.6, spacing: 0.3, angle: 25, roundness: 0.5, smoothing: 0.7)
+        src.tipID = "chalk"; src.sizeJitter = 0.2; src.scatter = 0.4; src.opacityJitter = 0.3; src.airbrush = true
+        src.blendMode = .multiply; src.pressureSize = false; src.pressureOpacity = true
+        src.dynamics.shapeEnabled = true; src.dynamics.sizeControl = ControlSetting(source: .tilt); src.dynamics.tiltScale = 1.2
+        src.dynamics.colorEnabled = true; src.dynamics.hueJitter = 0.3; src.dynamics.colorJitterControl = ControlSetting(source: .wheel)
+        src.dynamics.transferEnabled = true; src.dynamics.flowJitter = 0.2; src.dynamics.wetEdges = true
+        src.dynamics.poseEnabled = true; src.dynamics.poseTiltX = 0.5; src.dynamics.flipX = true
+        // settings → preset → settings
+        var back = BrushSettings()
+        back.apply(BrushParams(src), tipID: src.tipID, includesSize: true, includesToolSettings: true)
+        back.pressureSize = src.pressureSize; back.pressureOpacity = src.pressureOpacity   // (the tool's, not the preset's)
+        check(back == src, "a brush preset holds every brush setting (colour-jitter Control, pose, wet edges, …)")
+        // sync brush across tools carries exactly the preset part
+        var dst = BrushSettings(size: 10, hardness: 1, opacity: 0.9, flow: 0.8, smoothing: 0.2)
+        dst.blendMode = .screen
+        let tool = dst
+        BrushMemory.copyTip(from: src, to: &dst)
+        let part = { (s: BrushSettings) in BrushParams(s).presetPart(includesSize: true, includesToolSettings: false) }
+        check(part(dst) == part(src) && dst.tipID == src.tipID, "\"Sync brush across tools\" carries everything a preset owns")
+        check(dst.opacity == tool.opacity && dst.flow == tool.flow && dst.blendMode == tool.blendMode && dst.smoothing == tool.smoothing
+              && dst.pressureSize == tool.pressureSize && dst.pressureOpacity == tool.pressureOpacity,
+              "…and leaves the tool's own options (opacity, flow, mode, smoothing, pressure buttons)")
+        let ids = Set(BrushDefaults.records().map(\.record.id))
+        check((BrushPreset.builtIn + BrushPreset.dynamicPresets).allSatisfy { ids.contains($0.id) },
+              "every preset id of the older flat list is a default library brush (saved favourites and recents still resolve)")
+    }
+
     static func run(_ out: URL) {
         codableCheck()
+        presetModelCheck()
         func save(_ d: Document, _ name: String) { SelfTest.save(d.state, name, out) }
         let red = RGBA(hex: "C0392B")!, blue = RGBA(hex: "2E86DE")!, green = RGBA(hex: "27AE60")!
 
@@ -216,8 +248,16 @@ enum BrushSelfTest {
             let (d, id) = makeDoc()
             do {
                 let tips = try ABRImporter.load(data: syntheticABR())
-                let presets = BrushLibrary.shared.add(tips, persist: false)
+                let set = try ABRBrushReader.read(data: syntheticABR(), name: "Synthetic")
+                let lib = BrushLibrary(directory: out.appendingPathComponent("brushlib-abr", isDirectory: true), installDefaults: false)
+                let res = lib.add(set, source: "synthetic.abr")
                 print("ABR imported \(tips.count) tip(s): \(tips.map { "\($0.name) \(Int($0.diameter))px spacing \($0.spacing)" })")
+                // (strokes below use the shared library's tip lookup: register the tip there too)
+                let sharedRes = BrushLibrary.shared.add(set, source: "synthetic.abr")
+                _ = res
+                let presets = sharedRes.added.compactMap { BrushLibrary.shared.record($0) }.map { r in
+                    BrushPreset(id: r.id, name: r.name, size: r.params.size, hardness: r.params.hardness, spacing: r.params.spacing, tipID: r.tipID)
+                }
                 if let p = presets.first {
                     var s = BrushSettings(); s.pressureSize = false
                     p.apply(to: &s)
@@ -241,15 +281,16 @@ enum BrushSelfTest {
             // Persistence roundtrip in a scratch directory (never the user's Application Support).
             let dir = out.appendingPathComponent("brushlib", isDirectory: true)
             try? FileManager.default.removeItem(at: dir)
-            if let tips = try? ABRImporter.load(data: syntheticABR()) {
-                let lib = BrushLibrary(directory: dir)
-                let added = lib.add(tips)
-                let reloaded = BrushLibrary(directory: dir)
-                let same = reloaded.presets.map(\.name) == added.map(\.name)
-                    && reloaded.presets.first.flatMap { reloaded.tipBuffer($0.tipID) }?.pngData() == tips[0].tip.pngData()
-                print("Brush library roundtrip: \(reloaded.presets.count) preset(s), identical: \(same)")
-                if let id = reloaded.presets.first?.id { reloaded.remove(id) }
-                print("Brush library after delete: \(BrushLibrary(directory: dir).presets.count) preset(s)")
+            if let set = try? ABRBrushReader.read(data: syntheticABR(), name: "Synthetic"), let tips = try? ABRImporter.load(data: syntheticABR()) {
+                let lib = BrushLibrary(directory: dir, installDefaults: false)
+                let added = lib.add(set, source: "synthetic.abr").added
+                lib.saveNow()
+                let reloaded = BrushLibrary(directory: dir, installDefaults: false)
+                let same = added.compactMap { reloaded.record($0)?.name } == added.compactMap { lib.record($0)?.name }
+                    && added.first.flatMap { reloaded.record($0) }.flatMap { reloaded.tipBuffer($0.tipID) }?.pngData() == tips[0].tip.pngData()
+                print("Brush library roundtrip: \(reloaded.orderedBrushes.count) preset(s), identical: \(same)")
+                if let id = added.first { reloaded.delete([id], confirm: false); reloaded.saveNow() }
+                print("Brush library after delete: \(BrushLibrary(directory: dir, installDefaults: false).orderedBrushes.count) preset(s)")
             }
         }
         // Eraser with dynamics on a filled layer (destination-out)

@@ -285,13 +285,7 @@ final class Compositor {
             if let g = f.recipe { return RecipeRuntime.shared.layerContent(layer, graph: g, backdrop: backdrop, space: space) }   // Recipe layer
             return PaintRenderer.fillLayerImage(f, layer: layer, space: space)
         case .smartObject(let so):
-            var img = smartSourceImage(layer.id, so, space: space)
-            if so.filtersEnabled {
-                for f in so.filters where f.enabled {
-                    img = f.applySmart(img, space: space)
-                }
-            }
-            return img
+            return smartImage(layer.id, so, space: space, filtersBelow: so.filters.count)
         case .group(let g):
             let clear = CIImage.clearImage.cropped(to: space.ciCanvas)
             if g.repeater != nil { return RepeaterRenderer.image(layer, g, space: space, options: options) }   // Layout module: live repeater
@@ -305,6 +299,25 @@ final class Compositor {
         case .adjustment:
             return nil
         }
+    }
+
+    /// Smart object content with its (enabled) smart filters up to, not including, index `filtersBelow`.
+    func smartImage(_ id: UUID, _ so: SmartObjectContent, space: CanvasSpace, filtersBelow: Int) -> CIImage {
+        var img = smartSourceImage(id, so, space: space)
+        if so.filtersEnabled {
+            // smart filters centred on the object follow it (moved, scaled, new contents); FilterCenterSupport.swift
+            var center: FilterCenterContext? = nil
+            for f in so.filters.prefix(max(0, filtersBelow)) where f.enabled {
+                if f.kind.usesCenter && f.centerMode == .object {
+                    let ctx = center ?? FilterCenterResolver.smartContext(so, space: space)
+                    center = ctx
+                    img = f.reresolvedCenter(ctx, modes: [.object]).applySmart(img, space: space, quad: so.quad)
+                } else {
+                    img = f.applySmart(img, space: space, quad: so.quad)
+                }
+            }
+        }
+        return img
     }
 
     /// Smart object source warped onto its quad (before smart filters).

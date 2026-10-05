@@ -45,6 +45,9 @@ struct PreferencesDialog: View {
         case "Cursors":
             Picker("Painting Cursors", selection: $app.prefs.brushCursor) { ForEach(BrushCursorStyle.allCases) { Text($0.rawValue).tag($0) } }
             Toggle2(label: "Show Crosshair in Brush Tip", on: $app.prefs.showCrosshairInBrushTip)
+            Text("Caps Lock shows the precise crosshair while it is on.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+        case "Tablet":
+            TabletPreferencesSection()
         case "Transparency & Guides":
             ValueSlider(label: "Checker Size", value: $app.prefs.checkerSize, range: 2...32, step: 1, unit: "px", labelWidth: 110)
             HStack { Text("Guides").foregroundStyle(Theme.textDim).frame(width: 110, alignment: .leading); ColorWell(color: $app.prefs.guideColor) }

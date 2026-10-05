@@ -1,6 +1,28 @@
 // swift-tools-version:6.0
 import PackageDescription
 
+// The Mac app needs Apple-only frameworks and packages (MLX, CoreImage, AppKit…). On Windows and Linux this manifest
+// declares only the portable core and its tests, so `swift build` / `swift test` work there from the same checkout.
+// See docs/WINDOWS-PORT.md.
+
+// Platform-independent core: document model, pixel storage and pure algorithms. Foundation + stdlib only, so it builds
+// on Windows and Linux. Apple bridging (CoreGraphics/CoreImage/Metal/ImageIO) lives in the app as extensions
+// (Sources/Lumen/CoreBridge). `scripts/check_core_portable.sh` enforces the import/API rules.
+let core: Target = .target(
+    name: "ImageCratCore",
+    path: "Sources/ImageCratCore",
+    swiftSettings: [.swiftLanguageMode(.v5)]
+)
+
+// Portable unit tests for the core (XCTest, no app, no GUI). They run on macOS and Windows.
+let coreTests: Target = .testTarget(
+    name: "ImageCratCoreTests",
+    dependencies: ["ImageCratCore"],
+    path: "Tests/ImageCratCoreTests",
+    swiftSettings: [.swiftLanguageMode(.v5)]
+)
+
+#if os(macOS)
 let package = Package(
     name: "Lumen",
     platforms: [.macOS(.v15)],
@@ -11,14 +33,7 @@ let package = Package(
         .package(url: "https://github.com/contentauth/c2pa-swift.git", exact: "0.0.13"),
     ],
     targets: [
-        // Platform-independent core: document model, pixel storage and pure algorithms. Foundation + stdlib only, so it
-        // can build on Windows and Linux later. Apple bridging (CoreGraphics/CoreImage/Metal/ImageIO) lives in the app as
-        // extensions (Sources/Lumen/CoreBridge). `scripts/check_core_portable.sh` enforces the import/API rules.
-        .target(
-            name: "ImageCratCore",
-            path: "Sources/ImageCratCore",
-            swiftSettings: [.swiftLanguageMode(.v5)]
-        ),
+        core,
         // Web-export engine (Ultra PNG, optimal-parse deflate, JPEG encoder, quality metrics). Pure computation that is
         // hundreds of times slower without the optimiser, so it is always compiled with -O, also in debug builds.
         .target(
@@ -38,12 +53,12 @@ let package = Package(
             exclude: ["WebExport/Engine"],
             swiftSettings: [.swiftLanguageMode(.v5)]
         ),
-        // Portable unit tests for the core (XCTest, no app, no GUI). The first tests that will also run on Windows/Linux.
-        .testTarget(
-            name: "ImageCratCoreTests",
-            dependencies: ["ImageCratCore"],
-            path: "Tests/ImageCratCoreTests",
-            swiftSettings: [.swiftLanguageMode(.v5)]
-        ),
+        coreTests,
     ]
 )
+#else
+let package = Package(
+    name: "ImageCrat",
+    targets: [core, coreTests]
+)
+#endif

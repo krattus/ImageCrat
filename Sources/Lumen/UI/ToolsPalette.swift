@@ -146,13 +146,13 @@ struct ColorSwatchesControl: View {
                 .frame(width: 20, height: 20)
                 .offset(x: 12, y: 12)
                 .onTapGesture { editBG = true }
-                .popover(isPresented: $editBG) { ColorPickerView(color: $app.background, title: "Background Color").padding(10) }
+                .popover(isPresented: $editBG) { ColorPickerView(color: $app.background, title: "Background Color").colorPopoverContent() }
             RoundedRectangle(cornerRadius: 2)
                 .fill(Color(nsColor: app.foreground.nsColor))
                 .overlay(RoundedRectangle(cornerRadius: 2).stroke(Color.white.opacity(0.8), lineWidth: 1))
                 .frame(width: 20, height: 20)
                 .onTapGesture { editFG = true }
-                .popover(isPresented: $editFG) { ColorPickerView(color: $app.foreground, title: "Foreground Color").padding(10) }
+                .popover(isPresented: $editFG) { ColorPickerView(color: $app.foreground, title: "Foreground Color").colorPopoverContent() }
             Button { app.swapColors() } label: {
                 Image(systemName: "arrow.up.left.arrow.down.right").font(.system(size: 7)).foregroundStyle(Theme.textDim)
             }.buttonStyle(.plain).offset(x: 24, y: -2).help("Switch Colors (X)")
@@ -364,7 +364,7 @@ struct ColorWell: View {
         .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color(white: 0.45), lineWidth: 0.5))
         .onTapGesture { open = true }
         .popover(isPresented: $open) {
-            ColorPickerView(color: $color, showAlpha: showAlpha).padding(10)
+            ColorPickerView(color: $color, showAlpha: showAlpha).colorPopoverContent()
                 .onDisappear { onCommit?() }
         }
     }

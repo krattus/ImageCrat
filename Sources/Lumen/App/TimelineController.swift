@@ -165,7 +165,7 @@ final class TimelineController {
         if isPlaying { stop() }
         guard let i = selectedIndex(d), count > 0 else { return }
         let j = withNext ? i + 1 : i - 1
-        guard d.state.frames.indices.contains(j) else { NSSound.beep(); return }
+        guard d.state.frames.indices.contains(j) else { Beep.play(); return }
         let (lo, hi) = (min(i, j), max(i, j))
         let a = d.state.frames[lo], b = d.state.frames[hi]
         let mid = Animation.tween(from: a, to: b, count: count, position: position, opacity: opacity)
@@ -271,7 +271,7 @@ final class TimelineController {
     // MARK: Dialogs
 
     func showTweenDialog(_ d: Document) {
-        guard let i = selectedIndex(d), d.state.frames.count > 1 else { NSSound.beep(); return }
+        guard let i = selectedIndex(d), d.state.frames.count > 1 else { Beep.play(); return }
         let a = NSAlert()
         a.messageText = "Tween"
         a.informativeText = "Insert frames that interpolate layer position and opacity."

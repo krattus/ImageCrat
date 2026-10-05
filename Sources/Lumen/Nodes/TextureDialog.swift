@@ -56,7 +56,7 @@ enum TextureActions {
             guard let id = d.activeLayerID, let l = d.state.layer(id) else { return false }
             let target: EditTarget = d.editTarget == .mask && l.mask != nil ? .mask : .content
             if target == .content && !l.isRaster { AppActions.offerRasterize(layer: id); return false }
-            if l.locks.pixelsLocked { NSSound.beep(); return false }
+            if l.locks.pixelsLocked { Beep.play(); return false }
             guard let (w, o) = d.beginPixelEdit(layerID: id, target: target) else { return false }
             let orig = sp.place(w, at: o)
             var result = image(s, d).cropped(to: orig.extent)

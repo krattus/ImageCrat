@@ -281,20 +281,21 @@ final class BrushTestPadView: NSView {
         }
     }
 
-    private func sample(_ e: NSEvent) -> PenSample {
+    /// The pen sample of an event, through the Preferences ▸ Tablet curve like the canvas.
+    private func sample(_ e: NSEvent, _ phase: TabletInput.Phase) -> PenSample {
         let v = convert(e.locationInWindow, from: nil)
         let r = shown
-        let tablet = e.subtype == .tabletPoint
-        var pressure = Double(e.pressure)
-        if !tablet || pressure <= 0 { pressure = 1 }
-        var s = PenSample(p: CGPoint(x: (v.x - r.minX) * scale, y: (v.y - r.minY) * scale), pressure: pressure)
-        if tablet { s.tilt = CGPoint(x: e.tilt.x, y: e.tilt.y); s.rotation = Double(e.rotation) }
+        let t = TabletInput.shared.reading(e, phase: phase)
+        var s = PenSample(p: CGPoint(x: (v.x - r.minX) * scale, y: (v.y - r.minY) * scale), pressure: t.pressure)
+        s.tilt = t.tilt; s.rotation = t.rotation
+        s.wheel = t.isTablet ? min(1, abs(t.tangential)) : 1
+        s.mouse = !t.isTablet
         return s
     }
 
-    override func mouseDown(with e: NSEvent) { pad.begin(sample(e)) }
-    override func mouseDragged(with e: NSEvent) { pad.move(sample(e)) }
-    override func mouseUp(with e: NSEvent) { pad.end(sample(e)) }
+    override func mouseDown(with e: NSEvent) { TabletInput.shared.beginStroke(painting: true); pad.begin(sample(e, .down)) }
+    override func mouseDragged(with e: NSEvent) { pad.move(sample(e, .drag)) }
+    override func mouseUp(with e: NSEvent) { pad.end(sample(e, .up)); TabletInput.shared.endStroke() }
 }
 
 struct BrushTestPadRepresentable: NSViewRepresentable {

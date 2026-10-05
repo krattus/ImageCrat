@@ -404,7 +404,7 @@ final class RefBoardView: NSView {
 
     func paste() {
         let imgs = ReferenceImages.images(from: .general)
-        guard !imgs.isEmpty else { NSSound.beep(); return }
+        guard !imgs.isEmpty else { Beep.play(); return }
         add(imgs, at: CGPoint(x: bounds.midX, y: bounds.midY))
     }
 

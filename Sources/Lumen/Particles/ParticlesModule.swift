@@ -119,7 +119,7 @@ enum ParticleActions {
 
     /// Particle Brush: drag on the canvas to draw the path the selected system emits along.
     static func particleBrush() {
-        guard AppActions.doc != nil else { NSSound.beep(); return }
+        guard AppActions.doc != nil else { Beep.play(); return }
         var e = baseEffect()
         if !e.systems.isEmpty { e.systems[0].shape = .path }
         ParticleEditor.open(e, presetID: ParticleEditor.current?.state.presetID)
@@ -129,7 +129,7 @@ enum ParticleActions {
     }
 
     static func fromSelection(outline: Bool) {
-        guard let d = AppActions.doc, d.state.selection != nil else { NSSound.beep(); return }
+        guard let d = AppActions.doc, d.state.selection != nil else { Beep.play(); return }
         var e = baseEffect(default: outline ? "magic" : "glitter")
         for i in e.systems.indices where i == 0 || e.systems[i].shape == e.systems[0].shape {
             e.systems[i].shape = outline ? .selectionOutline : .selectionArea
@@ -139,7 +139,7 @@ enum ParticleActions {
     }
 
     static func fromLayer(edges: Bool) {
-        guard AppActions.doc != nil else { NSSound.beep(); return }
+        guard AppActions.doc != nil else { Beep.play(); return }
         var e = baseEffect(default: "magic")
         for i in e.systems.indices where i == 0 || e.systems[i].shape == e.systems[0].shape {
             e.systems[i].shape = edges ? .layerEdges : .layerAlpha
@@ -160,7 +160,7 @@ enum ParticleActions {
     }
 
     static func useActivePath(_ st: ParticleEditorState) {
-        guard let d = AppActions.doc, let p = ParticleSources.activePath(d) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let p = ParticleSources.activePath(d) else { Beep.play(); return }
         var s = st.system
         s.shape = .path; s.pathPoints = p.points; s.pathClosed = p.closed
         st.system = s
@@ -176,7 +176,7 @@ enum ParticleActions {
 
     /// Applies the last effect again without opening the editor (one history step).
     static func repeatLast(newSeed: Bool = false) {
-        guard let d = AppActions.doc, var e = ParticleEditor.lastEffect else { NSSound.beep(); return }
+        guard let d = AppActions.doc, var e = ParticleEditor.lastEffect else { Beep.play(); return }
         AppActions.canvas?.commitCurrentTool()
         if newSeed { e.seed = Int.random(in: 1...999_999) }
         e.maskCreated = false; e.imagePNG = nil
@@ -185,7 +185,7 @@ enum ParticleActions {
     }
 
     static func editParticleLayer() {
-        guard let d = AppActions.doc, let id = d.activeLayerID, ParticleEditor.reedit(layer: id) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let id = d.activeLayerID, ParticleEditor.reedit(layer: id) else { Beep.play(); return }
     }
 
     static func managePresets() {
@@ -208,7 +208,7 @@ enum ParticleActions {
     }
 
     static func savePreset(_ effect: ParticleEffect?) {
-        guard let e = effect ?? ParticleEditor.current?.state.effect ?? ParticleEditor.lastEffect else { NSSound.beep(); return }
+        guard let e = effect ?? ParticleEditor.current?.state.effect ?? ParticleEditor.lastEffect else { Beep.play(); return }
         guard let name = askName("Save Particle Preset", initial: e.name.isEmpty ? "My Particles" : e.name) else { return }
         do {
             try ParticleUserPresets.shared.save(e, name: name)

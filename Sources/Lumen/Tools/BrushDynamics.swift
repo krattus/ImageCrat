@@ -23,12 +23,15 @@ enum BrushControl: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// Every dynamic accepts every input (Photoshop offers a subset per option; tablet users want them all).
+    /// For non-angle options Rotation, Direction and Initial Direction read as 0…1 over a full turn.
+    static let allControls: [BrushControl] = [.off, .fade, .pressure, .tilt, .wheel, .rotation, .initialDirection, .direction]
     /// Controls offered for size / roundness / scatter / count / depth.
-    static let shapeControls: [BrushControl] = [.off, .fade, .pressure, .tilt, .wheel, .rotation]
+    static let shapeControls: [BrushControl] = allControls
     /// Controls offered for the angle.
-    static let angleControls: [BrushControl] = [.off, .fade, .pressure, .tilt, .wheel, .rotation, .initialDirection, .direction]
-    /// Controls offered for opacity / flow / foreground-background.
-    static let transferControls: [BrushControl] = [.off, .fade, .pressure, .tilt, .wheel]
+    static let angleControls: [BrushControl] = allControls
+    /// Controls offered for opacity / flow / foreground-background / colour jitter.
+    static let transferControls: [BrushControl] = allControls
 }
 
 struct ControlSetting: Equatable, Codable {
@@ -133,6 +136,8 @@ struct BrushDynamics: Equatable, Codable, DefaultInitializable {
     var saturationJitter: Double = 0     // 0...1
     var brightnessJitter: Double = 0     // 0...1
     var purity: Double = 0               // -1...1
+    /// Scales the hue / saturation / brightness jitter (pen pressure, tilt, wheel…).
+    var colorJitterControl = ControlSetting()
 
     // Transfer
     var transferEnabled = false
@@ -145,7 +150,23 @@ struct BrushDynamics: Equatable, Codable, DefaultInitializable {
     // Other options
     var noise = false
     var wetEdges = false
+    /// Texture settings stay when another preset is chosen (Photoshop's "Protect Texture").
+    var protectTexture = false
 
+    // Extras of the Photoshop preset model (kept so imported / exported presets round-trip)
+    var tiltScale: Double = 0            // Shape Dynamics › Tilt Scale (with a Pen Tilt size control)
+    var brushProjection = false          // Shape Dynamics › Brush Projection
+    var dualFlip = false                 // Dual Brush › Flip (random flips of the dual tip)
+
+    // Brush Pose: stylus values used for mouse input (or always, when overridden)
+    var poseEnabled = false
+    var poseTiltX: Double = 0            // -1...1
+    var poseTiltY: Double = 0            // -1...1
+    var poseRotation: Double = 0         // degrees
+    var posePressure: Double = 1         // 0...1
+    var poseOverrideTilt = false
+    var poseOverrideRotation = false
+    var poseOverridePressure = false
 
     init() {}
 
@@ -203,6 +224,7 @@ struct BrushDynamics: Equatable, Codable, DefaultInitializable {
         d(\.saturationJitter, .saturationJitter)
         d(\.brightnessJitter, .brightnessJitter)
         d(\.purity, .purity)
+        d(\.colorJitterControl, .colorJitterControl)
         d(\.transferEnabled, .transferEnabled)
         d(\.opacityControl, .opacityControl)
         d(\.minOpacity, .minOpacity)
@@ -211,7 +233,30 @@ struct BrushDynamics: Equatable, Codable, DefaultInitializable {
         d(\.minFlow, .minFlow)
         d(\.noise, .noise)
         d(\.wetEdges, .wetEdges)
+        d(\.protectTexture, .protectTexture)
+        d(\.tiltScale, .tiltScale)
+        d(\.brushProjection, .brushProjection)
+        d(\.dualFlip, .dualFlip)
+        d(\.poseEnabled, .poseEnabled)
+        d(\.poseTiltX, .poseTiltX)
+        d(\.poseTiltY, .poseTiltY)
+        d(\.poseRotation, .poseRotation)
+        d(\.posePressure, .posePressure)
+        d(\.poseOverrideTilt, .poseOverrideTilt)
+        d(\.poseOverrideRotation, .poseOverrideRotation)
+        d(\.poseOverridePressure, .poseOverridePressure)
         self = v
+    }
+
+    /// A pen sample with the Brush Pose applied: overridden values always, the others when the device didn't report them
+    /// (a mouse: no tilt, no rotation, full pressure).
+    func posed(_ s: PenSample) -> PenSample {
+        guard poseEnabled else { return s }
+        var o = s
+        if poseOverrideTilt || s.tilt == .zero { o.tilt = CGPoint(x: poseTiltX, y: poseTiltY) }
+        if poseOverrideRotation || s.rotation == 0 { o.rotation = poseRotation }
+        if poseOverridePressure { o.pressure = posePressure }
+        return o
     }
 
     /// Options that are applied to the accumulated stroke rather than to single dabs.
@@ -248,13 +293,29 @@ struct PenSample {
     var rotation: Double = 0
     /// Stylus (airbrush) wheel, 0...1.
     var wheel: Double = 1
+    /// A mouse / trackpad sample: tilt, rotation and wheel controls read as "full" (Photoshop treats a mouse as a
+    /// pen at full pressure, upright, unrotated).
+    var mouse = false
+    /// Synthesized while the pen rests (Stroke Catch-up): the smoothed tip glides towards the pen.
+    var catchUp = false
+    /// Painted exactly where it is, without smoothing (Shift-click straight lines).
+    var direct = false
 
     func lerp(_ o: PenSample, _ t: Double) -> PenSample {
-        PenSample(p: p.lerp(o.p, CGFloat(t)),
-                  pressure: pressure + (o.pressure - pressure) * t,
-                  tilt: tilt.lerp(o.tilt, CGFloat(t)),
-                  rotation: rotation + (o.rotation - rotation) * t,
-                  wheel: wheel + (o.wheel - wheel) * t)
+        var r = PenSample(p: p.lerp(o.p, CGFloat(t)),
+                          pressure: pressure + (o.pressure - pressure) * t,
+                          tilt: tilt.lerp(o.tilt, CGFloat(t)),
+                          rotation: PenSample.lerpAngle(rotation, o.rotation, t),
+                          wheel: wheel + (o.wheel - wheel) * t)
+        r.mouse = o.mouse
+        return r
+    }
+
+    /// Barrel rotation wraps at 360°: interpolate the short way round.
+    static func lerpAngle(_ a: Double, _ b: Double, _ t: Double) -> Double {
+        var d = (b - a).truncatingRemainder(dividingBy: 360)
+        if d > 180 { d -= 360 } else if d < -180 { d += 360 }
+        return a + d * t
     }
 
     var tiltMagnitude: Double { min(1, Double(tilt.length)) }
@@ -266,6 +327,9 @@ extension PenSample {
     init(_ e: ToolEvent) {
         self.init(p: e.doc, pressure: e.pressure, tilt: e.tilt, rotation: e.rotation,
                   wheel: e.isTablet ? min(1, abs(e.tangentialPressure)) : 1)
+        mouse = !e.isTablet
+        catchUp = e.isCatchUp
+        direct = e.direct
     }
 }
 

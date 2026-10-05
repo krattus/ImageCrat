@@ -163,7 +163,7 @@ struct PreflightPanel: View {
 
     func fix(_ d: Document, _ issues: [PreflightIssue], _ k: PreflightKind) {
         let n = Preflight.fix(issues, in: d, name: issues.count == 1 ? "\(k.fixTitle ?? "Fix"): \(k.title)" : "Fix \(k.title)")
-        if n == 0 { Workflow2Util.beep() }
+        if n == 0 { Beep.play() }
         model.scan(d, force: true)
     }
 

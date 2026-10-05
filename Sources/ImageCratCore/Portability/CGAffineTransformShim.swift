@@ -91,11 +91,11 @@ package struct PortableAffineTransform: Equatable, Hashable, Codable {
 package typealias CGAffineTransform = PortableAffineTransform
 
 extension CGPoint {
-    @inlinable package func applying(_ t: CGAffineTransform) -> CGPoint { t.apply(to: self) }
+    package func applying(_ t: CGAffineTransform) -> CGPoint { t.apply(to: self) }
 }
 
 extension CGSize {
-    @inlinable package func applying(_ t: CGAffineTransform) -> CGSize { t.apply(to: self) }
+    package func applying(_ t: CGAffineTransform) -> CGSize { t.apply(to: self) }
 }
 
 extension CGRect {

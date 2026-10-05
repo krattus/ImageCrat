@@ -535,12 +535,12 @@ enum RepeaterActions {
     }
 
     static func expandActive() {
-        guard let d = AppActions.doc, let id = activeRepeater(d) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let id = activeRepeater(d) else { Beep.play(); return }
         expand(d, id)
     }
 
     static func releaseActive() {
-        guard let d = AppActions.doc, let id = activeRepeater(d) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let id = activeRepeater(d) else { Beep.play(); return }
         release(d, id)
     }
 }

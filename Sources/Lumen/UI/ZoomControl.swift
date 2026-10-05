@@ -115,7 +115,7 @@ enum ZoomController {
 
     private static func refuse(_ msg: String) {
         AppModel.shared.statusMessage = msg
-        NSSound.beep()
+        Beep.play()
     }
 
     /// A ladder entry or any zoom, about the view centre.

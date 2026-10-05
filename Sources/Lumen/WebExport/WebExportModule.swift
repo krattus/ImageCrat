@@ -122,7 +122,7 @@ enum WebExportActions {
 
     /// Puts a losslessly optimised PNG of the visible document on the pasteboard.
     static func copyOptimisedPNG() {
-        guard let d = AppModel.shared.activeDocument, let img = WXDoc.image(d.state) else { NSSound.beep(); return }
+        guard let d = AppModel.shared.activeDocument, let img = WXDoc.image(d.state) else { Beep.play(); return }
         AppModel.shared.setStatus("Optimising PNG…")
         DispatchQueue.global(qos: .userInitiated).async {
             var o = UPLosslessOptions()

@@ -75,82 +75,25 @@ struct TipPickerGrid: View {
     @Bindable var library = BrushLibrary.shared
 
     var tipIDs: [String] {
-        var ids = ["round"] + BrushTips.textured
+        var ids = library.tipChoices
         for id in app.customBrushTips.keys.sorted() where !ids.contains(id) { ids.append(id) }
-        for p in library.presets where !ids.contains(p.tipID) { ids.append(p.tipID) }
+        if !ids.contains(tipID) { ids.append(tipID) }
         return ids
     }
 
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 4) {
+            LazyHStack(spacing: 4) {   // (lazy: an imported set can bring hundreds of tips)
                 ForEach(tipIDs, id: \.self) { id in
                     BrushTipPreview(settings: BrushSettings(size: 30, hardness: 0.9, tipID: id))
                         .frame(width: 30, height: 30)
                         .background(RoundedRectangle(cornerRadius: 3).fill(tipID == id ? Theme.selection : Theme.fieldBG))
                         .onTapGesture { tipID = id }
-                        .help(library.presets.first { $0.tipID == id }?.name ?? id.capitalized)
+                        .help(library.tipName(id))
                 }
             }
         }
         .frame(height: 32)
-    }
-}
-
-// MARK: - Brush preset picker (options bar popover, Brushes panel)
-
-struct BrushSettingsView: View {
-    @Binding var settings: BrushSettings
-    @Bindable var app = AppModel.shared
-    @Bindable var library = BrushLibrary.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ValueSlider(label: "Size", value: $settings.size, range: 1...1000, unit: " px", labelWidth: 64)
-            ValueSlider(label: "Hardness", value: Binding(get: { settings.hardness * 100 }, set: { settings.hardness = $0 / 100 }), range: 0...100, unit: "%", labelWidth: 64)
-            ValueSlider(label: "Spacing", value: Binding(get: { settings.spacing * 100 }, set: { settings.spacing = max(0.01, $0 / 100) }), range: 1...300, unit: "%", labelWidth: 64)
-            WrappingHStack {   // (Round wraps under Angle in a narrow column)
-                Text("Angle").foregroundStyle(Theme.textDim).frame(width: 64, alignment: .leading)
-                AngleDial(angle: $settings.angle).frame(width: 26, height: 26)
-                ValueSlider(label: "Round", value: Binding(get: { settings.roundness * 100 }, set: { settings.roundness = max(0.02, $0 / 100) }), range: 2...100, unit: "%", labelWidth: 40)
-            }
-            Divider()
-            HStack {
-                Caption("Presets")
-                Spacer()
-                Button("Import Brushes…") { BrushLibrary.importBrushes() }.buttonStyle(PanelButtonStyle())
-                    .help("Import Photoshop .abr brushes")
-            }
-            ScrollView {
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 62, maximum: 62), spacing: 6)], alignment: .leading, spacing: 6) {   // (as many columns as fit)
-                    ForEach(BrushPreset.builtIn + BrushPreset.dynamicPresets + library.presets + app.customBrushPresets) { p in
-                        presetCell(p)
-                    }
-                }
-            }.frame(height: 180)
-        }
-    }
-
-    @ViewBuilder
-    private func presetCell(_ p: BrushPreset) -> some View {
-        let selected = settings.tipID == p.tipID && settings.size == p.size && (p.dynamics == nil || p.dynamics == settings.dynamics)
-        VStack(spacing: 2) {
-            BrushTipPreview(settings: BrushSettings(size: p.size, hardness: p.hardness, angle: p.angle, roundness: p.roundness, tipID: p.tipID))
-                .frame(width: 34, height: 34)
-            Text(p.name).font(.system(size: 8)).foregroundStyle(Theme.textDim).lineLimit(1)
-        }
-        .frame(width: 62, height: 52)
-        .background(RoundedRectangle(cornerRadius: 4).fill(selected ? Theme.selection : Theme.fieldBG))
-        .overlay(alignment: .topTrailing) {
-            if p.dynamics != nil { Circle().fill(Theme.accent).frame(width: 5, height: 5).padding(3).help("Uses brush dynamics") }
-        }
-        .help(p.name)
-        .onTapGesture { p.apply(to: &settings) }
-        .contextMenu {
-            if library.contains(p.id) {
-                Button("Delete Brush") { library.remove(p.id) }
-            }
-        }
     }
 }
 
@@ -164,10 +107,12 @@ enum BrushSettingsSection: String, CaseIterable, Identifiable {
     case dual = "Dual Brush"
     case color = "Color Dynamics"
     case transfer = "Transfer"
+    case pose = "Brush Pose"
     case noise = "Noise"
     case wetEdges = "Wet Edges"
     case buildUp = "Build-up"
     case smoothing = "Smoothing"
+    case protectTexture = "Protect Texture"
     var id: String { rawValue }
 }
 
@@ -176,7 +121,38 @@ struct BrushSettingsPanel: View {
     var body: some View {
         let s = Binding(get: { app.activeBrushSettings }, set: { app.activeBrushSettings = $0 })
         ScrollView {
-            BrushSettingsEditor(settings: s).padding(10)
+            VStack(alignment: .leading, spacing: 8) {
+                BrushPresetHeader()
+                BrushSettingsEditor(settings: s)
+            }
+            .padding(10)
+        }
+    }
+}
+
+/// The preset the current tool's settings came from, with Photoshop's modified mark and Save / Reset / New.
+struct BrushPresetHeader: View {
+    @Bindable var lib = BrushLibrary.shared
+    @Bindable var app = AppModel.shared
+
+    var body: some View {
+        let preset = lib.activePreset
+        let modified = lib.isActivePresetModified
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: "paintbrush.pointed").font(.system(size: 10)).foregroundStyle(Theme.textDim)
+                Text(preset?.name ?? "No preset").font(Theme.fontBold).foregroundStyle(preset == nil ? Theme.textFaint : Theme.text).lineLimit(1).truncationMode(.middle)
+                if modified { Text("*").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.accent).help("Changed since the preset was chosen") }
+                Spacer(minLength: 0)
+            }
+            WrappingHStack(spacing: 4) {
+                Button("Save to Preset") { lib.saveChangesToActivePreset() }.buttonStyle(PanelButtonStyle())
+                    .disabled(preset == nil || !modified).help("Store the current settings in “\(preset?.name ?? "")”")
+                Button("Reset") { lib.resetActivePreset() }.buttonStyle(PanelButtonStyle())
+                    .disabled(preset == nil || !modified).help("Go back to the preset's settings")
+                Button("New Brush…") { DefineBrush.newBrushFromCurrentSettings() }.buttonStyle(PanelButtonStyle())
+                    .help("Save the current settings as a new preset")
+            }
         }
     }
 }
@@ -219,6 +195,8 @@ struct BrushSettingsEditor: View {
         case .dual: return $settings.dynamics.dualEnabled
         case .color: return $settings.dynamics.colorEnabled
         case .transfer: return $settings.dynamics.transferEnabled
+        case .pose: return $settings.dynamics.poseEnabled
+        case .protectTexture: return $settings.dynamics.protectTexture
         case .noise: return $settings.dynamics.noise
         case .wetEdges: return $settings.dynamics.wetEdges
         case .buildUp: return $settings.airbrush
@@ -242,7 +220,7 @@ struct BrushSettingsEditor: View {
         .onTapGesture {
             section = sec
             // Selecting an option-less section toggles it, like clicking its name in Photoshop.
-            if [.noise, .wetEdges, .buildUp].contains(sec), let b = enabled(sec) { b.wrappedValue.toggle() }
+            if [.noise, .wetEdges, .buildUp, .protectTexture].contains(sec), let b = enabled(sec) { b.wrappedValue.toggle() }
         }
     }
 
@@ -303,6 +281,7 @@ struct BrushSettingsEditor: View {
                 pct("Size Jitter", \.sizeJitter)
                 control(\.dynamics.sizeControl, BrushControl.shapeControls)
                 pct("Min Diameter", \.dynamics.minDiameter)
+                pct("Tilt Scale", \.dynamics.tiltScale, 0...200).opacity(settings.dynamics.sizeControl.source == .tilt ? 1 : 0.45)
                 Divider()
                 pct("Angle Jitter", \.dynamics.angleJitter)
                 control(\.dynamics.angleControl, BrushControl.angleControls)
@@ -314,6 +293,7 @@ struct BrushSettingsEditor: View {
                     Toggle2(label: "Flip X Jitter", on: $settings.dynamics.flipXJitter)
                     Toggle2(label: "Flip Y Jitter", on: $settings.dynamics.flipYJitter)
                 }
+                Toggle2(label: "Brush Projection", on: $settings.dynamics.brushProjection)
             }.opacity(dim(settings.dynamics.shapeEnabled))
         case .scattering:
             VStack(alignment: .leading, spacing: 6) {
@@ -355,6 +335,7 @@ struct BrushSettingsEditor: View {
                 pct("Scatter", \.dynamics.dualScatter, 0...1000)
                 Toggle2(label: "Both Axes", on: $settings.dynamics.dualBothAxes)
                 ValueSlider(label: "Count", value: $settings.dynamics.dualCount, range: 1...16, step: 1, labelWidth: lw)
+                Toggle2(label: "Flip", on: $settings.dynamics.dualFlip)
             }.opacity(dim(settings.dynamics.dualEnabled))
         case .color:
             VStack(alignment: .leading, spacing: 6) {
@@ -364,6 +345,7 @@ struct BrushSettingsEditor: View {
                 pct("Hue Jitter", \.dynamics.hueJitter)
                 pct("Saturation Jit.", \.dynamics.saturationJitter)
                 pct("Brightness Jit.", \.dynamics.brightnessJitter)
+                control(\.dynamics.colorJitterControl, BrushControl.transferControls)   // scales hue / saturation / brightness jitter
                 pct("Purity", \.dynamics.purity, -100...100)
             }.opacity(dim(settings.dynamics.colorEnabled))
         case .transfer:
@@ -376,6 +358,20 @@ struct BrushSettingsEditor: View {
                 control(\.dynamics.flowControl, BrushControl.transferControls)
                 pct("Minimum", \.dynamics.minFlow)
             }.opacity(dim(settings.dynamics.transferEnabled))
+        case .pose:
+            VStack(alignment: .leading, spacing: 6) {
+                ValueSlider(label: "Tilt X", value: Binding(get: { settings.dynamics.poseTiltX * 100 }, set: { settings.dynamics.poseTiltX = $0 / 100 }), range: -100...100, unit: "%", labelWidth: lw)
+                ValueSlider(label: "Tilt Y", value: Binding(get: { settings.dynamics.poseTiltY * 100 }, set: { settings.dynamics.poseTiltY = $0 / 100 }), range: -100...100, unit: "%", labelWidth: lw)
+                Toggle2(label: "Override Tilt", on: $settings.dynamics.poseOverrideTilt)
+                ValueSlider(label: "Rotation", value: $settings.dynamics.poseRotation, range: 0...360, unit: "°", labelWidth: lw)
+                Toggle2(label: "Override Rotation", on: $settings.dynamics.poseOverrideRotation)
+                pct("Pressure", \.dynamics.posePressure)
+                Toggle2(label: "Override Pressure", on: $settings.dynamics.poseOverridePressure)
+                Text("Stylus values used when the input device doesn't report them (a mouse), or always when overridden.")
+                    .foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
+            }.opacity(dim(settings.dynamics.poseEnabled))
+        case .protectTexture:
+            note("Keeps the current texture (pattern, scale, depth, mode) when another brush preset is chosen.", on: $settings.dynamics.protectTexture)
         case .noise:
             note("Adds grain to the soft edges of the stroke.", on: $settings.dynamics.noise)
         case .wetEdges:

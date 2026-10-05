@@ -56,7 +56,7 @@ struct FillLayerDialog: View {
     }
 
     static func open(_ d: Document, _ layerID: UUID, isNew: Bool) {
-        guard let l = d.state.layer(layerID), let f = l.fill, f.recipe == nil else { NSSound.beep(); return }
+        guard let l = d.state.layer(layerID), let f = l.fill, f.recipe == nil else { Beep.play(); return }
         if AppModel.shared.dialog?.id == ActiveDialog.custom(dialogID).id { close() }
         session = Session(doc: d, layerID: layerID, isNew: isNew)
         DialogRegistry.show(dialogID)   // (first: replacing another dialog reverts that dialog's live edits)
@@ -419,7 +419,7 @@ enum ShapeMaskOps {
     /// Intersect Shape Areas): the shape's own stroke then runs along the cut edge as well. A one-piece mask stays a live
     /// component (Path Selection can still move it); a mask of several pieces is merged into the outline.
     static func intersectWithVectorMask(_ d: Document, _ id: UUID) {
-        guard let l = d.state.layer(id), let s = l.shape, let vm = l.vectorMask, !vm.isEmpty else { NSSound.beep(); return }
+        guard let l = d.state.layer(id), let s = l.shape, let vm = l.vectorMask, !vm.isEmpty else { Beep.play(); return }
         var p = s.path
         if vm.subpaths.count == 1, vm.subpaths[0].closed {
             p.subpaths += vm.withOperation(.intersect).subpaths

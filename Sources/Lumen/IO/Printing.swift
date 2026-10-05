@@ -148,7 +148,7 @@ enum Printing {
 
     /// File > Print… (⌘P)
     static func print() {
-        guard let d = AppActions.doc, let op = makeOperation(d.state) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let op = makeOperation(d.state) else { Beep.play(); return }
         TimelineController.shared.stop()
         op.showsPrintPanel = true
         op.showsProgressPanel = true
@@ -159,7 +159,7 @@ enum Printing {
 
     /// File > Print One Copy (⌥⇧⌘P): prints with the current settings, no dialog.
     static func printOneCopy() {
-        guard let d = AppActions.doc, let op = makeOperation(d.state) else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let op = makeOperation(d.state) else { Beep.play(); return }
         op.printInfo.dictionary()[NSPrintInfo.AttributeKey.copies] = 1
         op.showsPrintPanel = false
         op.showsProgressPanel = true

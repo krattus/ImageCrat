@@ -77,6 +77,48 @@ enum LayerFX {
         for (id, fx) in base { d.updateLayer(id) { $0.effects = LayerTransformer.scaled(fx, factor) } }
     }
 
+    // MARK: Dragging effects between layers
+
+    /// Drag payload of an effect row: "imagecrat-fx:<layer>:<kind>:<instance>", or "imagecrat-fx:<layer>:all" for the Effects row.
+    static let dragPrefix = "imagecrat-fx:"
+
+    static func dragString(_ layer: UUID, _ slot: EffectSlot?) -> String {
+        dragPrefix + layer.uuidString + (slot.map { ":\($0.kind.rawValue):\($0.index)" } ?? ":all")
+    }
+
+    static func parseDrag(_ s: String) -> (layer: UUID, slot: EffectSlot?)? {
+        guard s.hasPrefix(dragPrefix) else { return nil }
+        let parts = s.dropFirst(dragPrefix.count).split(separator: ":").map(String.init)
+        guard let first = parts.first, let id = UUID(uuidString: first) else { return nil }
+        if parts.count == 2, parts[1] == "all" { return (id, nil) }
+        guard parts.count == 3, let k = EffectKind(rawValue: parts[1]), let i = Int(parts[2]), i >= 0 else { return nil }
+        return (id, EffectSlot(kind: k, index: i))
+    }
+
+    /// An effect row (or the Effects row: the whole style) dropped on another layer, as in Photoshop: it moves there,
+    /// ⌥ copies it. One effect joins the target's style next to what it has (one more instance of a kind that allows
+    /// several; a single-instance kind is replaced); the whole style replaces the target's, like Paste Layer Style.
+    /// The target's Effects are shown when a shown effect arrives. One history step.
+    @discardableResult
+    static func transfer(_ d: Document, from src: UUID, slot: EffectSlot?, to dst: UUID, copy: Bool) -> Bool {
+        guard src != dst, let s = d.state.layer(src), let t = d.state.layer(dst), s.effects.hasStyle, !t.locks.all, copy || !s.locks.all else { return false }
+        if let slot {
+            guard s.effects.item(slot)?.isListed == true else { return false }
+            let shown = s.effects.isShown(slot)
+            d.updateLayer(dst) { l in
+                l.effects.insert(slot, from: s.effects)
+                if shown { l.effects.enabled = true }
+            }
+            if !copy { d.updateLayer(src) { $0.effects.removeFromStyle(slot) } }
+            d.commit("\(copy ? "Copy" : "Move") \(slot.kind.displayName)")
+        } else {
+            d.updateLayer(dst) { $0.effects = s.effects }
+            if !copy { d.updateLayer(src) { $0.effects = LayerEffects() } }
+            d.commit(copy ? "Copy Layer Style" : "Move Layer Style")
+        }
+        return true
+    }
+
     /// Double-click on an effect row: Layer Style opened on that effect (and instance), which is not switched on.
     static func openStyle(_ slot: EffectSlot, layer id: UUID, doc d: Document) {
         guard let s = StyleSection(rawValue: slot.kind.displayName) else { return }
@@ -139,12 +181,12 @@ struct LayerEffectsRows: View {
     var body: some View {
         let fx = layer.effects
         VStack(spacing: 0) {
-            row(.effects(layer.id), eyeOn: fx.enabled, label: "Effects", labelDim: !fx.enabled, indent: 0, height: 19,
+            row(.effects(layer.id), drag: nil, eyeOn: fx.enabled, label: "Effects", labelDim: !fx.enabled, indent: 0, height: 19,
                 axLabel: fx.enabled ? "Hide Effects" : "Show Effects", eye: { LayerFX.toggleMaster(doc, layer.id) }, open: nil)
             ForEach(fx.listedSlots, id: \.self) { s in
                 let shown = fx.isShown(s)
                 let name = s.kind.displayName + (s.index > 0 ? " \(s.index + 1)" : "")
-                row(.effect(layer.id, s), eyeOn: shown, label: s.kind.displayName, labelDim: !shown || !fx.enabled, indent: 14, height: 18, masterOff: !fx.enabled,
+                row(.effect(layer.id, s), drag: s, eyeOn: shown, label: s.kind.displayName, labelDim: !shown || !fx.enabled, indent: 14, height: 18, masterOff: !fx.enabled,
                     axLabel: (shown ? "Hide " : "Show ") + name,
                     eye: { LayerFX.setShown(doc, layer.id, s, !shown) },
                     open: { LayerFX.openStyle(s, layer: layer.id, doc: doc) })
@@ -155,7 +197,7 @@ struct LayerEffectsRows: View {
     }
 
     @ViewBuilder
-    func row(_ target: EyeTarget, eyeOn: Bool, label: String, labelDim: Bool, indent: CGFloat, height: CGFloat, masterOff: Bool = false, axLabel: String,
+    func row(_ target: EyeTarget, drag: EffectSlot?, eyeOn: Bool, label: String, labelDim: Bool, indent: CGFloat, height: CGFloat, masterOff: Bool = false, axLabel: String,
              eye: @escaping () -> Void, open: (() -> Void)?) -> some View {
         HStack(spacing: 4) {
             Button(action: eye) {
@@ -181,6 +223,8 @@ struct LayerEffectsRows: View {
             .contentShape(Rectangle())
             .gesture(TapGesture(count: 2).onEnded { (open ?? { AppModel.shared.dialog = .layerStyle(layer.id) })() })
             .simultaneousGesture(TapGesture().onEnded { if !doc.selectedLayerIDs.contains(layer.id) { doc.selectLayer(layer.id) } })
+            // drag onto another layer moves the effect (the Effects row: the whole style), ⌥ copies: LayerFX.transfer
+            .onDrag { NSItemProvider(object: LayerFX.dragString(layer.id, drag) as NSString) }
         }
         .frame(height: height)
         .eyeRow(target)   // (drag across effect eyes: LayersPanelEyeDrag.swift)

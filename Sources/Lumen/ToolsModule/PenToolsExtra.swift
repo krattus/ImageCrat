@@ -313,7 +313,7 @@ final class AnchorEditTool: Tool {
             path = AnchorEditTool.deleting(path, si, pi)
             VectorEditing.setPath(d, t, path)
             // (a type path keeps at least two anchors: nothing deleted, no step)
-            guard VectorEditing.path(d, t) != before else { NSSound.beep(); status("A type path needs at least two anchor points."); return }
+            guard VectorEditing.path(d, t) != before else { Beep.play(); status("A type path needs at least two anchor points."); return }
             d.commit("Delete Anchor Point")
         default:   // convert point
             if let (si, pi, h) = handleHit(path, e.view) {

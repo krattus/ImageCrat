@@ -67,11 +67,19 @@ enum ToolModes {
         if isPen(k) { if app.penMode != m { app.penMode = m } } else if app.shapeTool.mode != m { app.shapeTool.mode = m }
     }
 
+    static func symbol(_ m: ShapeMode) -> String {
+        switch m {
+        case .shape: return "square.on.circle"
+        case .path: return "point.topleft.down.to.point.bottomright.curvepath"
+        case .pixels: return "square.grid.3x3.fill"
+        }
+    }
+
     static func help(_ m: ShapeMode) -> String {
         switch m {
         case .shape: return "Shape: draws a new shape layer (fill and stroke, editable)"
         case .path: return "Path: draws only an outline in the Paths panel; nothing is painted (Make: Selection, Mask or Shape turns it into one)"
-        case .pixels: return "Pixels: paints the shape with the foreground color on the active layer"
+        case .pixels: return "Pixels: paints the shape with the foreground color (options-bar Mode and Opacity) on the selected pixel layer"
         }
     }
 }
@@ -82,13 +90,15 @@ struct ToolModePicker: View {
     let tool: ToolKind
     var body: some View {
         let modes = ToolModes.modes(for: tool)
+        let cur = ToolModes.current(tool)
+        // a pop-up naming the mode (Photoshop's "Shape ▾"): the options to its right change with it
         Picker("", selection: Binding(get: { ToolModes.current(tool) }, set: { ToolModes.set($0, for: tool) })) {
-            ForEach(modes, id: \.self) { m in Text(m.rawValue).tag(m).help(ToolModes.help(m)) }
+            ForEach(modes, id: \.self) { m in Label(m.rawValue, systemImage: ToolModes.symbol(m)).tag(m).help(ToolModes.help(m)) }
         }
-        .pickerStyle(.segmented)
-        .frame(width: modes.count == 2 ? 116 : 170)
+        .pickerStyle(.menu)
+        .frame(width: 92)
         .labelsHidden()
-        .help(modes.map(ToolModes.help).joined(separator: "\n"))
+        .help("Tool mode: \(cur.rawValue)\n" + modes.map(ToolModes.help).joined(separator: "\n"))
         if ToolModes.current(tool) == .path { PathMakeButtons() }
     }
 }
@@ -232,7 +242,7 @@ enum PathOps {
         else if id == nil, let l = d.activeLayer, let s = l.shape { src = (s.path, "\(l.name) Shape Path copy") }
         else if id == nil, let (l, p) = PathOverlay.typePath(d) { src = (p, "\(l.name) Type Path copy") }
         else { src = nil }
-        guard let (p, name) = src, !p.isEmpty else { NSSound.beep(); return nil }
+        guard let (p, name) = src, !p.isEmpty else { Beep.play(); return nil }
         let np = NamedPath(name: name, path: p)
         d.state.paths.append(np)
         d.activePathID = np.id
@@ -283,8 +293,8 @@ enum PathOps {
     /// Fill Path: the path's area (anti-aliased, feathered) in a color at an opacity, one history step.
     @discardableResult
     static func fill(_ d: Document, _ id: UUID? = nil, _ o: FillOptions = FillOptions()) -> Bool {
-        guard let p = path(d, id), !p.isEmpty else { NSSound.beep(); return false }
-        guard let (lid, tgt) = paintTarget(d), let (w, origin) = d.beginPixelEdit(layerID: lid, target: tgt) else { NSSound.beep(); return false }
+        guard let p = path(d, id), !p.isEmpty else { Beep.play(); return false }
+        guard let (lid, tgt) = paintTarget(d), let (w, origin) = d.beginPixelEdit(layerID: lid, target: tgt) else { Beep.play(); return false }
         let rp = p.resolved
         var m = SelectionOps.mask(fromPath: rp.path, width: d.state.width, height: d.state.height, antialias: o.antialias, evenOdd: rp.evenOdd)
         if o.feather > 0 { m = SelectionOps.feather(m, radius: o.feather) }
@@ -314,8 +324,8 @@ enum PathOps {
     /// Simulate Pressure tapers each stroke (pen pressure 0 → 1 → 0). One history step.
     @discardableResult
     static func stroke(_ d: Document, _ id: UUID? = nil, _ o: StrokeOptions = StrokeOptions()) -> Bool {
-        guard let p = path(d, id), !p.isEmpty else { NSSound.beep(); return false }
-        guard paintTarget(d) != nil else { NSSound.beep(); return false }
+        guard let p = path(d, id), !p.isEmpty else { Beep.play(); return false }
+        guard paintTarget(d) != nil else { Beep.play(); return false }
         guard let canvas = AppActions.canvas, canvas.document === d, strokeTools.contains(o.tool) else { return strokeCG(d, p) }
         let tool = Tool.make(o.tool, canvas: canvas)
         let h0 = d.historyIndex
@@ -372,7 +382,7 @@ enum PathOps {
     /// Make Selection: the path's area as a selection (feathered, anti-aliased, combined with the current one).
     @discardableResult
     static func makeSelection(_ d: Document, _ id: UUID? = nil, _ o: SelectionOptions = SelectionOptions()) -> Bool {
-        guard let p = path(d, id), !p.isEmpty else { NSSound.beep(); return false }
+        guard let p = path(d, id), !p.isEmpty else { Beep.play(); return false }
         let rp = p.resolved
         var m = SelectionOps.mask(fromPath: rp.path, width: d.state.width, height: d.state.height, antialias: o.antialias, evenOdd: rp.evenOdd)
         if o.feather > 0 { m = SelectionOps.feather(m, radius: o.feather, direction: AppModel.shared.featherDirection) }
@@ -384,7 +394,7 @@ enum PathOps {
     /// Make Work Path from the selection; `tolerance` (px) simplifies the traced outline. Replaces the Work Path.
     @discardableResult
     static func makeWorkPath(_ d: Document, tolerance: Double = 2) -> Bool {
-        guard d.state.selection != nil else { AppModel.shared.setStatus("Make a selection first."); NSSound.beep(); return false }
+        guard d.state.selection != nil else { AppModel.shared.setStatus("Make a selection first."); Beep.play(); return false }
         AppActions.workPathFromSelection(tolerance: tolerance)
         return true
     }
@@ -392,8 +402,8 @@ enum PathOps {
     /// Mask: the path becomes the active layer's vector mask.
     @discardableResult
     static func addVectorMask(_ d: Document, _ id: UUID? = nil) -> Bool {
-        guard let lid = d.activeLayerID, let l = d.state.layer(lid), let p = path(d, id), !p.isEmpty else { NSSound.beep(); return false }
-        if l.locks.all { AppModel.shared.setStatus("The layer is locked."); NSSound.beep(); return false }
+        guard let lid = d.activeLayerID, let l = d.state.layer(lid), let p = path(d, id), !p.isEmpty else { Beep.play(); return false }
+        if l.locks.all { AppModel.shared.setStatus("The layer is locked."); Beep.play(); return false }
         d.updateLayer(lid) { $0.vectorMask = p; $0.vectorMaskEnabled = true }
         d.commit("Add Vector Mask")
         return true
@@ -402,8 +412,8 @@ enum PathOps {
     /// Shape: a new shape layer (foreground fill, the shape tool's stroke) from the path; the path is kept.
     @discardableResult
     static func makeShape(_ d: Document, _ id: UUID? = nil) -> Bool {
-        guard let p = id.flatMap({ i in d.state.paths.first { $0.id == i }?.path }) ?? actionPath(d, includeShape: false)?.path, !p.isEmpty else { NSSound.beep(); return false }
-        _ = VectorEditing.newShapeLayer(d, geometry: .path(p), name: "Shape")
+        guard let p = id.flatMap({ i in d.state.paths.first { $0.id == i }?.path }) ?? actionPath(d, includeShape: false)?.path, !p.isEmpty else { Beep.play(); return false }
+        _ = VectorEditing.newShapeLayer(d, geometry: .path(p), name: "Shape", foregroundFill: true)
         d.commit("New Shape Layer")
         return true
     }

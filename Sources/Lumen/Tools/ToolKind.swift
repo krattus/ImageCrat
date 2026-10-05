@@ -303,6 +303,39 @@ struct ShapeToolSettings: Equatable, Codable {
     var libraryID = "heart"
     /// Stroke Options for new shapes: caps, corners, miter limit, dashes (paint, width and alignment are the fields above).
     var strokeOptions: StrokeStyle? = nil
+    /// Pixels mode (Photoshop: Mode / Opacity / Anti-alias): how the foreground colour is painted onto the layer.
+    var pixelBlendMode: BlendMode = .normal
+    var pixelOpacity: Double = 1
+    var pixelAntiAlias = true
+    /// Path options (the gear): draw from the centre / keep the proportions (square, circle) without holding ⌥ / ⇧.
+    var fromCenter = false
+    var constrainProportions = false
+}
+
+extension ShapeToolSettings {
+    /// Older settings and tool presets have no Pixels-mode or path-option fields: missing keys keep their defaults.
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let d = ShapeToolSettings()
+        mode = try c.decodeIfPresent(ShapeMode.self, forKey: .mode) ?? d.mode
+        fill = try c.decodeIfPresent(PaintStyle.self, forKey: .fill) ?? d.fill
+        stroke = try c.decodeIfPresent(PaintStyle.self, forKey: .stroke) ?? d.stroke
+        strokeWidth = try c.decodeIfPresent(Double.self, forKey: .strokeWidth) ?? d.strokeWidth
+        strokeAlignment = try c.decodeIfPresent(StrokeAlignment.self, forKey: .strokeAlignment) ?? d.strokeAlignment
+        cornerRadius = try c.decodeIfPresent(Double.self, forKey: .cornerRadius) ?? d.cornerRadius
+        sides = try c.decodeIfPresent(Int.self, forKey: .sides) ?? d.sides
+        starRatio = try c.decodeIfPresent(Double.self, forKey: .starRatio) ?? d.starRatio
+        lineWeight = try c.decodeIfPresent(Double.self, forKey: .lineWeight) ?? d.lineWeight
+        arrowEnd = try c.decodeIfPresent(Bool.self, forKey: .arrowEnd) ?? d.arrowEnd
+        operation = try c.decodeIfPresent(PathOperation.self, forKey: .operation)
+        libraryID = try c.decodeIfPresent(String.self, forKey: .libraryID) ?? d.libraryID
+        strokeOptions = try c.decodeIfPresent(StrokeStyle.self, forKey: .strokeOptions)
+        pixelBlendMode = try c.decodeIfPresent(BlendMode.self, forKey: .pixelBlendMode) ?? d.pixelBlendMode
+        pixelOpacity = try c.decodeIfPresent(Double.self, forKey: .pixelOpacity) ?? d.pixelOpacity
+        pixelAntiAlias = try c.decodeIfPresent(Bool.self, forKey: .pixelAntiAlias) ?? d.pixelAntiAlias
+        fromCenter = try c.decodeIfPresent(Bool.self, forKey: .fromCenter) ?? d.fromCenter
+        constrainProportions = try c.decodeIfPresent(Bool.self, forKey: .constrainProportions) ?? d.constrainProportions
+    }
 }
 
 struct TextToolSettings: Equatable, Codable {

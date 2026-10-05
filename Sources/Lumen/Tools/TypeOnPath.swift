@@ -48,7 +48,7 @@ enum TypeOnPath {
         if sub == nil, let s = d.activeLayer?.shape { sub = subpaths(of: s).first { $0.points.count >= 2 } }
         guard let sp = sub else {
             AppModel.shared.setStatus(helpText)
-            NSSound.beep()
+            Beep.play()
             return
         }
         if canvas.currentTool.kind != .text { AppModel.shared.tool = .text }
@@ -118,7 +118,7 @@ final class PathTextDrag {
         guard let id = hit(d, e.doc, canvas: canvas, glyphsOnly: viaPathTool), let l = d.state.layer(id) else { return false }
         if l.locks.all || l.locks.position {
             AppModel.shared.setStatus("The layer is locked.")
-            NSSound.beep()
+            Beep.play()
             return true
         }
         if let tt = TextTool.editing, tt.editingID != nil, !tt.isEditing(id) { tt.endEditing(commit: true) }

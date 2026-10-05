@@ -529,7 +529,7 @@ extension NodesSelfTest {
         check(m.previews.count >= 3 && m.errors.isEmpty, "editor: node previews rendered (\(m.previews.count)), no errors")
         // library coverage
         let filterCount = RecipeLibrary.all.filter { $0.type.hasPrefix("filter.") }.count
-        check(filterCount == FilterKind.allCases.count - 3, "library: one node per FilterKind (\(filterCount))")
+        check(filterCount == FilterKind.allCases.count - 4, "library: one node per FilterKind (\(filterCount))")
         check(RecipeLibrary.all.filter { $0.type.hasPrefix("gallery.") }.count == GalleryFilter.allCases.count, "library: one node per Filter Gallery look")
         check(RecipeLibrary.all.filter { $0.type.hasPrefix("gen.") }.count == TextureCatalog.all.count, "library: one node per texture generator (\(TextureCatalog.all.count))")
         check(RecipeLibrary.all.filter { $0.type.hasPrefix("adj.") }.count == AdjustmentKind.allCases.count - 1, "library: one node per adjustment kind")

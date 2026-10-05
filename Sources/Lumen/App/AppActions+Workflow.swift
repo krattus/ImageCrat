@@ -10,9 +10,9 @@ extension AppActions {
     static func toggleLinkLayers() {
         guard let d = doc else { return }
         let ids = d.orderedSelection
-        guard !ids.isEmpty else { NSSound.beep(); return }
+        guard !ids.isEmpty else { Beep.play(); return }
         let links = Set(ids.map { d.state.layer($0)?.linkID })
-        if ids.count == 1, d.state.layer(ids[0])?.linkID == nil { NSSound.beep(); return }   // one unlinked layer: nothing to link or unlink
+        if ids.count == 1, d.state.layer(ids[0])?.linkID == nil { Beep.play(); return }   // one unlinked layer: nothing to link or unlink
         if ids.count == 1 || (links.count == 1 && links.first! != nil) {
             for id in ids { d.updateLayer(id) { $0.linkID = nil } }
             d.commit("Unlink Layers")
@@ -52,10 +52,10 @@ extension AppActions {
 
     /// Turns the selected layers into an artboard fitted to their bounds.
     static func artboardFromLayers() {
-        guard let d = doc, !d.orderedSelection.isEmpty else { NSSound.beep(); return }
+        guard let d = doc, !d.orderedSelection.isEmpty else { Beep.play(); return }
         // artboards can't go into another artboard: they stay where they are
         let picked = d.withoutDescendants(d.orderedSelection).filter { d.state.layer($0)?.isArtboard == false }
-        guard !picked.isEmpty else { NSSound.beep(); return }
+        guard !picked.isEmpty else { Beep.play(); return }
         d.selectedLayerIDs = Set(picked)
         if let a = d.activeLayerID, !picked.contains(a) { d.activeLayerID = picked.last }
         var b: CGRect?
@@ -370,7 +370,7 @@ extension AppActions {
     }
 
     static func relinkToFile() {
-        guard let d = doc, let id = d.activeLayerID, d.state.layer(id)?.smart != nil else { NSSound.beep(); return }
+        guard let d = doc, let id = d.activeLayerID, d.state.layer(id)?.smart != nil else { Beep.play(); return }
         let panel = NSOpenPanel()
         panel.allowedContentTypes = openTypes + DocumentIO.extraOpenTypes
         guard UIBlock.run(panel) == .OK, let url = panel.url else { return }
@@ -393,7 +393,7 @@ extension AppActions {
     }
 
     static func embedLinked() {
-        guard let d = doc, let id = d.activeLayerID, d.state.layer(id)?.smart?.linkedURL != nil else { NSSound.beep(); return }
+        guard let d = doc, let id = d.activeLayerID, d.state.layer(id)?.smart?.linkedURL != nil else { Beep.play(); return }
         d.updateLayer(id) { x in
             guard var s = x.smart else { return }
             s.linkedURL = nil
@@ -404,7 +404,7 @@ extension AppActions {
     }
 
     static func convertToLinked() {
-        guard let d = doc, let id = d.activeLayerID, let so = d.state.layer(id)?.smart else { NSSound.beep(); return }
+        guard let d = doc, let id = d.activeLayerID, let so = d.state.layer(id)?.smart else { Beep.play(); return }
         let panel = NSSavePanel()
         panel.allowedContentTypes = [Brand.documentType]
         panel.nameFieldStringValue = (so.sourceName as NSString).deletingPathExtension + "." + Brand.documentExtension

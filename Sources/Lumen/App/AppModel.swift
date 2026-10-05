@@ -81,6 +81,7 @@ final class AppModel {
         didSet {
             if oldValue != tool {
                 previousTool = oldValue
+                syncBrush(from: oldValue, to: tool)   // Preferences ▸ Tablet ▸ Sync brush across tools
                 toolChanged?(oldValue, tool)
                 if let g = ToolKind.groups.firstIndex(where: { $0.contains(tool) }) { groupSelection[g] = tool }
             }
@@ -101,9 +102,19 @@ final class AppModel {
     var pencil = BrushSettings(size: 1, hardness: 1, spacing: 0.05, smoothing: 0)
     var eraser = BrushSettings(size: 40, hardness: 0.6)
     var clone = BrushSettings(size: 60, hardness: 0.5)
-    var healing = BrushSettings(size: 40, hardness: 0.6)
     var historyBrush = BrushSettings(size: 50, hardness: 0.5)
-    var retouchBrush = BrushSettings(size: 50, hardness: 0.3)
+    /// Brushes of the tools that used to share one (Healing / Spot Healing, Blur … Sponge): each tool remembers its own.
+    var toolBrushes: [ToolKind: BrushSettings] = AppModel.sharedSlotDefaults
+    /// Healing Brush settings; assigning sets Spot Healing too (resets, tool presets of the group).
+    var healing: BrushSettings {
+        get { toolBrushes[.healing] ?? AppModel.healingDefault }
+        set { toolBrushes[.healing] = newValue; toolBrushes[.spotHealing] = newValue }
+    }
+    /// The active retouch tool's brush (Blur's when another tool is active); assigning sets all six.
+    var retouchBrush: BrushSettings {
+        get { toolBrushes[tool.isRetouch ? tool : .blur] ?? AppModel.retouchDefault }
+        set { for k in AppModel.retouchKinds { toolBrushes[k] = newValue } }
+    }
     var removeBrush = BrushSettings(size: 60, hardness: 0.8)
     var colorReplaceBrush = BrushSettings(size: 40, hardness: 0.6)
     var mixerBrushSettings = BrushSettings(size: 45, hardness: 0.5, spacing: 0.08)
@@ -143,7 +154,6 @@ final class AppModel {
 
     var customPatterns: [PatternDef] = []
     var customBrushTips: [String: PixelBuffer] = [:]
-    var customBrushPresets: [BrushPreset] = []
     var gradients: [ColorGradient] = ColorGradient.presets
 
     // Preferences (persisted)
@@ -190,34 +200,8 @@ final class AppModel {
     // MARK: Helpers
 
     var activeBrushSettings: BrushSettings {
-        get {
-            switch tool {
-            case .pencil: return pencil
-            case .eraser: return eraser
-            case .cloneStamp: return clone
-            case .healing, .spotHealing: return healing
-            case .historyBrush: return historyBrush
-            case .removeTool: return removeBrush
-            case .colorReplacement: return colorReplaceBrush
-            case .mixerBrush: return mixerBrushSettings
-            case .blur, .sharpen, .smudge, .dodge, .burn, .sponge: return retouchBrush
-            default: return ToolsSettings.shared.brush(for: tool) ?? brush
-            }
-        }
-        set {
-            switch tool {
-            case .pencil: pencil = newValue
-            case .eraser: eraser = newValue
-            case .cloneStamp: clone = newValue
-            case .healing, .spotHealing: healing = newValue
-            case .historyBrush: historyBrush = newValue
-            case .removeTool: removeBrush = newValue
-            case .colorReplacement: colorReplaceBrush = newValue
-            case .mixerBrush: mixerBrushSettings = newValue
-            case .blur, .sharpen, .smudge, .dodge, .burn, .sponge: retouchBrush = newValue
-            default: if !ToolsSettings.shared.setBrush(newValue, for: tool) { brush = newValue }
-            }
-        }
+        get { brushSettings(for: tool) }
+        set { setBrushSettings(newValue, for: tool) }
     }
 
     func swapColors() { swap(&foreground, &background) }

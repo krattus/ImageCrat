@@ -16,3 +16,6 @@ PSD export check*/
 
 # macOS
 .DS_Store
+
+# Local machine settings
+.winvm

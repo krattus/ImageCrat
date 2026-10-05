@@ -15,7 +15,7 @@ struct DropperButtons: View {
                 let armed = CanvasSampler.shared.token == token
                 Button {
                     CanvasSampler.shared.toggle(token) { p, _ in
-                        guard let d = doc ?? AppActions.doc, let c = AdjustmentSampling.compositeColor(d, at: p) else { NSSound.beep(); return }
+                        guard let d = doc ?? AppActions.doc, let c = AdjustmentSampling.compositeColor(d, at: p) else { Beep.play(); return }
                         onSample(k, c)
                     }
                 } label: {
@@ -93,7 +93,7 @@ struct HueSatControls: View {
                 let token = "hs.\(m)"
                 Button {
                     CanvasSampler.shared.toggle(token) { p, mods in
-                        guard let d = doc ?? AppActions.doc, let c = AdjustmentSampling.compositeColor(d, at: p) else { NSSound.beep(); return }
+                        guard let d = doc ?? AppActions.doc, let c = AdjustmentSampling.compositeColor(d, at: p) else { Beep.play(); return }
                         let mode = mods.contains(.shift) ? 1 : mods.contains(.option) ? 2 : m
                         sampleRange(c, mode: mode)
                     }
@@ -116,7 +116,7 @@ struct HueSatControls: View {
 
     func sampleRange(_ c: RGBA, mode: Int) {
         let (hh, sat, _) = c.hsb
-        guard sat > 0.02 else { NSSound.beep(); return }
+        guard sat > 0.02 else { Beep.play(); return }
         let h = hh * 360
         var cur = s
         if let a = doc?.activeLayer?.adjustment, a.kind == s.kind { cur = a }
@@ -312,7 +312,7 @@ struct ReplaceColorControls: View {
     }
 
     func sample(_ p: CGPoint, _ mods: NSEvent.ModifierFlags) {
-        guard let d = doc ?? AppActions.doc, let c = AdjustmentSampling.layerColor(d, at: p) else { NSSound.beep(); return }
+        guard let d = doc ?? AppActions.doc, let c = AdjustmentSampling.layerColor(d, at: p) else { Beep.play(); return }
         let m = mods.contains(.shift) ? 1 : mods.contains(.option) ? 2 : mode
         let sp = AppActions.space(d)
         var r = s.replace

@@ -484,12 +484,12 @@ enum GenAIActions {
 
     /// Harmonize: relight/recolour the active layer to the layers below, as a new layer (source hidden) + a local contact shadow.
     static func harmonize(prompt: String = "", light: String? = nil, modelOverride: String? = nil) {
-        guard let d = requireDoc(), let l = d.activeLayer, !l.isGroup, !l.isAdjustment else { NSSound.beep(); return }
+        guard let d = requireDoc(), let l = d.activeLayer, !l.isGroup, !l.isAdjustment else { Beep.play(); return }
         let sp = CanvasSpace(width: d.state.width, height: d.state.height)
         guard let img = Compositor.shared.contentImage(l, space: sp) else { return }
         let content = RenderEngine.renderBuffer(img.cropped(to: sp.ciCanvas), docRect: d.state.canvasRect, space: sp)
         let alpha = content.toGray(useAlpha: true)
-        guard alpha.opaqueBounds() != nil else { NSSound.beep(); return }
+        guard alpha.opaqueBounds() != nil else { Beep.play(); return }
         let sourceID = l.id
         let grown = SelectionOps.expand(alpha, by: 2)
         GenPipeline.runRegion(d, feature: .harmonize, prompt: prompt, sel: grown, modelOverride: modelOverride, layerName: "\(l.name) (Harmonized)",

@@ -3,8 +3,9 @@ import CoreImage
 import ImageCratCore
 
 extension FilterInstance {
-    /// Applies the filter (with its opacity / blend) to an image in CI space.
-    func apply(_ img: CIImage, canvas: CGRect) -> CIImage {
+    /// Applies the filter (with its opacity / blend) to an image in CI space. `quad`: where the smart object it
+    /// belongs to is now (a Liquify mesh follows the object).
+    func apply(_ img: CIImage, canvas: CGRect, quad: Quad? = nil) -> CIImage {
         let out: CIImage
         switch kind {
         case .filterGallery:
@@ -19,17 +20,19 @@ extension FilterInstance {
             out = NeuralSmartFilter.apply(self, img, canvas: canvas)
         case .recipe:
             out = RecipeRuntime.shared.smartFilter(self, img, canvas: canvas)
+        case .liquify:
+            out = LiquifySmartFilter.apply(self, img, space: CanvasSpace(width: Int(canvas.width.rounded()), height: Int(canvas.height.rounded())), quad: quad)
         default:
             out = kind.apply(img, values: values, colors: colors, canvas: canvas)
         }
         if opacity >= 0.999 && blendMode == .normal { return out }
-        let ext = img.extent
+        let ext = kind == .liquify ? img.extent.union(out.extent) : img.extent   // (Liquify may grow the layer)
         return out.withOpacity(opacity).blended(over: img, mode: blendMode).cropped(to: ext)
     }
 
     /// Applies the filter as a smart filter: through its filter mask (the result inside, the input outside).
-    func applySmart(_ img: CIImage, space: CanvasSpace) -> CIImage {
-        let out = apply(img, canvas: space.ciCanvas)
+    func applySmart(_ img: CIImage, space: CanvasSpace, quad: Quad? = nil) -> CIImage {
+        let out = apply(img, canvas: space.ciCanvas, quad: quad)
         guard let m = mask, m.isEnabled, !img.extent.isEmpty, !img.extent.isInfinite else { return out }
         let outside = CIImage.color(RGBA(gray: Double(m.outsideValue) / 255), img.extent.union(out.extent).union(space.ciCanvas))
         let gray = space.place(m.buffer, at: m.origin).composited(over: outside)
@@ -44,10 +47,15 @@ extension FilterKind {
         let ext = input.extent
         if ext.isEmpty || ext.isInfinite { return input }
         func val(_ k: String) -> Double { v[k] ?? params.first { $0.key == k }?.defaultValue ?? 0 }
-        func point(_ kx: String, _ ky: String) -> CIVector {
-            CIVector(x: canvas.minX + CGFloat(val(kx)) * canvas.width, y: canvas.maxY - CGFloat(val(ky)) * canvas.height)
-        }
         let minDim = Double(min(canvas.width, canvas.height))
+        // Centre-based filters (FilterCenter.swift): the resolved centre (`cx`, `cy`, canvas-normalized, y down; the
+        // canvas middle when absent) and the box radius-like parameters are relative to (`centerW` × `centerH`; the
+        // canvas when absent, as before the Center option).
+        func norm(_ k: String) -> CGFloat { CGFloat(v[k].flatMap { $0.isFinite ? $0 : nil } ?? params.first { $0.key == k }?.defaultValue ?? 0.5) }
+        let center = CIVector(x: canvas.minX + norm(FilterCenterKey.x) * canvas.width, y: canvas.maxY - norm(FilterCenterKey.y) * canvas.height)
+        let boxW = max(1, (v[FilterCenterKey.width].flatMap { $0.isFinite && $0 > 0 ? CGFloat($0) : nil } ?? 1) * canvas.width)
+        let boxH = max(1, (v[FilterCenterKey.height].flatMap { $0.isFinite && $0 > 0 ? CGFloat($0) : nil } ?? 1) * canvas.height)
+        let boxMin = Double(min(boxW, boxH))
         let clamped = input.clampedToExtent()
         func finish(_ img: CIImage?) -> CIImage {
             guard let img else { return input }
@@ -64,14 +72,14 @@ extension FilterKind {
         case .motionBlur:
             return finish(clamped.applyingFilter("CIMotionBlur", parameters: [kCIInputRadiusKey: val("distance") / 2, kCIInputAngleKey: val("angle") * .pi / 180]))
         case .radialBlur:
-            return finish(clamped.applyingFilter("CIZoomBlur", parameters: [kCIInputCenterKey: point("cx", "cy"), "inputAmount": val("amount")]))
+            return finish(clamped.applyingFilter("CIZoomBlur", parameters: [kCIInputCenterKey: center, "inputAmount": val("amount")]))
         case .spinBlur:
             // The average of copies rotated about the centre over the blur angle, added premultiplied: a true average,
             // so transparent pixels (an element on its own layer) spin symmetrically — source-over compositing of the
             // copies weighted them by their order there. 32 copies of the source, then passes that each average two
             // copies of the result turned ± a quarter of the sample spacing (halving it) until the arc of the farthest
             // pixel has samples ≤ 1 px apart: 16 fixed copies left ghost rings far from the centre.
-            let c = point("cx", "cy")
+            let c = center
             let total = val("angle") * .pi / 180
             guard total > 0.0001 else { return input }
             func turned(_ img: CIImage, _ a: Double, _ weight: Double) -> CIImage {
@@ -124,14 +132,14 @@ extension FilterKind {
             for _ in 0..<FilterInstance.count(val("passes")) { img = img.applyingFilter("CIMedianFilter") }
             return finish(img)
         case .twirl:
-            return finish(clamped.applyingFilter("CITwirlDistortion", parameters: [kCIInputCenterKey: point("cx", "cy"), kCIInputRadiusKey: val("radius") * minDim,
+            return finish(clamped.applyingFilter("CITwirlDistortion", parameters: [kCIInputCenterKey: center, kCIInputRadiusKey: val("radius") * boxMin,
                                                                                   kCIInputAngleKey: val("angle") * .pi / 180]))
         case .pinch:
-            return finish(clamped.applyingFilter("CIPinchDistortion", parameters: [kCIInputCenterKey: CIVector(x: canvas.midX, y: canvas.midY),
-                                                                                  kCIInputRadiusKey: val("radius") * minDim, kCIInputScaleKey: val("amount") / 100 * 0.99]))
+            return finish(clamped.applyingFilter("CIPinchDistortion", parameters: [kCIInputCenterKey: center,
+                                                                                  kCIInputRadiusKey: val("radius") * boxMin, kCIInputScaleKey: val("amount") / 100 * 0.99]))
         case .spherize:
-            return finish(clamped.applyingFilter("CIBumpDistortion", parameters: [kCIInputCenterKey: point("cx", "cy"),
-                                                                                 kCIInputRadiusKey: val("radius") * minDim, kCIInputScaleKey: val("amount") / 100]))
+            return finish(clamped.applyingFilter("CIBumpDistortion", parameters: [kCIInputCenterKey: center,
+                                                                                 kCIInputRadiusKey: val("radius") * boxMin, kCIInputScaleKey: val("amount") / 100]))
         case .ripple:
             guard let k = Kernels.rippleWarp else { return input }
             let a = val("amount")
@@ -144,12 +152,13 @@ extension FilterKind {
                                   arguments: [Float(a), Float(val("size")), Float(val("horizontal"))]))
         case .polarCoordinates:
             guard let k = Kernels.polarWarp else { return input }
-            let c = CIVector(x: canvas.midX, y: canvas.midY)
+            // the polar grid spans the centre's box (the canvas without a Center option)
+            let box = CGRect(x: center.x - boxW / 2, y: center.y - boxH / 2, width: boxW, height: boxH)
             return finish(k.apply(extent: ext, roiCallback: { _, _ in ext }, image: clamped,
-                                  arguments: [c, CIVector(cgRect: canvas), Float(val("mode") < 0.5 ? 1 : 0)]))
+                                  arguments: [center, CIVector(cgRect: box), Float(val("mode") < 0.5 ? 1 : 0)]))
         case .vortex:
-            return finish(clamped.applyingFilter("CIVortexDistortion", parameters: [kCIInputCenterKey: CIVector(x: canvas.midX, y: canvas.midY),
-                                                                                   kCIInputRadiusKey: val("radius") * minDim, kCIInputAngleKey: val("angle") * .pi / 180]))
+            return finish(clamped.applyingFilter("CIVortexDistortion", parameters: [kCIInputCenterKey: center,
+                                                                                   kCIInputRadiusKey: val("radius") * boxMin, kCIInputAngleKey: val("angle") * .pi / 180]))
         case .glass:
             let tex = CIFilter(name: "CIRandomGenerator")!.outputImage!
                 .transformed(by: CGAffineTransform(scaleX: CGFloat(val("scale")), y: CGFloat(val("scale"))))
@@ -224,7 +233,7 @@ extension FilterKind {
         case .gloom:
             return finish(clamped.applyingFilter("CIGloom", parameters: [kCIInputRadiusKey: val("radius"), kCIInputIntensityKey: val("intensity")]))
         case .kaleidoscope:
-            return finish(clamped.applyingFilter("CIKaleidoscope", parameters: ["inputCount": val("count"), kCIInputCenterKey: CIVector(x: canvas.midX, y: canvas.midY),
+            return finish(clamped.applyingFilter("CIKaleidoscope", parameters: ["inputCount": val("count"), kCIInputCenterKey: center,
                                                                                kCIInputAngleKey: val("angle") * .pi / 180]))
         case .wind:
             let dir = val("direction") < 0.5 ? 0.0 : Double.pi
@@ -238,7 +247,7 @@ extension FilterKind {
             if self == .clouds { return cl.cropped(to: ext) }
             return finish(cl.applyingFilter("CIDifferenceBlendMode", parameters: [kCIInputBackgroundImageKey: input]).cropped(to: ext))
         case .lensFlare:
-            let c = point("cx", "cy")
+            let c = center
             let b = val("brightness") / 100
             let halo = CIFilter(name: "CILenticularHaloGenerator", parameters: [
                 kCIInputCenterKey: c, kCIInputColorKey: CIColor(red: 1, green: 0.9, blue: 0.8),
@@ -263,13 +272,13 @@ extension FilterKind {
                 "inputBVector": CIVector(x: 0, y: 0, z: CGFloat(b), w: 0)])
             return keepAlpha(flare.cropped(to: ext).applyingFilter("CIScreenBlendMode", parameters: [kCIInputBackgroundImageKey: input]))
         case .vignette:
-            return finish(clamped.applyingFilter("CIVignetteEffect", parameters: [kCIInputCenterKey: CIVector(x: canvas.midX, y: canvas.midY),
-                                                                                 kCIInputRadiusKey: val("radius") * Double(max(canvas.width, canvas.height)) * 0.6,
+            return finish(clamped.applyingFilter("CIVignetteEffect", parameters: [kCIInputCenterKey: center,
+                                                                                 kCIInputRadiusKey: val("radius") * Double(max(boxW, boxH)) * 0.6,
                                                                                  kCIInputIntensityKey: val("intensity"), "inputFalloff": val("falloff")]))
         case .spotlight:
-            let t = point("cx", "cy")
+            let t = center
             return keepAlpha(clamped.applyingFilter("CISpotLight", parameters: [
-                "inputLightPosition": CIVector(x: t.x - canvas.width * 0.2, y: t.y + canvas.height * 0.25, z: CGFloat(val("height"))),
+                "inputLightPosition": CIVector(x: t.x - boxW * 0.2, y: t.y + boxH * 0.25, z: CGFloat(val("height"))),
                 "inputLightPointsAt": CIVector(x: t.x, y: t.y, z: 0), "inputBrightness": val("brightness"),
                 "inputConcentration": val("concentration"), "inputColor": CIColor.white]))
         case .cameraRaw:
@@ -296,8 +305,8 @@ extension FilterKind {
             return finish(clamped.applyingFilter("CIMorphologyMinimum", parameters: [kCIInputRadiusKey: val("radius")]))
         case .filterGallery, .fieldBlur, .irisBlur, .pathBlur, .displace:
             return input   // handled by FilterInstance / FilterExtras
-        case .neuralFilter, .recipe:
-            return input   // handled by FilterInstance / NeuralSmartFilter / RecipeRuntime
+        case .neuralFilter, .recipe, .liquify:
+            return input   // handled by FilterInstance / NeuralSmartFilter / RecipeRuntime / LiquifySmartFilter
         case .lensCorrection:
             return keepAlpha(FilterExtras.lensCorrection(clamped, v: val, ext: ext, canvas: canvas))
         case .smartSharpen:

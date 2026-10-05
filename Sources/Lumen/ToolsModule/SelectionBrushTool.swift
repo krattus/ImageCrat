@@ -7,6 +7,7 @@ final class SelectionBrushTool: Tool {
     private var accum: PixelBuffer?
     private var placer = DabPlacer(spacing: 2, smoothing: 0)
     private var subtract = false
+    private var dynamics = DabDynamics()
 
     override var cursor: NSCursor { .crosshair }
 
@@ -16,21 +17,31 @@ final class SelectionBrushTool: Tool {
         subtract = ToolsSettings.shared.selectionBrushSubtract != e.option
         accum = d.committedState.selection?.copy() ?? PixelBuffer(width: d.state.width, height: d.state.height, format: .gray)
         placer = DabPlacer(spacing: max(1, s.size * max(0.05, s.spacing)), smoothing: s.smoothing)
-        for (p, pr) in placer.begin(e.doc, pressure: e.pressure) { SelectionBrushTool.dab(accum!, at: p, settings: s, pressure: pr, subtract: subtract) }
+        dynamics = DabDynamics()
+        for smp in placer.begin(PenSample(e)) { paint(accum!, smp, s) }
         preview()
     }
 
     override func mouseDragged(_ e: ToolEvent) {
         guard let a = accum else { return }
         let s = ToolsSettings.shared.selectionBrush
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure) { SelectionBrushTool.dab(a, at: p, settings: s, pressure: pr, subtract: subtract) }
+        for smp in placer.move(PenSample(e)) { paint(a, smp, s) }
         preview()
+    }
+
+    /// One dab with the brush dynamics of the sample (pressure → size / opacity, tilt → angle, …).
+    private func paint(_ m: PixelBuffer, _ smp: PenSample, _ s: BrushSettings) {
+        let dd = dynamics.dab(smp, s)
+        var t = s
+        t.size = dd.size; t.angle = dd.angle; t.roundness = dd.roundness; t.flow = s.flow * dd.alpha
+        t.pressureSize = false
+        SelectionBrushTool.dab(m, at: smp.p, settings: t, subtract: subtract)
     }
 
     override func mouseUp(_ e: ToolEvent) {
         guard let d = doc, let a = accum else { return }
         let s = ToolsSettings.shared.selectionBrush
-        for (p, pr) in placer.move(e.doc, pressure: e.pressure, final: true) { SelectionBrushTool.dab(a, at: p, settings: s, pressure: pr, subtract: subtract) }
+        for smp in placer.move(PenSample(e), final: true) { paint(a, smp, s) }
         a.markDirty()
         d.revertUncommitted()
         d.setSelection(a, commitName: "Selection Brush")

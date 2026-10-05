@@ -432,7 +432,7 @@ enum AssistSearch {
         let st = d.state
         Assist.run("Comparing layers…", { await AssistIndex.shared.ensure(st, useFlorence: false) }) { _ in
             let sim = similar(to: id, in: d.state)
-            guard !sim.isEmpty else { AppModel.shared.setStatus("No similar looking layers found."); NSSound.beep(); return }
+            guard !sim.isEmpty else { AppModel.shared.setStatus("No similar looking layers found."); Beep.play(); return }
             d.selectedLayerIDs = Set(sim.map(\.id) + [id])
             d.activeLayerID = id
             reveal(d, ids: sim.map(\.id))

@@ -129,7 +129,7 @@ enum ArtboardExport {
     /// Export Artboard As…: one artboard → a save panel (format from the extension); several → a folder of PNGs.
     static func exportAsPanel(_ d: Document, _ ids: [UUID]) {
         let boards = list(d.state, ids)
-        guard !boards.isEmpty else { NSSound.beep(); return }
+        guard !boards.isEmpty else { Beep.play(); return }
         if boards.count == 1, let l = boards.first {
             let p = NSSavePanel()
             p.nameFieldStringValue = safeName(l.name) + ".png"

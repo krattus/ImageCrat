@@ -72,7 +72,7 @@ final class ToolPresetStore {
 
     func newPreset(name: String? = nil) {
         let tool = AppModel.shared.tool
-        guard let data = ToolPresetStore.capture(tool) else { NSSound.beep(); return }
+        guard let data = ToolPresetStore.capture(tool) else { Beep.play(); return }
         presets.append(ToolPreset(name: name ?? "\(tool.displayName.replacingOccurrences(of: " Tool", with: "")) \(presets.filter { $0.tool == tool }.count + 1)", tool: tool, payload: data))
     }
 }

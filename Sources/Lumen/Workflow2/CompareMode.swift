@@ -76,7 +76,7 @@ final class CompareController: @unchecked Sendable {     // main-thread only; Se
 
     @discardableResult
     func start(_ d: Document, source: CompareSource, layout: CompareLayout? = nil) -> Bool {
-        guard let (st, name) = CompareController.resolve(source, in: d) else { Workflow2Util.beep(); return false }
+        guard let (st, name) = CompareController.resolve(source, in: d) else { Beep.play(); return false }
         return start(d, reference: st, label: name, layout: layout)
     }
 
@@ -306,7 +306,7 @@ final class IsolateMode {
         if isActive { exit() }
         let sel = d.selectedLayerIDs.isEmpty ? Set(d.activeLayerID.map { [$0] } ?? []) : d.selectedLayerIDs
         let keep = IsolateMode.keepSet(d.state, selection: sel)
-        guard !keep.isEmpty else { Workflow2Util.beep(); return false }
+        guard !keep.isEmpty else { Beep.play(); return false }
         doc = d
         docID = d.id
         kept = keep

@@ -96,6 +96,7 @@ enum AppActions {
     }
 
     static func open(url: URL) {
+        if BrushLibrary.isBrushFile(url) { BrushLibrary.shared.importInBackground([url]); return }   // .abr, .brushset, … → Brushes panel
         if let existing = app.documents.first(where: { $0.fileURL == url }) {
             app.activeDocumentID = existing.id
             return

@@ -170,7 +170,7 @@ enum HistoryActions {
 
     /// Edit ▸ Repeat Last Command: like "Last Filter", for any recordable command.
     static func repeatLast() {
-        guard let s = CommandLog.shared.lastStep, AppActions.doc != nil else { Workflow2Util.beep(); return }
+        guard let s = CommandLog.shared.lastStep, AppActions.doc != nil else { Beep.play(); return }
         AppActions.canvas?.commitCurrentTool()
         CommandLog.shared.clearPending()
         ActionRecorder.perform(s)
@@ -207,7 +207,7 @@ enum HistoryActions {
     /// Runs the last command on each of `ids` and folds the result into ONE history step. Returns (applied, skipped).
     @discardableResult
     static func applyLast(to ids: [UUID], in d: Document) -> (applied: Int, skipped: Int) {
-        guard let s = CommandLog.shared.lastStep, isPerLayer(s) else { Workflow2Util.beep(); return (0, ids.count) }
+        guard let s = CommandLog.shared.lastStep, isPerLayer(s) else { Beep.play(); return (0, ids.count) }
         AppActions.canvas?.commitCurrentTool()
         let startID = d.history[d.historyIndex].id
         let active = d.activeLayerID, selection = d.selectedLayerIDs, target = d.editTarget
@@ -248,7 +248,7 @@ enum HistoryActions {
     }
 
     static func applyLastToSameKind() {
-        guard let d = AppActions.doc, let a = d.activeLayer else { Workflow2Util.beep(); return }
+        guard let d = AppActions.doc, let a = d.activeLayer else { Beep.play(); return }
         applyLast(to: d.state.allLayers.filter { sameKind($0, a) && $0.isVisible }.map(\.id), in: d)
     }
 }

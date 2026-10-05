@@ -58,8 +58,8 @@ enum GenVariations {
         select(d, layerID: layerID, index: ((inf.selected + delta) % n + n) % n)
     }
 
-    static func next() { if let a = active { step(a.doc, layerID: a.layerID, by: 1) } else { NSSound.beep() } }
-    static func previous() { if let a = active { step(a.doc, layerID: a.layerID, by: -1) } else { NSSound.beep() } }
+    static func next() { if let a = active { step(a.doc, layerID: a.layerID, by: 1) } else { Beep.play() } }
+    static func previous() { if let a = active { step(a.doc, layerID: a.layerID, by: -1) } else { Beep.play() } }
 
     static func delete(_ d: Document, layerID: UUID, index: Int) {
         guard var inf = d.state.generative[layerID], inf.variations.count > 1, inf.variations.indices.contains(index) else { return }

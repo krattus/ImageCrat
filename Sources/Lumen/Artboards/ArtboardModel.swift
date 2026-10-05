@@ -400,7 +400,7 @@ enum ArtboardOps {
             d.state.insertLayer(copy, above: id)
             out.append(copy.id)
         }
-        guard !out.isEmpty else { NSSound.beep(); return [] }
+        guard !out.isEmpty else { Beep.play(); return [] }
         d.activeLayerID = out.last
         d.selectedLayerIDs = Set(out)
         commitSized(d, commitName)
@@ -419,7 +419,7 @@ enum ArtboardOps {
     /// Delete Artboard: with its contents, or (keepContents) only the artboard — its layers go to the top level.
     static func delete(_ d: Document, _ ids: [UUID], keepContents: Bool, commitName: String? = nil) {
         let boards = ids.filter { d.state.layer($0)?.isArtboard == true }
-        guard !boards.isEmpty else { NSSound.beep(); return }
+        guard !boards.isEmpty else { Beep.play(); return }
         var selectAfter: [UUID] = []
         for id in boards {
             guard let l = d.state.layer(id) else { continue }
@@ -449,7 +449,7 @@ enum ArtboardOps {
     @discardableResult
     static func fromGroup(_ d: Document, _ id: UUID) -> Bool {
         // (an artboard can't hold another artboard)
-        guard let g = d.state.layer(id), g.isGroup, !g.isArtboard, !g.children.allLayers.contains(where: \.isArtboard) else { NSSound.beep(); return false }
+        guard let g = d.state.layer(id), g.isGroup, !g.isArtboard, !g.children.allLayers.contains(where: \.isArtboard) else { Beep.play(); return false }
         let b = Compositor.shared.contentBounds(g, state: d.state).flatMap { $0.isNull || $0.width < 1 || $0.height < 1 ? nil : $0 } ?? d.state.canvasCGRect
         d.updateLayer(id) { l in
             guard case .group(var gc) = l.content else { return }
@@ -507,7 +507,7 @@ enum ArtboardOps {
     /// Aligns the selected artboards' edges (or centres) with each other.
     static func align(_ d: Document, _ ids: [UUID], _ a: Alignment) {
         let boards = ids.compactMap { id in d.state.layer(id)?.artboard.map { (id, $0.rect) } }
-        guard boards.count > 1 else { NSSound.beep(); return }
+        guard boards.count > 1 else { Beep.play(); return }
         let u = boards.map(\.1).reduce(boards[0].1) { $0.union($1) }
         for (id, r) in boards {
             var p = r.origin
@@ -527,7 +527,7 @@ enum ArtboardOps {
     /// Lays the selected artboards out in a row (or column) with `spacing` pixels between them, in their current order.
     static func distribute(_ d: Document, _ ids: [UUID], horizontal: Bool, spacing: CGFloat) {
         var boards = ids.compactMap { id in d.state.layer(id)?.artboard.map { (id, $0.rect) } }
-        guard boards.count > 1 else { NSSound.beep(); return }
+        guard boards.count > 1 else { Beep.play(); return }
         boards.sort { horizontal ? $0.1.minX < $1.1.minX : $0.1.minY < $1.1.minY }
         var pos = horizontal ? boards[0].1.maxX : boards[0].1.maxY
         for (id, r) in boards.dropFirst() {

@@ -93,7 +93,7 @@ enum TidyUp {
 
     static func run() {
         guard let d = AppActions.doc else { return }
-        guard let r = tidied(d.state, ids: LayoutGeom.movable(d)) else { NSSound.beep(); return }
+        guard let r = tidied(d.state, ids: LayoutGeom.movable(d)) else { Beep.play(); return }
         d.state = r.state
         d.commit("Tidy Up")
         switch r.structure {
@@ -146,7 +146,7 @@ enum TidyUp {
     static func swapPositions() {
         guard let d = AppActions.doc else { return }
         let ids = LayoutGeom.movable(d)
-        guard ids.count >= 2 else { NSSound.beep(); return }
+        guard ids.count >= 2 else { Beep.play(); return }
         d.state = swapped(d.state, ids: ids)
         d.commit("Swap Positions")
     }
@@ -167,7 +167,7 @@ enum TidyUp {
         guard let d = AppActions.doc else { return }
         let ids = LayoutGeom.movable(d)
         // the key layer is the active one (the last layer clicked)
-        guard ids.count >= 2, let key = d.activeLayerID.flatMap({ ids.contains($0) ? $0 : nil }) ?? ids.last else { NSSound.beep(); return }
+        guard ids.count >= 2, let key = d.activeLayerID.flatMap({ ids.contains($0) ? $0 : nil }) ?? ids.last else { Beep.play(); return }
         d.state = matched(d.state, ids: ids, key: key, width: width, height: height)
         d.commit(width && height ? "Match Size" : width ? "Match Width" : "Match Height")
     }

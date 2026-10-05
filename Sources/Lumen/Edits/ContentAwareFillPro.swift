@@ -292,7 +292,7 @@ enum ContentAwareFillEngine {
 
     /// Edit ▸ Delete and Fill Selection: removes the selected content and fills it from its surroundings.
     static func deleteAndFill() {
-        guard let d = AppActions.doc, let sel = d.state.selection, let l = d.activeLayer else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let sel = d.state.selection, let l = d.activeLayer else { Beep.play(); return }
         if !l.isRaster { AppActions.offerRasterize(layer: l.id); return }
         guard let img = sourceImage(d, allLayers: false) else { return }
         AppModel.shared.setStatus("Filling…")
@@ -308,7 +308,7 @@ enum ContentAwareFillEngine {
         MenuRegistry.add("Edit", "Delete and Fill Selection", key: .delete, modifiers: [.shift, .command],
                          enabled: { AppActions.doc?.state.selection != nil }) { deleteAndFill() }
         MenuRegistry.add("Edit", "Content-Aware Fill…", enabled: { AppActions.doc?.state.selection != nil }) {
-            guard AppActions.doc?.state.selection != nil else { NSSound.beep(); return }
+            guard AppActions.doc?.state.selection != nil else { Beep.play(); return }
             DialogRegistry.show("edits.caf")
         }
         DialogRegistry.register("edits.caf") { AnyView(ContentAwareFillDialog()) }

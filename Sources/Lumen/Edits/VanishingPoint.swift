@@ -256,7 +256,7 @@ final class VPModel: ObservableObject {
     func endStroke() { strokeBase = nil; lastDab = nil; tick += 1 }
 
     func defineStampSource(_ p: CGPoint) {
-        guard let i = planeIndex(at: p), let m = planes[i].toMetric(p) else { NSSound.beep(); return }
+        guard let i = planeIndex(at: p), let m = planes[i].toMetric(p) else { Beep.play(); return }
         stampSource = (i, m)
         stampOffset = nil
     }
@@ -393,7 +393,7 @@ final class VPModel: ObservableObject {
     // MARK: Paste onto a plane
 
     func pasteImage(_ img: PixelBuffer) {
-        guard let i = active ?? (planes.isEmpty ? nil : 0), planes.indices.contains(i) else { NSSound.beep(); return }
+        guard let i = active ?? (planes.isEmpty ? nil : 0), planes.indices.contains(i) else { Beep.play(); return }
         let pl = planes[i]
         let wM = pl.aspect * pl.scale * 0.6
         paste = (img, i, CGPoint(x: pl.aspect * pl.scale / 2, y: pl.scale / 2), wM)
@@ -743,7 +743,7 @@ struct VanishingPointWorkspace: View {
             Button("Paste Image from Clipboard") {
                 if let img = NSImage(pasteboard: .general), let cg = img.cgImage(forProposedRect: nil, context: nil, hints: nil) {
                     m.pasteImage(PixelBuffer(cgImage: cg)); m.tick += 1
-                } else { NSSound.beep() }
+                } else { Beep.play() }
             }.buttonStyle(PanelButtonStyle())
             if let pa = m.paste {
                 ValueSlider(label: "Size", value: Binding(get: { Double(pa.width) }, set: { m.paste?.width = CGFloat($0); m.tick += 1 }),

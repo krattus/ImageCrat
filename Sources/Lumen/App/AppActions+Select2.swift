@@ -202,7 +202,7 @@ extension AppActions {
     // MARK: Similar
 
     static func selectSimilar() {
-        guard let d = doc, let sel = d.state.selection, let src = sampleSource(allLayers: true), let b = sel.opaqueBounds() else { NSSound.beep(); return }
+        guard let d = doc, let sel = d.state.selection, let src = sampleSource(allLayers: true), let b = sel.opaqueBounds() else { Beep.play(); return }
         let seed = IPoint(x: b.x + b.width / 2, y: b.y + b.height / 2)
         let m = SelectionOps.floodMask(src: src, seed: seed, tolerance: app.selection.tolerance, contiguous: false, antialias: true)
         d.setSelection(SelectionOps.combine(sel, m, mode: .add), commitName: "Similar")
@@ -211,7 +211,7 @@ extension AppActions {
     // MARK: Transform Selection
 
     static func transformSelection() {
-        guard let c = canvas, let d = doc, d.state.selection != nil else { NSSound.beep(); return }
+        guard let c = canvas, let d = doc, d.state.selection != nil else { Beep.play(); return }
         c.commitCurrentTool()
         app.tool = .move
         (c.tool(for: .move) as? MoveTool)?.startTransform(selectionOnly: true)
@@ -277,12 +277,12 @@ extension AppActions {
         }
         if l.locks.positionLocked || (l.isRaster && l.locks.pixelsLocked) {     // like Free Transform
             app.setStatus("The layer is locked.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         c.commitCurrentTool()
         app.tool = .move
-        guard let mt = c.tool(for: .move) as? MoveTool, let s = make(d, id) else { NSSound.beep(); return }
+        guard let mt = c.tool(for: .move) as? MoveTool, let s = make(d, id) else { Beep.play(); return }
         mt.interactive = s
         app.setStatus("\(s.title): press Return to apply, Esc to cancel.")
     }

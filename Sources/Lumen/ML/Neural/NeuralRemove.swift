@@ -160,7 +160,7 @@ final class NeuralRemove {
     /// Fills the current selection on the active layer (LaMa, or Content-Aware Fill).
     @MainActor
     static func removeSelection() {
-        guard let d = AppActions.doc, let id = d.activeLayerID, let sel = d.state.selection else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let id = d.activeLayerID, let sel = d.state.selection else { Beep.play(); return }
         guard let l = d.state.layer(id), l.isRaster else { AppActions.offerRasterize(layer: id); return }
         let hole = SelectionOps.expand(sel, by: 2)
         if shared.mode == .generative && LamaInpainter.isAvailable {

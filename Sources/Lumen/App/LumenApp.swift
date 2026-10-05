@@ -8,6 +8,7 @@ struct LumenApp: App {
 
     init() {
         CorePlatform.install()   // before any PixelBuffer or document exists (CGContext pixel storage, core hooks)
+        Beep.installHeadlessGuards()   // automated runs: no AppKit "unhandled key" beeps either
         LegacyMigration.runAtLaunch()   // first: carries Lumen's folder and preferences over before anything reads them
         FeatureModules.registerAll()
     }
@@ -53,6 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         PendingEdits.install()
         MemoryHygiene.install()
+        TabletSettings.shared.applyAtLaunch()   // pressure-button defaults, pen-eraser proximity monitor (not in self tests)
         LegacyMigration.afterLaunch()   // Keychain items (in the background) and the one-time "Lumen is now ImageCrat" note
         DispatchQueue.main.async {
             if let w = NSApp.windows.first {
@@ -76,7 +78,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
-        for u in urls { AppActions.open(url: u) }
+        // Brush files (double-clicked in Finder, dropped on the Dock icon) go into the brush library.
+        let brushes = urls.filter(BrushLibrary.isBrushFile)
+        if !brushes.isEmpty { BrushLibrary.shared.importInBackground(brushes) }
+        for u in urls where !BrushLibrary.isBrushFile(u) { AppActions.open(url: u) }
     }
 
     /// (Not during a self-test run: a test that closes its last offscreen window while pumping the run loop would
@@ -125,7 +130,7 @@ enum KeyRouter {
             // ⇧⌫ is Edit ▸ Fill…: leave it to the menu (the canvas would treat it as a plain Delete and clear pixels)
             if e.keyCode == 51 && e.modifierFlags.contains(.shift) && !e.modifierFlags.contains(.option) { return false }
             if e.keyCode == 51 && e.modifierFlags.contains(.option) {
-                AppActions.fill(.foreground, opacity: 1, mode: .normal, preserveTransparency: false); return true
+                AppActions.fillForegroundShortcut(); return true   // (a selected shape layer takes it as its fill)
             }
             canvas.keyDown(with: e)
             return true
@@ -143,13 +148,8 @@ enum KeyRouter {
         case "\t": app.showPanels.toggle(); return true
         default: break
         }
-        if let n = Int(ch), app.tool.isPainting || app.tool == .gradient {
-            let v = n == 0 ? 1.0 : Double(n) / 10
-            if app.tool == .gradient { app.gradientTool.opacity = v } else {
-                var s = app.activeBrushSettings; s.opacity = v; app.activeBrushSettings = s
-            }
-            return true
-        }
+        // number keys: opacity (1 = 10% … 0 = 100%, two quick digits = exact), ⇧ + number: flow
+        if BrushKeys.handleDigit(e) { return true }
         // Tool shortcuts
         let upper = ch.uppercased()
         let groups = ToolKind.groups.enumerated().filter { $0.element.first?.shortcut == upper }
@@ -341,6 +341,12 @@ struct LumenCommands2: Commands {
             Divider()
             Button("Layer Style…") { if let id = AppActions.doc?.activeLayerID { AppModel.shared.dialog = .layerStyle(id) } }
             Menu("Layer Style Options") {
+                // Photoshop's Layer ▸ Layer Style ▸ Blending Options… / <effect>…: opens Layer Style with that effect added
+                ForEach(StyleSection.allCases) { sec in
+                    Button(sec.menuTitle) { LayerStyleDialog.openFromMenu(sec) }
+                    if sec == .blending { Divider() }
+                }
+                Divider()
                 Button("Copy Layer Style") { AppActions.copyLayerStyle() }
                 Button("Paste Layer Style") { AppActions.pasteLayerStyle() }
                 Button("Clear Layer Style") { AppActions.clearLayerStyle() }
@@ -494,7 +500,7 @@ struct LumenCommands3: Commands {
             Button("Lens Correction…") { FilterLauncher.launch(.lensCorrection) }.keyboardShortcut("r", modifiers: [.command, .shift])
             }.disabled(!FilterLauncher.canRun())
             Button("Liquify…") { FilterLauncher.liquify() }.keyboardShortcut("x", modifiers: [.command, .shift])
-                .disabled(!FilterLauncher.canRun(smartFilter: false, layerPixels: true))
+                .disabled(!FilterLauncher.canRun(smartFilter: true, layerPixels: true))
             Divider()
             ForEach(FilterCategory.allCases, id: \.self) { cat in
                 Menu(cat.rawValue) {
@@ -594,7 +600,7 @@ enum FilterLauncher {
         let d = AppActions.doc
         switch target(d, smartFilter: smartFilter, layerPixels: layerPixels) {
         case .pixels, .smartFilter: return true
-        case .none: NSSound.beep(); return false
+        case .none: Beep.play(); return false
         case .needsRasterize:
             guard let d, let id = d.activeLayerID else { return false }
             AppActions.offerRasterize(layer: id)
@@ -602,12 +608,14 @@ enum FilterLauncher {
         }
     }
 
+    /// Liquify, like Photoshop: on a smart object it is a smart filter (no rasterizing), otherwise it warps the pixels.
     static func liquify() {
-        guard prepare(smartFilter: false, layerPixels: true) else { return }
+        guard prepare(smartFilter: true, layerPixels: true) else { return }
         AppModel.shared.dialog = .liquify
     }
 
     static func launch(_ k: FilterKind) {
+        if k == .liquify { liquify(); return }
         guard AppActions.doc != nil, MaskTargetPrompt.resolve(k.displayName), let d = AppActions.doc, prepare() else { return }
         switch k {
         case .fieldBlur, .irisBlur, .pathBlur:

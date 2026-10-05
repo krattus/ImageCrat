@@ -86,7 +86,7 @@ final class PerspectiveCropTool: Tool {
     /// Rectifies the document so `q` becomes the whole (new) canvas.
     static func apply(_ d: Document, quad q: Quad) {
         let (w, h) = outputSize(q)
-        guard let hom = Homography(from: q, to: Quad(rect: CGRect(x: 0, y: 0, width: w, height: h))) else { NSSound.beep(); return }
+        guard let hom = Homography(from: q, to: Quad(rect: CGRect(x: 0, y: 0, width: w, height: h))) else { Beep.play(); return }
         let before = d.historyIndex
         AppActions.transformDocument(d, h: hom, newWidth: w, newHeight: h, name: "Perspective Crop", nearest: false, guideMap: nil)
         if ToolsSettings.shared.cropDeletePixels { AppActions.crop(to: IRect(x: 0, y: 0, width: w, height: h), deletePixels: true) }
@@ -228,7 +228,7 @@ final class StraightenCropTool: CropTool {
         guard let cg = RenderEngine.cgImage(Compositor.shared.composite(d), rect: sp.ciCanvas),
               let angle = detectHorizon(cg) else {
             AppModel.shared.setStatus("Auto Straighten: no horizon detected.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         // Vision's angle is the (y-up, counter-clockwise) rotation that levels the horizon: a horizon rising to the

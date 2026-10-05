@@ -129,6 +129,7 @@ final class OverlayView: NSView {
 
         // Tool overlay
         canvas.currentTool.drawOverlay(ctx)
+        BrushHUD.shared.draw(ctx, canvas: canvas)   // ⌃⌥-drag resize / hardness circle, key readouts
 
         // Rulers
         if doc.showRulers { drawRulers(ctx, canvas: canvas, doc: doc) }

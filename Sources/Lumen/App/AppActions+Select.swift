@@ -22,7 +22,7 @@ extension AppActions {
     }
 
     static func reselect() {
-        guard let d = doc, let s = lastSelection, s.width == d.state.width, s.height == d.state.height else { NSSound.beep(); return }
+        guard let d = doc, let s = lastSelection, s.width == d.state.width, s.height == d.state.height else { Beep.play(); return }
         d.setSelection(s, commitName: "Reselect")
     }
 
@@ -33,7 +33,7 @@ extension AppActions {
     }
 
     static func modifySelection(_ kind: ModifySelectionKind, amount: Double, direction: FeatherDirection? = nil) {
-        guard let d = doc, let s = d.state.selection else { NSSound.beep(); return }
+        guard let d = doc, let s = d.state.selection else { Beep.play(); return }
         let r: PixelBuffer
         switch kind {
         case .expand: r = SelectionOps.expand(s, by: amount)
@@ -107,7 +107,7 @@ extension AppActions {
     // MARK: Channels
 
     static func saveSelection() {
-        guard let d = doc, let s = d.state.selection else { NSSound.beep(); return }
+        guard let d = doc, let s = d.state.selection else { Beep.play(); return }
         let n = d.state.alphaChannels.count + 1
         d.state.alphaChannels.append(AlphaChannel(name: "Alpha \(n)", buffer: s.copy()))
         d.commit("Save Selection")

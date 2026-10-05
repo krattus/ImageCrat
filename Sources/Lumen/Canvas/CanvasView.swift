@@ -14,6 +14,14 @@ struct ToolEvent {
     var tilt: CGPoint = .zero
     var rotation: Double = 0
     var tangentialPressure: Double = 0
+    /// Pen, eraser end, puck or mouse (see `TabletInput`).
+    var pointer: PointerKind = .mouse
+    /// Pressure as reported by the device, before the Preferences ▸ Tablet curve.
+    var rawPressure: Double = 1
+    /// Synthesized while the pen rests mid-stroke (Smoothing ▸ Stroke Catch-up).
+    var isCatchUp = false
+    /// Painted exactly here, without smoothing (Shift-click straight lines).
+    var direct = false
 
     var shift: Bool { modifiers.contains(.shift) }
     var option: Bool { modifiers.contains(.option) }
@@ -43,6 +51,12 @@ final class CanvasView: NSView {
     /// Viewer with nothing being edited go there (see `TypeInput`).
     var lastClick: (docID: UUID, point: CGPoint)?
     private(set) var clickSerial = 0
+    /// Where each painting tool's last stroke ended (Shift-click paints a straight line from there).
+    var lastPaintEnd: [ToolKind: (docID: UUID, point: CGPoint)] = [:]
+    /// Smoothing ▸ Stroke Catch-up: while the pen rests mid-stroke the paint keeps gliding towards it.
+    private var catchUpTimer: Timer?
+    private var lastDragEvent: ToolEvent?
+    private var lastDragAt: CFTimeInterval = 0
 
     weak var document: Document? {
         didSet {
@@ -247,7 +261,7 @@ final class CanvasView: NSView {
 
     /// True while the mouse button is held down on the canvas (a tool drag or a guide drag is in progress). The button
     /// state is checked too: a mouse-up swallowed by a modal alert opened from mouse-down must not leave this stuck.
-    var isTrackingMouse: Bool { (dragTool != nil || draggingGuide != nil) && CanvasView.primaryButtonDown() }
+    var isTrackingMouse: Bool { (dragTool != nil || draggingGuide != nil || BrushHUD.shared.isActive) && CanvasView.primaryButtonDown() }
 
     /// Tools where ⌘⌥-drag is free to mean "duplicate and move" (vector and type tools use ⌘/⌥ for their own editing).
     static func allowsQuickDuplicate(_ k: ToolKind) -> Bool {
@@ -263,19 +277,25 @@ final class CanvasView: NSView {
 
     // MARK: Events
 
-    private func makeEvent(_ e: NSEvent) -> ToolEvent {
+    private func makeEvent(_ e: NSEvent, phase: TabletInput.Phase = .hover) -> ToolEvent {
         let v = convert(e.locationInWindow, from: nil)
-        let tablet = e.subtype == .tabletPoint || e.subtype == .tabletProximity
-        var pressure = Double(e.pressure)
-        if !tablet || pressure <= 0 { pressure = 1 }
-        var ev = ToolEvent(doc: viewToDoc(v), view: v, pressure: pressure, modifiers: e.modifierFlags, clickCount: e.clickCount, isTablet: tablet)
-        if e.subtype == .tabletPoint {   // tilt/rotation are only valid on tablet point events
-            ev.tilt = CGPoint(x: e.tilt.x, y: e.tilt.y)
-            ev.rotation = Double(e.rotation)
-            ev.tangentialPressure = Double(e.tangentialPressure)
-        }
+        let r = TabletInput.shared.reading(e, phase: phase)
+        var ev = ToolEvent(doc: viewToDoc(v), view: v, pressure: r.pressure, modifiers: e.modifierFlags,
+                           clickCount: TabletInput.isMouseEvent(e) ? e.clickCount : 1, isTablet: r.isTablet)
+        ev.tilt = r.tilt
+        ev.rotation = r.rotation
+        ev.tangentialPressure = r.tangential
+        ev.pointer = r.pointer
+        ev.rawPressure = r.rawPressure
         return ev
     }
+
+    /// Tools whose strokes get every tablet sample, smoothing catch-up and Shift-click lines.
+    static func paintsStrokes(_ k: ToolKind) -> Bool { AppModel.hasBrush(k) || k == .quickSelect }
+
+    /// Tools without a Shift-click line of their own (the Brush, Pencil, Eraser and History Brush have one).
+    static let shiftLineKinds: Set<ToolKind> = [.cloneStamp, .healing, .colorReplacement, .mixerBrush, .patternStamp, .artHistoryBrush,
+                                                .backgroundEraser, .blur, .sharpen, .smudge, .dodge, .burn, .sponge, .selectionBrush]
 
     private func rulerHit(_ v: CGPoint) -> Bool? {
         guard document?.showRulers == true else { return nil }
@@ -287,7 +307,9 @@ final class CanvasView: NSView {
     override func mouseDown(with event: NSEvent) {
         window?.makeFirstResponder(self)
         guard let doc = document else { return }
-        let te = makeEvent(event)
+        TabletInput.shared.viewZoom = Double(zoom)
+        TabletInput.shared.beginStroke(painting: CanvasView.paintsStrokes(effectiveToolKind))
+        let te = makeEvent(event, phase: .down)
         lastClick = (doc.id, te.doc)
         clickSerial += 1
         if CanvasSampler.shared.handle(te.doc, event.modifierFlags) { overlay.needsDisplay = true; return }   // adjustment eyedroppers
@@ -298,6 +320,12 @@ final class CanvasView: NSView {
         if AppModel.shared.tool == .move || AppModel.shared.tool == .pathSelect, let d = document, d.showGuides, !spaceDown,
            let g = guideHit(te.view) {
             draggingGuide = (g.id, g.isVertical)
+            return
+        }
+        // ⌃⌥-drag: brush size (horizontal) and hardness (vertical) with a live HUD; ⌃-click: quick brush picker
+        if !spaceDown, BrushHUD.shared.beginGesture(te, canvas: self) { overlay.needsDisplay = true; return }
+        if !spaceDown, te.control, !te.option, !te.command, AppModel.hasBrush(effectiveToolKind) {
+            QuickBrushPicker.open(at: te.view, canvas: self)
             return
         }
         // Quick Mask: pixel tools that can't paint the mask must not fall through to the layer's pixels
@@ -311,32 +339,88 @@ final class CanvasView: NSView {
             dragTool = tool(for: .move)
         }
         if let t = ArtboardCanvas.toolForLabelClick(te, canvas: self) { dragTool = t }   // an artboard's name: select / move / rename it
-        dragTool?.mouseDown(te)
+        if te.shift, let t = dragTool, CanvasView.shiftLineKinds.contains(t.kind), let last = lastPaintEnd[t.kind], last.docID == doc.id {
+            // Shift-click: a straight line from where the tool's last stroke ended
+            var start = te
+            start.doc = last.point; start.view = docToView(last.point); start.modifiers.remove(.shift); start.direct = true
+            t.mouseDown(start)
+            var to = te
+            to.direct = true
+            t.mouseDragged(to)
+        } else {
+            dragTool?.mouseDown(te)
+        }
+        lastDragEvent = te
+        lastDragAt = CACurrentMediaTime()
         lastMouseView = te.view
         overlay.needsDisplay = true
     }
 
     override func mouseDragged(with event: NSEvent) {
-        let te = makeEvent(event)
+        let te = makeEvent(event, phase: .drag)
         lastMouseView = te.view
+        if BrushHUD.shared.isActive {
+            BrushHUD.shared.update(te, canvas: self)
+            overlay.needsDisplay = true
+            return
+        }
         if let g = draggingGuide {
             updateGuideDrag(g, te)
             return
         }
         dragTool?.mouseDragged(te)
+        if let t = dragTool, CanvasView.paintsStrokes(t.kind) {
+            lastDragEvent = te
+            lastDragAt = CACurrentMediaTime()
+            startCatchUpIfNeeded(t)
+        }
         updateCursorInfo(te)
         overlay.needsDisplay = true
     }
 
     override func mouseUp(with event: NSEvent) {
-        let te = makeEvent(event)
+        let te = makeEvent(event, phase: .up)
+        defer { TabletInput.shared.endStroke() }
+        stopCatchUp()
+        if BrushHUD.shared.isActive {
+            BrushHUD.shared.endGesture()
+            overlay.needsDisplay = true
+            return
+        }
         if let g = draggingGuide {
             finishGuideDrag(g, te)
             draggingGuide = nil
             return
         }
         dragTool?.mouseUp(te)
+        if let t = dragTool, CanvasView.paintsStrokes(t.kind), let d = document { lastPaintEnd[t.kind] = (d.id, te.doc) }
         dragTool = nil
+        overlay.needsDisplay = true
+    }
+
+    // MARK: Stroke catch-up
+
+    private func startCatchUpIfNeeded(_ t: Tool) {
+        guard catchUpTimer == nil, TabletSettings.shared.prefs.smoothing.strokeCatchUp,
+              AppModel.hasBrush(t.kind), AppModel.shared.brushSettings(for: t.kind).smoothing > 0 else { return }
+        let timer = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] _ in self?.catchUpTick() }
+        RunLoop.main.add(timer, forMode: .common)
+        catchUpTimer = timer
+    }
+
+    private func stopCatchUp() {
+        catchUpTimer?.invalidate()
+        catchUpTimer = nil
+        lastDragEvent = nil
+    }
+
+    /// One catch-up step while the pen rests (`force`: regardless of the time since the last drag; tests).
+    func catchUpTick(force: Bool = false) {
+        guard let t = dragTool, var e = lastDragEvent, CanvasView.paintsStrokes(t.kind) else { return }
+        guard force || CACurrentMediaTime() - lastDragAt > 0.035 else { return }
+        e.isCatchUp = true
+        e.direct = false
+        t.mouseDragged(e)
         overlay.needsDisplay = true
     }
 
@@ -345,7 +429,26 @@ final class CanvasView: NSView {
         let te = makeEvent(event)
         if let menu = ArtboardCanvas.contextMenu(te, canvas: self) ?? currentTool.contextMenu(te) {
             NSMenu.popUpContextMenu(menu, with: event, for: self)
+        } else if AppModel.hasBrush(effectiveToolKind) {
+            QuickBrushPicker.open(at: te.view, canvas: self)   // brush tools: size, hardness, recent and favourite brushes
         }
+    }
+
+    // MARK: Tablet
+
+    override func tabletProximity(with event: NSEvent) {
+        TabletInput.shared.handleProximity(event)
+        overlay.needsDisplay = true
+    }
+
+    /// Native tablet point events (some drivers send them instead of tablet-subtype mouse events).
+    override func tabletPoint(with event: NSEvent) {
+        if dragTool != nil || BrushHUD.shared.isActive { mouseDragged(with: event) }
+    }
+
+    /// Force Touch trackpad pressure (used when Preferences ▸ Tablet ▸ Force Touch pressure is on).
+    override func pressureChange(with event: NSEvent) {
+        TabletInput.shared.forceTouch(event)
     }
 
     override func mouseMoved(with event: NSEvent) {
@@ -519,8 +622,13 @@ final class CanvasView: NSView {
         let pb = sender.draggingPasteboard
         if ComponentCommands.handleCanvasDrop(sender, canvas: self) { return true }   // component / clipboard-history drags
         if let urls = pb.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL], !urls.isEmpty {
+            // Brush files are imported into the brush library (pictures are placed as layers).
+            let brushes = urls.filter(BrushLibrary.isBrushFile)
+            if !brushes.isEmpty { BrushLibrary.shared.importInBackground(brushes) }
+            let others = urls.filter { !BrushLibrary.isBrushFile($0) }
+            if others.isEmpty { return true }
             // Option-drag places linked (like Photoshop's Alt-drag); a plain drag places embedded.
-            AppActions.place(urls, linked: NSEvent.modifierFlags.contains(.option))
+            AppActions.place(others, linked: NSEvent.modifierFlags.contains(.option))
             return true
         }
         // Text (the Character Viewer, Notes, Safari, the Glyphs panel) types into the layer being edited or becomes a

@@ -249,7 +249,7 @@ final class ObjectSelectionEngine: @unchecked Sendable {
                 self.settings.busy = nil
                 if let e = err {
                     AppModel.shared.setStatus(e.localizedDescription)
-                    NSSound.beep()
+                    Beep.play()
                 } else {
                     AppModel.shared.setStatus(String(format: "%@ done (%.0f ms).", message.replacingOccurrences(of: "…", with: ""), ms))
                 }

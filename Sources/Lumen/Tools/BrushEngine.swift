@@ -8,12 +8,12 @@ enum BrushTips {
     private static var dabCache: [String: CGImage] = [:]
     private static var dabCacheOrder: [String] = []
 
-    static let textured = ["chalk", "charcoal", "bristle", "grass", "star"]
+    static let textured = ["chalk", "charcoal", "bristle", "grass", "star", "pencil", "sponge", "spray", "leaf", "square"]
 
     /// Procedural 128px gray tip textures.
     static func texture(_ id: String) -> CGImage? {
         if let c = textureCache[id] { return c }
-        if let custom = AppModel.shared.customBrushTips[id] ?? BrushLibrary.shared.tipBuffer(id) {
+        if let custom = AppModel.shared.customBrushTips[id] ?? BrushLibrary.tipFramesAnywhere(id)?.buffers.first {
             let img = custom.makeCGImage()
             textureCache[id] = img
             return img
@@ -22,7 +22,7 @@ enum BrushTips {
         guard let ctx = CGContext(data: nil, width: n, height: n, bitsPerComponent: 8, bytesPerRow: 0, space: graySpace, bitmapInfo: CGImageAlphaInfo.none.rawValue) else { return nil }
         ctx.setFillColor(gray: 0, alpha: 1)
         ctx.fill(CGRect(x: 0, y: 0, width: n, height: n))
-        var rng = SeededRandom(seed: UInt64(abs(id.hashValue) % 100000 + 7))
+        var rng = SeededRandom(seed: id.utf8.reduce(UInt64(14695981039346656037)) { ($0 ^ UInt64($1)) &* 1099511628211 } % 100000 + 7)   // (stable across launches)
         let c = CGFloat(n) / 2
         switch id {
         case "chalk":
@@ -64,6 +64,50 @@ enum BrushTips {
             ctx.setFillColor(gray: 1, alpha: 1)
             ctx.addPath(p)
             ctx.fillPath()
+        case "pencil":
+            // graphite: a dense, grainy disc with a soft rim
+            for _ in 0..<2600 {
+                let a = rng.next() * 2 * .pi, r = sqrt(rng.next()) * 58
+                let g = (r < 44 ? 0.75 : 0.45) + rng.next() * 0.25
+                ctx.setFillColor(gray: CGFloat(g), alpha: 1)
+                ctx.fill(CGRect(x: c + CGFloat(cos(a) * r) - 1, y: c + CGFloat(sin(a) * r) - 1, width: 2, height: 2))
+            }
+        case "sponge":
+            // porous blob: overlapping cells with holes
+            for _ in 0..<70 {
+                let a = rng.next() * 2 * .pi, r = sqrt(rng.next()) * 50
+                let s = CGFloat(8 + rng.next() * 18)
+                ctx.setFillColor(gray: CGFloat(0.55 + rng.next() * 0.45), alpha: 1)
+                ctx.fillEllipse(in: CGRect(x: c + CGFloat(cos(a) * r) - s / 2, y: c + CGFloat(sin(a) * r) - s / 2, width: s, height: s))
+            }
+            ctx.setFillColor(gray: 0, alpha: 1)
+            for _ in 0..<45 {
+                let a = rng.next() * 2 * .pi, r = sqrt(rng.next()) * 52
+                let s = CGFloat(2 + rng.next() * 6)
+                ctx.fillEllipse(in: CGRect(x: c + CGFloat(cos(a) * r) - s / 2, y: c + CGFloat(sin(a) * r) - s / 2, width: s, height: s))
+            }
+        case "spray":
+            // fine droplets, denser in the middle
+            for _ in 0..<420 {
+                let a = rng.next() * 2 * .pi, r = pow(rng.next(), 1.6) * 60
+                let s = CGFloat(1 + rng.next() * 2.5)
+                ctx.setFillColor(gray: CGFloat(0.6 + rng.next() * 0.4), alpha: 1)
+                ctx.fillEllipse(in: CGRect(x: c + CGFloat(cos(a) * r) - s / 2, y: c + CGFloat(sin(a) * r) - s / 2, width: s, height: s))
+            }
+        case "leaf":
+            ctx.setFillColor(gray: 1, alpha: 1)
+            let p = CGMutablePath()
+            p.move(to: CGPoint(x: c, y: 6))
+            p.addQuadCurve(to: CGPoint(x: c, y: 122), control: CGPoint(x: c + 70, y: 60))
+            p.addQuadCurve(to: CGPoint(x: c, y: 6), control: CGPoint(x: c - 70, y: 60))
+            ctx.addPath(p)
+            ctx.fillPath()
+            ctx.setStrokeColor(gray: 0.35, alpha: 1)
+            ctx.setLineWidth(3)
+            ctx.move(to: CGPoint(x: c, y: 10)); ctx.addLine(to: CGPoint(x: c, y: 118)); ctx.strokePath()
+        case "square":
+            ctx.setFillColor(gray: 1, alpha: 1)
+            ctx.fill(CGRect(x: 8, y: 8, width: 112, height: 112))
         default:
             ctx.setFillColor(gray: 1, alpha: 1)
             ctx.fillEllipse(in: CGRect(x: 0, y: 0, width: n, height: n))
@@ -155,41 +199,61 @@ struct SeededRandom {
 
 // MARK: - Stroke interpolation
 
-/// Places dabs along a path with spacing, smoothing and jitter.
+/// Places dabs along a path with spacing and smoothing. Carries the full pen sample (pressure, tilt, rotation,
+/// wheel) so tools that place dabs themselves get the same tablet data as the brush engine.
 struct DabPlacer {
     var spacing: Double
     var smoothing: Double
-    private var last: CGPoint?
-    private var lastPressure: Double = 1
+    private var last: PenSample?
     private var residual: Double = 0
-    private var smoothed: CGPoint?
+    private var smoother: StrokeSmoother
+    private let catchUpOnEnd: Bool
 
     init(spacing: Double, smoothing: Double) {
         self.spacing = max(0.5, spacing)
         self.smoothing = smoothing
+        let opts = TabletSettings.shared.prefs.smoothing
+        catchUpOnEnd = opts.catchUpOnEnd
+        smoother = StrokeSmoother(radius: StrokeSmoother.radius(smoothing: smoothing, zoom: TabletInput.shared.viewZoom, adjustForZoom: opts.adjustForZoom),
+                                  pulledString: opts.pulledString)
     }
 
-    mutating func begin(_ p: CGPoint, pressure: Double) -> [(CGPoint, Double)] {
-        last = p; smoothed = p; lastPressure = pressure; residual = 0
-        return [(p, pressure)]
+    mutating func begin(_ s: PenSample) -> [PenSample] {
+        last = s; residual = 0
+        smoother.begin(s.p)
+        return [s]
     }
 
-    mutating func move(_ raw: CGPoint, pressure: Double, final: Bool = false) -> [(CGPoint, Double)] {
-        guard let l = last, let s0 = smoothed else { return begin(raw, pressure: pressure) }
-        let k = final ? 0 : clamp(smoothing, 0, 0.95)
-        let s = s0.lerp(raw, 1 - k)
-        smoothed = s
-        let d = l.distance(to: s)
-        var out: [(CGPoint, Double)] = []
+    mutating func move(_ raw: PenSample, final: Bool = false) -> [PenSample] {
+        guard let l = last else { return begin(raw) }
+        var cur = raw
+        if raw.direct {
+            smoother.begin(raw.p)
+        } else if final {
+            cur.p = smoother.finish(raw.p, catchUp: catchUpOnEnd)
+        } else {
+            cur.p = smoother.step(raw.p, catchUp: raw.catchUp)
+        }
+        let d = Double(l.p.distance(to: cur.p))
+        if d <= 1e-9 { return [] }
+        var out: [PenSample] = []
         var t = spacing - residual
         while t <= d {
-            let f = t / d
-            out.append((l.lerp(s, CGFloat(f)), lastPressure + (pressure - lastPressure) * f))
+            out.append(l.lerp(cur, t / d))
             t += spacing
         }
         residual = d - (t - spacing)
-        if d > 0 { last = s; lastPressure = pressure }
+        if d > 0 { last = cur }
         return out
+    }
+
+    // Point + pressure API (older callers).
+    mutating func begin(_ p: CGPoint, pressure: Double) -> [(CGPoint, Double)] {
+        begin(PenSample(p: p, pressure: pressure)).map { ($0.p, $0.pressure) }
+    }
+
+    mutating func move(_ raw: CGPoint, pressure: Double, final: Bool = false) -> [(CGPoint, Double)] {
+        move(PenSample(p: raw, pressure: pressure), final: final).map { ($0.p, $0.pressure) }
     }
 }
 

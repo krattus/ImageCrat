@@ -26,7 +26,7 @@ enum Assist {
                 await MainActor.run {
                     AssistState.shared.busy = nil
                     AppModel.shared.setStatus("\(status) failed: \(error.localizedDescription)")
-                    NSSound.beep()
+                    Beep.play()
                 }
             }
         }

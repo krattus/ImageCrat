@@ -128,7 +128,7 @@ enum SelectSimilar {
     }
 
     static func run(_ c: SimilarCriterion) {
-        guard let d = AppActions.doc, let ref = d.activeLayer else { NSSound.beep(); return }
+        guard let d = AppActions.doc, let ref = d.activeLayer else { Beep.play(); return }
         let ids = find(c, ref: ref, in: d.state)
         d.selectedLayerIDs = Set(ids)
         d.activeLayerID = ref.id

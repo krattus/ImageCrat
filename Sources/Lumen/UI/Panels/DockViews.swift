@@ -631,7 +631,7 @@ final class DockTabBar: NSView, DockChrome {
             press = pr
             beginDrag(tab: pr.id, at: pr.point)
         }
-        WorkspaceManager.shared.drag?.update(m)
+        WorkspaceManager.shared.drag?.update(m, suppressDocking: e.modifierFlags.contains(.command))   // ⌘ as of this event, not the live keyboard
     }
 
     override func mouseUp(with e: NSEvent) {
@@ -639,7 +639,7 @@ final class DockTabBar: NSView, DockChrome {
         press = nil
         if pr?.started == true, let s = WorkspaceManager.shared.drag {
             WorkspaceManager.shared.drag = nil
-            s.finish(dockScreenPoint(e))
+            s.finish(dockScreenPoint(e), suppressDocking: e.modifierFlags.contains(.command))
         }
         WorkspaceManager.shared.returnFocusToCanvas()
     }
@@ -964,7 +964,7 @@ final class DockIconButton: NSView, DockChrome {
             ws.drag = DockDragSession(panels: [panelID], sourceGroup: g.id, wholeGroup: g.panels.count == 1, active: panelID, movingWindow: nil,
                                       start: pr.point, size: DockMetrics.defaultFloatSize)
         }
-        ws.drag?.update(m)
+        ws.drag?.update(m, suppressDocking: e.modifierFlags.contains(.command))
     }
 
     override func mouseUp(with e: NSEvent) {
@@ -973,7 +973,7 @@ final class DockIconButton: NSView, DockChrome {
         let ws = WorkspaceManager.shared
         if pr?.started == true, let s = ws.drag {
             ws.drag = nil
-            s.finish(dockScreenPoint(e))
+            s.finish(dockScreenPoint(e), suppressDocking: e.modifierFlags.contains(.command))
         } else if pr != nil {
             DockFlyout.show(panelID, from: self)
         }

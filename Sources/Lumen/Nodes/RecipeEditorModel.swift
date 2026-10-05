@@ -273,7 +273,7 @@ final class RecipeEditorModel {
             try g.connect(from: from, fromPort, to: to, toPort)
         } catch {
             status = error.localizedDescription
-            NSSound.beep()
+            Beep.play()
             return false
         }
         mutate("Connect") { $0 = g }

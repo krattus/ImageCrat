@@ -349,18 +349,6 @@ struct InfoPanel: View {
     }
 }
 
-// MARK: - Brushes
-
-struct BrushesPanel: View {
-    @Bindable var app = AppModel.shared
-    var body: some View {
-        ScrollView {
-            BrushSettingsView(settings: Binding(get: { app.activeBrushSettings }, set: { app.activeBrushSettings = $0 })).padding(10)
-            Button("Define Brush from Selection") { AppActions.defineBrush() }.buttonStyle(PanelButtonStyle()).padding(.bottom, 10)
-        }
-    }
-}
-
 // MARK: - Channels
 
 struct ChannelsPanel: View {

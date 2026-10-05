@@ -363,7 +363,7 @@ enum AssistNaming {
         let ids = targets(d, forceSelection: selectionOnly)
         guard !ids.isEmpty else {
             AppModel.shared.setStatus("Name Layers Automatically: no default-named layers (select layers to rename them anyway).")
-            NSSound.beep()
+            Beep.play()
             return
         }
         let st = d.state

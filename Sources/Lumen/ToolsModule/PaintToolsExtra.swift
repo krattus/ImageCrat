@@ -238,6 +238,7 @@ final class BackgroundEraserTool: Tool {
     private var sample: (Double, Double, Double)?
     private var selection: PixelBuffer?
     private weak var d: Document?
+    private var dynamics = DabDynamics()
 
     override var cursor: NSCursor { .crosshair }
 
@@ -247,7 +248,7 @@ final class BackgroundEraserTool: Tool {
             return
         }
         begin(doc, layerID: id)
-        dabs(placer.begin(e.doc, pressure: e.pressure))
+        dabs(placer.begin(PenSample(e)))
     }
 
     func begin(_ doc: Document, layerID id: UUID) {
@@ -260,16 +261,17 @@ final class BackgroundEraserTool: Tool {
         sample = nil
         let s = ToolsSettings.shared.bgEraserBrush
         placer = DabPlacer(spacing: max(1, s.size * max(0.05, s.spacing)), smoothing: s.smoothing)
+        dynamics = DabDynamics()
     }
 
     override func mouseDragged(_ e: ToolEvent) {
         guard working != nil else { return }
-        dabs(placer.move(e.doc, pressure: e.pressure))
+        dabs(placer.move(PenSample(e)))
     }
 
     override func mouseUp(_ e: ToolEvent) {
         guard working != nil else { return }
-        dabs(placer.move(e.doc, pressure: e.pressure, final: true))
+        dabs(placer.move(PenSample(e), final: true))
         end()
     }
 
@@ -279,25 +281,26 @@ final class BackgroundEraserTool: Tool {
     }
 
     /// Processes placed dabs (and their symmetry mirrors).
-    func dabs(_ list: [(CGPoint, Double)]) {
+    func dabs(_ list: [(CGPoint, Double)]) { dabs(list.map { PenSample(p: $0.0, pressure: $0.1) }) }
+
+    func dabs(_ list: [PenSample]) {
         guard let w = working, let doc = d else { return }
         let sym = ToolsSettings.shared.symmetry
-        for (p, pr) in list {
-            erase(at: p, pressure: pr)
+        for smp in list {
+            let size = dynamics.dab(smp, ToolsSettings.shared.bgEraserBrush).size
+            erase(at: smp.p, size: size)
             if sym.enabled && SymmetryControls.supports(app.tool) {
-                for m in sym.mirrors(of: p, width: doc.state.width, height: doc.state.height) { erase(at: m, pressure: pr, mirrored: true) }
+                for m in sym.mirrors(of: smp.p, width: doc.state.width, height: doc.state.height) { erase(at: m, size: size, mirrored: true) }
             }
         }
         w.markDirty()
         doc.setNeedsRender()
     }
 
-    private func erase(at p: CGPoint, pressure: Double, mirrored: Bool = false) {
+    private func erase(at p: CGPoint, size: Double, mirrored: Bool = false) {
         guard let w = working, let orig = original else { return }
         let ts = ToolsSettings.shared
         let s = ts.bgEraserBrush
-        var size = s.size
-        if s.pressureSize { size *= max(0.05, pressure) }
         let radius = size / 2
         let cx = Double(p.x) - Double(origin.x), cy = Double(p.y) - Double(origin.y)
         let x0 = max(0, Int(floor(cx - radius))), x1 = min(w.width - 1, Int(ceil(cx + radius)))

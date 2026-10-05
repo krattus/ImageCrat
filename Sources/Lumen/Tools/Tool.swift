@@ -58,7 +58,7 @@ class Tool {
     func canModify(_ layer: Layer, position: Bool = false) -> Bool {
         if layer.locks.all || (position && layer.locks.position) {
             status("The layer is locked.")
-            NSSound.beep()
+            Beep.play()
             return false
         }
         return true
@@ -68,7 +68,7 @@ class Tool {
 
     func refuseInQuickMask() {
         status("The \(kind.displayName.replacingOccurrences(of: " Tool", with: "")) can't paint in Quick Mask mode. Press Q to leave it.")
-        NSSound.beep()
+        Beep.play()
     }
 
     static func make(_ k: ToolKind, canvas: CanvasView) -> Tool {
@@ -108,49 +108,23 @@ class Tool {
 
     // MARK: Shared helpers
 
-    /// Draws a brush-size circle cursor at the mouse location.
+    /// Draws the painting cursor at the mouse location: the brush tip's outline (shape, angle, roundness) at `size`,
+    /// scaled by the zoom and view rotation (see `BrushCursor`).
     func drawBrushCursor(_ ctx: CGContext, size: Double, hardness: Double = 1) {
-        guard let m = canvas.lastMouseView else { return }
-        let prefs = AppModel.shared.prefs
-        // Normal = the 50% opacity edge of soft tips; Full Size = whole tip; Precise/Standard = crosshair only.
-        let scale = prefs.brushCursor == .normal ? 0.5 + 0.5 * max(0, min(1, hardness)) : 1
-        let d = max(2, CGFloat(size * scale) * canvas.zoom)
-        let r = CGRect(x: m.x - d / 2, y: m.y - d / 2, width: d, height: d)
-        ctx.saveGState()
-        ctx.setLineWidth(1)
-        let showCircle = prefs.brushCursor == .normal || prefs.brushCursor == .fullSize
-        if showCircle {
-            ctx.setStrokeColor(NSColor(white: 0, alpha: 0.7).cgColor)
-            ctx.strokeEllipse(in: r.insetBy(dx: -0.75, dy: -0.75))
-            ctx.setStrokeColor(NSColor(white: 1, alpha: 0.9).cgColor)
-            ctx.strokeEllipse(in: r)
-        }
-        if !showCircle || d < 10 || prefs.showCrosshairInBrushTip {
-            let k: CGFloat = showCircle && d >= 10 ? 3 : 6
-            ctx.setStrokeColor(NSColor(white: 0, alpha: 0.6).cgColor)
-            ctx.setLineWidth(2.5)
-            ctx.move(to: CGPoint(x: m.x - k, y: m.y)); ctx.addLine(to: CGPoint(x: m.x + k, y: m.y))
-            ctx.move(to: CGPoint(x: m.x, y: m.y - k)); ctx.addLine(to: CGPoint(x: m.x, y: m.y + k))
-            ctx.strokePath()
-            ctx.setStrokeColor(NSColor(white: 1, alpha: 0.95).cgColor)
-            ctx.setLineWidth(1)
-            ctx.move(to: CGPoint(x: m.x - k, y: m.y)); ctx.addLine(to: CGPoint(x: m.x + k, y: m.y))
-            ctx.move(to: CGPoint(x: m.x, y: m.y - k)); ctx.addLine(to: CGPoint(x: m.x, y: m.y + k))
-            ctx.strokePath()
-        }
-        ctx.restoreGState()
+        let s: BrushSettings? = AppModel.hasBrush(kind) ? app.brushSettings(for: kind) : nil
+        BrushCursor.draw(ctx, canvas: canvas, size: size, hardness: hardness, settings: s)
     }
 
     /// True when the pixels of `layer` may be edited: not pixel-locked and not hidden. Tells the user otherwise.
     func pixelsEditable(_ layer: Layer) -> Bool {
         if layer.locks.pixelsLocked {
             status("The layer is locked.")
-            NSSound.beep()
+            Beep.play()
             return false
         }
         if !layer.isVisible {
             status("The layer is hidden.")
-            NSSound.beep()
+            Beep.play()
             return false
         }
         return true
@@ -169,8 +143,8 @@ class Tool {
         }
         if d.editTarget == .mask && layer.mask != nil {
             // the mask of a fully locked or hidden layer can't be painted either
-            if layer.locks.all { status("The layer is locked."); NSSound.beep(); return nil }
-            if !layer.isVisible { status("The layer is hidden."); NSSound.beep(); return nil }
+            if layer.locks.all { status("The layer is locked."); Beep.play(); return nil }
+            if !layer.isVisible { status("The layer is hidden."); Beep.play(); return nil }
             return (d, id, .mask)
         }
         if !layer.isRaster {
@@ -183,12 +157,12 @@ class Tool {
         }
         if layer.locks.pixelsLocked {
             status("The layer is locked.")
-            NSSound.beep()
+            Beep.play()
             return nil
         }
         if !layer.isVisible {
             status("The layer is hidden.")
-            NSSound.beep()
+            Beep.play()
             return nil
         }
         return (d, id, .content)

@@ -53,7 +53,8 @@ enum ActionStep: Codable, Equatable {
     var detail: String? {
         switch self {
         case .filter(let f):
-            let v = f.values.sorted { $0.key < $1.key }.prefix(4).map { "\($0.key): \(String(format: "%.3g", $0.value))" }
+            var v = f.values.filter { !FilterCenterKey.all.contains($0.key) }.sorted { $0.key < $1.key }.prefix(4).map { "\($0.key): \(String(format: "%.3g", $0.value))" }
+            if f.kind.usesCenter, let m = f.centerMode { v.append("center: \(m.title.lowercased())") }
             return v.isEmpty ? nil : v.joined(separator: ", ")
         default: return nil
         }

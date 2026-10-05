@@ -17,6 +17,12 @@ enum StyleSection: String, CaseIterable, Identifiable {
 
     /// Effects Photoshop lets you add several times ("+").
     var allowsMultiple: Bool { [.stroke, .innerShadow, .colorOverlay, .gradientOverlay, .dropShadow].contains(self) }
+
+    /// The effect this section edits (nil for Blending Options).
+    var kind: EffectKind? { EffectKind.allCases.first { $0.displayName == rawValue } }
+
+    /// Layer ▸ Layer Style ▸ … menu titles (Blending Options… first, then every effect in Photoshop's order).
+    var menuTitle: String { self == .blending ? "Blending Options…" : rawValue + "…" }
 }
 
 struct LayerStyleDialog: View {
@@ -45,29 +51,24 @@ struct LayerStyleDialog: View {
     }
 
     /// Opens the dialog on `section` with that effect switched on (a live edit, so Cancel switches it off again), like
-    /// choosing it from Photoshop's fx menu.
+    /// choosing it from Photoshop's fx menu. The rest of the style is left as it is; the layer's Effects are shown
+    /// (a style imported with its Effects hidden would hide the new effect too). An effect the layer already has is
+    /// opened (and shown if its eye was closed), not added a second time.
     static func open(_ section: StyleSection, layer id: UUID, doc d: Document) {
-        if section != .blending {
-            d.updateLayer(id) { l in
-                switch section {
-                case .blending: break
-                case .bevel: l.effects.bevel.enabled = true
-                case .stroke: l.effects.stroke.enabled = true
-                case .innerShadow: l.effects.innerShadow.enabled = true
-                case .innerGlow: l.effects.innerGlow.enabled = true
-                case .satin: l.effects.satin.enabled = true
-                case .colorOverlay: l.effects.colorOverlay.enabled = true
-                case .gradientOverlay: l.effects.gradientOverlay.enabled = true
-                case .patternOverlay: l.effects.patternOverlay.enabled = true
-                case .outerGlow: l.effects.outerGlow.enabled = true
-                case .dropShadow: l.effects.dropShadow.enabled = true
-                }
-                l.effects.enabled = true
-            }
-        }
+        // the dialog first: replacing another dialog reverts that dialog's uncommitted edits (DialogGuard), not this one
         AppModel.shared.dialog = .layerStyle(id)
+        if let kind = section.kind {
+            let light = d.state.globalLight
+            d.updateLayer(id) { $0.effects.addToStyle(EffectSlot(kind: kind), light: light) }
+        }
         openingSection = (id, section)       // (after: replacing another dialog clears it — DialogGuard)
         openingInstance = 0
+    }
+
+    /// Layer ▸ Layer Style ▸ <effect>… on the active layer.
+    static func openFromMenu(_ section: StyleSection) {
+        guard let d = AppActions.doc, let id = d.activeLayerID, d.state.layer(id) != nil else { return }
+        open(section, layer: id, doc: d)
     }
 
     var doc: Document? { AppActions.doc }
@@ -187,17 +188,18 @@ struct LayerStyleDialog: View {
 
     func addInstance(_ s: StyleSection, after i: Int, _ fx: Binding<LayerEffects>) {
         var f = fx.wrappedValue
-        func insert<T>(_ primary: WritableKeyPath<LayerEffects, T>, _ extras: WritableKeyPath<LayerEffects, [T]>, enable: (inout T) -> Void) {
+        func insert<T: LayerEffectItem>(_ primary: WritableKeyPath<LayerEffects, T>, _ extras: WritableKeyPath<LayerEffects, [T]>, enable: (inout T) -> Void) {
+            guard i == 0 || f[keyPath: extras].indices.contains(i - 1) else { return }
             var copy = i == 0 ? f[keyPath: primary] : f[keyPath: extras][i - 1]
             enable(&copy)
             f[keyPath: extras].insert(copy, at: min(i, f[keyPath: extras].count))
         }
         switch s {
-        case .stroke: insert(\.stroke, \.extraStrokes) { $0.enabled = true }
-        case .innerShadow: insert(\.innerShadow, \.extraInnerShadows) { $0.enabled = true }
-        case .colorOverlay: insert(\.colorOverlay, \.extraColorOverlays) { $0.enabled = true }
-        case .gradientOverlay: insert(\.gradientOverlay, \.extraGradientOverlays) { $0.enabled = true }
-        case .dropShadow: insert(\.dropShadow, \.extraDropShadows) { $0.enabled = true }
+        case .stroke: insert(\.stroke, \.extraStrokes) { $0.setInStyle(true) }
+        case .innerShadow: insert(\.innerShadow, \.extraInnerShadows) { $0.setInStyle(true) }
+        case .colorOverlay: insert(\.colorOverlay, \.extraColorOverlays) { $0.setInStyle(true) }
+        case .gradientOverlay: insert(\.gradientOverlay, \.extraGradientOverlays) { $0.setInStyle(true) }
+        case .dropShadow: insert(\.dropShadow, \.extraDropShadows) { $0.setInStyle(true) }
         default: return
         }
         f.enabled = true
@@ -235,7 +237,8 @@ struct LayerStyleDialog: View {
         let slot = EffectSlot(kind: kind, index: i)
         return Binding(get: { fx.wrappedValue.item(slot)?.enabled == true }, set: { v in
             var f = fx.wrappedValue
-            f.modify(slot) { $0.setInStyle(v) }
+            // checking an effect adds it like the fx menu does: Effects shown, Global Light direction adopted
+            if v { f.addToStyle(slot, light: doc?.state.globalLight ?? GlobalLight()) } else { f.modify(slot) { $0.setInStyle(false) } }
             fx.wrappedValue = f
         })
     }
@@ -343,6 +346,20 @@ struct LayerStyleDialog: View {
         }
     }
 
+    /// "Use Global Light" of effect `e`. Switching it off keeps the direction the effect is drawn in: its own angle (and
+    /// altitude) take the Global Light's values, as in Photoshop. One write, so the two changes can't undo each other.
+    func globalLightToggle<T>(_ e: Binding<T>, angle: WritableKeyPath<T, Double>, use: WritableKeyPath<T, Bool>, altitude: WritableKeyPath<T, Double>? = nil) -> Binding<Bool> {
+        Binding(get: { e.wrappedValue[keyPath: use] }, set: { v in
+            var x = e.wrappedValue
+            if !v, x[keyPath: use], let light = doc?.state.globalLight, light.angle.isFinite, light.altitude.isFinite {
+                x[keyPath: angle] = light.angle
+                if let alt = altitude { x[keyPath: alt] = light.altitude }
+            }
+            x[keyPath: use] = v
+            e.wrappedValue = x
+        })
+    }
+
     func contourRow(_ label: String, _ c: Binding<Contour>) -> some View {
         HStack {
             Text(label).foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
@@ -355,7 +372,7 @@ struct LayerStyleDialog: View {
         Caption(inner ? "Inner Shadow — Structure" : "Drop Shadow — Structure")
         modeRow(s.blendMode, color: s.color)
         pct("Opacity", s.opacity)
-        angleRow(s.angle, global: s.useGlobalLight)
+        angleRow(s.angle, global: globalLightToggle(s, angle: \.angle, use: \.useGlobalLight))
         ValueSlider(label: "Distance", value: s.distance, range: 0...300, unit: "px")
         ValueSlider(label: inner ? "Choke" : "Spread", value: s.spread, range: 0...100, unit: "%")
         ValueSlider(label: "Size", value: s.size, range: 0...250, unit: "px")
@@ -401,7 +418,7 @@ struct LayerStyleDialog: View {
         ValueSlider(label: "Size", value: b.size, range: 0...250, unit: "px")
         ValueSlider(label: "Soften", value: b.soften, range: 0...16, unit: "px")
         Caption("Shading")
-        angleRow(b.angle, global: b.useGlobalLight)
+        angleRow(b.angle, global: globalLightToggle(b, angle: \.angle, use: \.useGlobalLight, altitude: \.altitude))
         if b.wrappedValue.useGlobalLight {
             ValueSlider(label: "Altitude", value: Binding(get: { doc?.state.globalLight.altitude ?? 30 }, set: { v in doc?.state.globalLight.altitude = v }), range: 0...90, unit: "°")
         } else {

@@ -202,7 +202,7 @@ struct FrameOptions: View {
         Button("Place Image in Frame…") { FrameSupport.placeIntoSelectedFrame() }.buttonStyle(PanelButtonStyle())
         Button("Fit Content") {
             guard let d = AppActions.doc, let fid = FrameSupport.frameID(for: d.activeLayerID, in: d.state), let g = d.state.layer(fid),
-                  let r = FrameSupport.frameRect(g), let c = g.children.last(where: { $0.isSmartObject }) else { NSSound.beep(); return }
+                  let r = FrameSupport.frameRect(g), let c = g.children.last(where: { $0.isSmartObject }) else { Beep.play(); return }
             FrameSupport.fit(d, content: c.id, in: r, mode: ts.frameFit)
             d.commit("Fit Frame Content")
         }.buttonStyle(PanelButtonStyle())

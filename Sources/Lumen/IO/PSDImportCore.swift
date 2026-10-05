@@ -81,6 +81,8 @@ final class PSDImporter: PSDByteSource {
     var mode = 3
     var palette: [UInt8] = []
     var transparentIndex: Int? = nil
+    /// Global Light angle / altitude resources (1037 / 1049) found in the file.
+    var storedLight = (angle: false, altitude: false)
     var icc: Data? = nil
     var alphaNames: [String] = []
     var mergedHasTransparency = false
@@ -128,6 +130,7 @@ final class PSDImporter: PSDByteSource {
         parseGlobals()
 
         st.layers = buildTree()
+        inferGlobalLight(&st)
         var imageData = c
         if st.layers.isEmpty {
             if let m = try? merged(&c) {
@@ -175,6 +178,24 @@ final class PSDImporter: PSDByteSource {
         if mode == 2, r.count >= 768 { palette = Array(bytes[r.lowerBound..<(r.lowerBound + 768)]) }
     }
 
+    /// A file without the Global Light resources (written by other tools): the light is the one its effects that use
+    /// Global Light were drawn with ('lagl' / 'Lald'), so they keep their direction and new effects follow it.
+    func inferGlobalLight(_ st: inout DocumentState) {
+        guard !storedLight.angle || !storedLight.altitude else { return }
+        for l in st.allLayers {
+            let fx = l.effects
+            let shadows = (fx.dropShadows + fx.innerShadows).filter { $0.isListed && $0.useGlobalLight }
+            if !storedLight.angle, let s = shadows.first {
+                st.globalLight.angle = s.angle; storedLight.angle = true
+            }
+            if fx.bevel.isListed && fx.bevel.useGlobalLight {
+                if !storedLight.angle { st.globalLight.angle = fx.bevel.angle; storedLight.angle = true }
+                if !storedLight.altitude { st.globalLight.altitude = fx.bevel.altitude; storedLight.altitude = true }
+            }
+            if storedLight.angle && storedLight.altitude { return }
+        }
+    }
+
     func resources(_ c: inout PSDCursor, _ st: inout DocumentState) throws {
         let n = try c.u32()
         guard n <= c.remaining else { throw PSDImportError.truncated }
@@ -189,8 +210,8 @@ final class PSDImporter: PSDByteSource {
             switch id {
             case 1005 where size >= 4:
                 if let v = try? b.u32() { st.resolution = validResolution(Double(v) / 65536) }
-            case 1037 where size >= 4: if let v = try? b.i32() { light.angle = Double(v) }
-            case 1049 where size >= 4: if let v = try? b.i32() { light.altitude = Double(v) }
+            case 1037 where size >= 4: if let v = try? b.i32() { light.angle = Double(v); storedLight.angle = true }
+            case 1049 where size >= 4: if let v = try? b.i32() { light.altitude = Double(v); storedLight.altitude = true }
             case 1032:
                 // version, grid cycle (2 × 4), count, then (position in 1/32 px, direction) per guide
                 guard (try? b.skip(12)) != nil, let count = try? b.u32(), count <= b.remaining / 5 else { break }

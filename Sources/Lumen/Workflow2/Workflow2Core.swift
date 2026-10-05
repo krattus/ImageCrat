@@ -117,7 +117,7 @@ enum Workflow2PrefsState {
         defer { pendingSection = nil }
         return pendingSection
     }
-    static let sections = ["General", "Interface", "Artboards", "Cursors", "Transparency & Guides", "Units", "Performance", "Workflow", "Radial Menu", "Generative AI", "AI Models"]
+    static let sections = ["General", "Interface", "Artboards", "Cursors", "Tablet", "Transparency & Guides", "Units", "Performance", "Workflow", "Radial Menu", "Generative AI", "AI Models"]
     static func open(_ section: String) {
         pendingSection = section
         AppModel.shared.dialog = nil
@@ -172,9 +172,6 @@ extension View {
 }
 
 enum Workflow2Util {
-    /// Alert sound — silent for command-line runs.
-    static func beep() { if !FilesModule.headless { NSSound.beep() } }
-
     static func byteString(_ n: Int) -> String {
         let f = ByteCountFormatter()
         f.countStyle = .file

@@ -47,7 +47,9 @@ final class BrushDynamicsEngine {
 
     // Path state
     private var last: PenSample?
-    private var smoothed: CGPoint?
+    /// Pulled-string smoothing of the options-bar Smoothing amount (see `StrokeSmoother`).
+    private var smoother: StrokeSmoother
+    private let smoothingOptions: SmoothingOptions
     private var sinceLast: Double = 0
     private var dualSince: Double = 0
     private var dabIndex = 0
@@ -80,6 +82,11 @@ final class BrushDynamicsEngine {
         self.grayOutput = grayOutput
         BrushDynamicsEngine.strokeCounter &+= 1
         rng = SeededRandom(seed: seed ?? (12345 &+ BrushDynamicsEngine.strokeCounter &* 0x9E3779B1))
+        let opts = TabletSettings.shared.prefs.smoothing
+        smoothingOptions = opts
+        smoother = StrokeSmoother(radius: StrokeSmoother.radius(smoothing: settings.smoothing, zoom: TabletInput.shared.viewZoom,
+                                                                adjustForZoom: opts.adjustForZoom),
+                                  pulledString: opts.pulledString)
         tip = TipSource.get(settings.tipID)
         let d = settings.dynamics
         if d.dualEnabled {
@@ -108,7 +115,7 @@ final class BrushDynamicsEngine {
     func begin(_ s0: PenSample) {
         let s = BrushDynamicsEngine.inputHook?(self, s0, .begin)?.first ?? s0
         last = s
-        smoothed = s.p
+        smoother.begin(s.p)
         sinceLast = 0
         dualSince = 0
         place(s)
@@ -122,10 +129,16 @@ final class BrushDynamicsEngine {
             for (i, p) in pts.enumerated() { move(p, final: final && i == pts.count - 1) }
             return
         }
-        guard let l = last, let s0 = smoothed else { begin(raw); return }
-        let k = final ? 0 : clamp(settings.smoothing, 0, 0.95)
-        let sp = s0.lerp(raw.p, CGFloat(1 - k))
-        smoothed = sp
+        guard let l = last else { begin(raw); return }
+        let sp: CGPoint
+        if raw.direct {
+            sp = raw.p
+            smoother.begin(raw.p)
+        } else if final {
+            sp = smoother.finish(raw.p, catchUp: smoothingOptions.catchUpOnEnd)
+        } else {
+            sp = smoother.step(raw.p, catchUp: raw.catchUp)
+        }
         var cur = raw
         cur.p = sp
         let d = Double(l.p.distance(to: sp))
@@ -162,7 +175,7 @@ final class BrushDynamicsEngine {
     func airbrushTick() {
         guard let l = last else { return }
         var s = l
-        if let sm = smoothed { s.p = sm }
+        if let sm = smoother.tip { s.p = sm }
         place(s)
         placeDual(s)
     }
@@ -170,8 +183,9 @@ final class BrushDynamicsEngine {
     /// Distance between dabs for the current pressure.
     private func spacing(_ pressure: Double) -> Double {
         var size = settings.size
-        if settings.pressureSize { size *= max(0.05, pressure) }
-        if dyn.shapeEnabled && dyn.sizeControl.source == .pressure {
+        if settings.pressureSize {
+            size *= DynamicsMath.pressureSizeFactor(pressure, settings)
+        } else if dyn.shapeEnabled && dyn.sizeControl.source == .pressure {
             size *= dyn.minDiameter + (1 - dyn.minDiameter) * clamp(pressure, 0, 1)
         }
         return max(aliased ? 1 : 0.5, size * settings.spacing)
@@ -180,30 +194,11 @@ final class BrushDynamicsEngine {
     // MARK: Controls
 
     private func control(_ c: ControlSetting, _ s: PenSample) -> Double {
-        switch c.source {
-        case .off, .direction, .initialDirection: return 1
-        case .fade: return max(0, 1 - Double(dabIndex) / max(1, c.fadeSteps))
-        case .pressure: return clamp(s.pressure, 0, 1)
-        case .tilt: return 1 - s.tiltMagnitude
-        case .wheel: return clamp(s.wheel, 0, 1)
-        case .rotation:
-            var r = s.rotation.truncatingRemainder(dividingBy: 360)
-            if r < 0 { r += 360 }
-            return r / 360
-        }
+        DynamicsMath.control(c, s, dabIndex: dabIndex, direction: direction, initialDirection: initialDirection)
     }
 
     private func angleOffset(_ c: ControlSetting, _ s: PenSample) -> Double {
-        switch c.source {
-        case .off: return 0
-        case .fade: return 360 * min(1, Double(dabIndex) / max(1, c.fadeSteps))
-        case .pressure: return 360 * clamp(s.pressure, 0, 1)
-        case .tilt: return s.tiltAngle
-        case .wheel: return 360 * clamp(s.wheel, 0, 1)
-        case .rotation: return s.rotation
-        case .direction: return direction
-        case .initialDirection: return initialDirection ?? direction
-        }
+        DynamicsMath.angleOffset(c, s, dabIndex: dabIndex, direction: direction, initialDirection: initialDirection)
     }
 
     /// Jitter + control + minimum, Photoshop style: control scales from the minimum to 100%, jitter reduces randomly.
@@ -217,7 +212,8 @@ final class BrushDynamicsEngine {
 
     // MARK: Dabs
 
-    private func place(_ s: PenSample) {
+    private func place(_ s0: PenSample) {
+        let s = dyn.posed(s0)
         var n = 1
         if dyn.scatterEnabled {
             var c = dyn.count * control(dyn.countControl, s)
@@ -237,12 +233,14 @@ final class BrushDynamicsEngine {
         let st = settings
         let d = dyn
         var size = st.size
-        if st.pressureSize { size *= max(0.05, s.pressure) }
+        // The options-bar pressure button overrides the panel's size control (Photoshop): pressure drives the size
+        // (down to Minimum Diameter), the jitter still applies.
+        if st.pressureSize { size *= DynamicsMath.pressureSizeFactor(s.pressure, st) }
         var angle = st.angle
         var roundness = st.roundness
         var flipX = d.flipX, flipY = d.flipY
         if d.shapeEnabled {
-            size *= dynamicFactor(control: d.sizeControl, jitter: st.sizeJitter, minimum: d.minDiameter, s)
+            size *= dynamicFactor(control: st.pressureSize ? ControlSetting() : d.sizeControl, jitter: st.sizeJitter, minimum: d.minDiameter, s)
             angle += angleOffset(d.angleControl, s)
             if d.angleJitter > 0 { angle += (rng.next() * 2 - 1) * 180 * d.angleJitter }
             roundness *= dynamicFactor(control: d.roundnessControl, jitter: d.roundnessJitter, minimum: d.minRoundness, s)
@@ -264,16 +262,19 @@ final class BrushDynamicsEngine {
             }
         }
 
+        // Opacity (pen pressure via the options-bar button, or the Transfer opacity control) is a ceiling the
+        // stroke builds up to; flow is how much each dab deposits (Photoshop).
         var alpha = st.flow
-        if st.pressureOpacity { alpha *= clamp(s.pressure, 0, 1) }
+        var ceiling = 1.0
+        if st.pressureOpacity { ceiling *= DynamicsMath.pressureOpacityFactor(s.pressure, st) }
         if d.transferEnabled {
-            alpha *= dynamicFactor(control: d.opacityControl, jitter: st.opacityJitter, minimum: d.minOpacity, s)
+            ceiling *= dynamicFactor(control: st.pressureOpacity ? ControlSetting() : d.opacityControl, jitter: st.opacityJitter, minimum: d.minOpacity, s)
             alpha *= dynamicFactor(control: d.flowControl, jitter: d.flowJitter, minimum: d.minFlow, s)
         }
-        if alpha <= 0.001 { return }
+        if alpha * ceiling <= 0.001 { return }
 
         if let cs = customStamp {
-            cs(DabInstance(center: pos, diameter: size, roundness: roundness, angle: angle, flipX: flipX, flipY: flipY, alpha: alpha))
+            cs(DabInstance(center: pos, diameter: size, roundness: roundness, angle: angle, flipX: flipX, flipY: flipY, alpha: alpha * ceiling))
             return
         }
 
@@ -290,7 +291,8 @@ final class BrushDynamicsEngine {
         }
         let dab = DabRaster.Dab(cx: cx, cy: cy, diameter: size, roundness: roundness, angle: angle,
                                 flipX: flipX, flipY: flipY, hardness: st.hardness, aliased: aliased)
-        let r = DabRaster.stamp(dab, tip: tip, into: target, color: color, alpha: Float(min(1, alpha)), texture: texture)
+        let t = tip.frames.isEmpty ? tip : tip.frame(dab: dabIndex, angle: angle, pressure: s.pressure, random: rng.next())   // animated tips (GIMP image pipes)
+        let r = DabRaster.stamp(dab, tip: t, into: target, color: color, alpha: Float(min(1, alpha)), texture: texture, ceiling: Float(min(1, ceiling)))
         dirty = dirty.union(r)
     }
 
@@ -312,8 +314,9 @@ final class BrushDynamicsEngine {
                     p.y += CGFloat(cos(t) * r)
                 }
             }
+            let flip = d.dualFlip && rng.next() < 0.5
             let dab = DabRaster.Dab(cx: Double(p.x) - Double(origin.x), cy: Double(p.y) - Double(origin.y), diameter: size,
-                                    roundness: 1, angle: 0, hardness: d.dualHardness)
+                                    roundness: 1, angle: 0, flipX: flip, hardness: d.dualHardness)
             let r = DabRaster.stamp(dab, tip: dt, into: db, alpha: 1)
             // The primary stroke under a changed dual area must be re-processed.
             dirty = dirty.union(r)
@@ -349,9 +352,10 @@ final class BrushDynamicsEngine {
         var c = fg.mix(bg, t)
         if d.hueJitter > 0 || d.saturationJitter > 0 || d.brightnessJitter > 0 || d.purity != 0 {
             var (h, sat, v) = c.hsb
-            if d.hueJitter > 0 { h += (rng.next() * 2 - 1) * 0.5 * d.hueJitter }
-            if d.saturationJitter > 0 { sat = clamp(sat + (rng.next() * 2 - 1) * d.saturationJitter, 0, 1) }
-            if d.brightnessJitter > 0 { v = clamp(v + (rng.next() * 2 - 1) * d.brightnessJitter, 0, 1) }
+            let k = d.colorJitterControl.source == .off ? 1 : control(d.colorJitterControl, s)
+            if d.hueJitter > 0 { h += (rng.next() * 2 - 1) * 0.5 * d.hueJitter * k }
+            if d.saturationJitter > 0 { sat = clamp(sat + (rng.next() * 2 - 1) * d.saturationJitter * k, 0, 1) }
+            if d.brightnessJitter > 0 { v = clamp(v + (rng.next() * 2 - 1) * d.brightnessJitter * k, 0, 1) }
             if d.purity > 0 { sat += (1 - sat) * d.purity } else if d.purity < 0 { sat *= 1 + d.purity }
             c = RGBA(h: h, s: clamp(sat, 0, 1), v: v, a: 1)
         }
@@ -453,5 +457,113 @@ final class BrushDynamicsEngine {
         }
         out.markDirty()
         return o
+    }
+}
+
+
+// MARK: - Shared dynamics math (the engine and the dab-placer tools: clone, healing, retouch, mixer, …)
+
+enum DynamicsMath {
+    /// 0…1 for an angle over a full turn.
+    static func turn(_ deg: Double) -> Double {
+        var r = deg.truncatingRemainder(dividingBy: 360)
+        if r < 0 { r += 360 }
+        return r / 360
+    }
+
+    /// Value (0…1) of a Control for a sample. Mouse samples have no tilt, rotation or wheel: those read as full.
+    static func control(_ c: ControlSetting, _ s: PenSample, dabIndex: Int, direction: Double, initialDirection: Double?) -> Double {
+        switch c.source {
+        case .off: return 1
+        case .fade: return max(0, 1 - Double(dabIndex) / max(1, c.fadeSteps))
+        case .pressure: return clamp(s.pressure, 0, 1)
+        case .tilt: return s.mouse ? 1 : 1 - s.tiltMagnitude
+        case .wheel: return s.mouse ? 1 : clamp(s.wheel, 0, 1)
+        case .rotation: return s.mouse ? 1 : turn(s.rotation)
+        case .direction: return turn(direction)
+        case .initialDirection: return turn(initialDirection ?? direction)
+        }
+    }
+
+    /// Angle added (degrees) by an angle Control.
+    static func angleOffset(_ c: ControlSetting, _ s: PenSample, dabIndex: Int, direction: Double, initialDirection: Double?) -> Double {
+        switch c.source {
+        case .off: return 0
+        case .fade: return 360 * min(1, Double(dabIndex) / max(1, c.fadeSteps))
+        case .pressure: return 360 * clamp(s.pressure, 0, 1)
+        case .tilt: return s.mouse ? 0 : s.tiltAngle
+        case .wheel: return s.mouse ? 0 : 360 * clamp(s.wheel, 0, 1)
+        case .rotation: return s.mouse ? 0 : s.rotation
+        case .direction: return direction
+        case .initialDirection: return initialDirection ?? direction
+        }
+    }
+
+    /// Size factor of the options-bar "pressure controls size" button: from Minimum Diameter (when Shape Dynamics
+    /// is on; else a 5% floor) to 100%.
+    static func pressureSizeFactor(_ pressure: Double, _ st: BrushSettings) -> Double {
+        let p = clamp(pressure, 0, 1)
+        if st.dynamics.shapeEnabled { return st.dynamics.minDiameter + (1 - st.dynamics.minDiameter) * p }
+        return max(0.05, p)
+    }
+
+    static func pressureOpacityFactor(_ pressure: Double, _ st: BrushSettings) -> Double {
+        let p = clamp(pressure, 0, 1)
+        if st.dynamics.transferEnabled { return st.dynamics.minOpacity + (1 - st.dynamics.minOpacity) * p }
+        return p
+    }
+}
+
+/// Brush dynamics for tools that place dabs themselves (clone, healing, retouch, mixer, selection brush, …): size,
+/// angle, roundness and opacity from pressure / tilt / rotation / wheel / direction, like the brush engine.
+struct DabDynamics {
+    struct Dab { var size: Double; var angle: Double; var roundness: Double; var alpha: Double }
+
+    private var rng = SeededRandom(seed: 0x7AB1E7)
+    private(set) var dabIndex = 0
+    private var last: CGPoint?
+    private var travelled: Double = 0
+    private(set) var direction: Double = 0
+    private(set) var initialDirection: Double?
+
+    init() {}
+
+    /// The dab for a sample (call once per placed dab, in order).
+    mutating func dab(_ s: PenSample, _ st: BrushSettings) -> Dab {
+        if let l = last {
+            let d = Double(l.distance(to: s.p))
+            if d > 1e-6 {
+                direction = atan2(-Double(s.p.y - l.y), Double(s.p.x - l.x)) * 180 / .pi
+                travelled += d
+                if initialDirection == nil && travelled >= 2 { initialDirection = direction }
+            }
+        }
+        last = s.p
+        let d = st.dynamics
+        func ctl(_ c: ControlSetting) -> Double { DynamicsMath.control(c, s, dabIndex: dabIndex, direction: direction, initialDirection: initialDirection) }
+        func factor(_ c: ControlSetting, _ jitter: Double, _ minimum: Double) -> Double {
+            let on = c.source != .off
+            var f = on ? minimum + (1 - minimum) * ctl(c) : 1
+            if jitter > 0 { f *= 1 - jitter * rng.next() }
+            if on || jitter > 0 { f = max(f, minimum) }
+            return f
+        }
+        var size = st.size
+        if st.pressureSize { size *= DynamicsMath.pressureSizeFactor(s.pressure, st) }
+        var angle = st.angle, roundness = st.roundness
+        if d.shapeEnabled {
+            size *= factor(st.pressureSize ? ControlSetting() : d.sizeControl, st.sizeJitter, d.minDiameter)
+            angle += DynamicsMath.angleOffset(d.angleControl, s, dabIndex: dabIndex, direction: direction, initialDirection: initialDirection)
+            if d.angleJitter > 0 { angle += (rng.next() * 2 - 1) * 180 * d.angleJitter }
+            roundness *= factor(d.roundnessControl, d.roundnessJitter, d.minRoundness)
+        }
+        var alpha = 1.0
+        if st.pressureOpacity { alpha *= DynamicsMath.pressureOpacityFactor(s.pressure, st) }
+        if d.transferEnabled {
+            alpha *= factor(st.pressureOpacity ? ControlSetting() : d.opacityControl, st.opacityJitter, d.minOpacity)
+            alpha *= factor(d.flowControl, d.flowJitter, d.minFlow)
+        }
+        dabIndex += 1
+        return Dab(size: max(0.5, size), angle: angle, roundness: max(0.02, roundness), alpha: alpha)
     }
 }

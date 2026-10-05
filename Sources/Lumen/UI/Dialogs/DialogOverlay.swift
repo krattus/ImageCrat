@@ -44,6 +44,7 @@ struct DialogOverlay: View {
         case .filter(let k, let smart, let editing):
             if k == .filterGallery { FilterGalleryDialog(smartLayer: smart, editingFilter: editing) }
             else if k == .recipe { RecipeFilterDialog(smartLayer: smart, editingFilter: editing) }
+            else if k == .liquify { LiquifyDialog(smartLayer: smart, editingFilter: editing) }
             else { FilterDialog(kind: k, smartLayer: smart, editingFilter: editing) }
         case .blurGallery:
             if let st = AppActions.blurGallery { BlurGalleryDialog(st: st) }
@@ -328,26 +329,39 @@ struct FilterDialog: View {
     let editingFilter: UUID?
     @State private var f: FilterInstance
     @State private var preview = true
+    /// What the Center option's Object / Selection / Canvas mean for this dialog (filters about a centre point).
+    private let centerContext: FilterCenterContext?
+    @State private var centerThumb: CGImage?
 
-    init(kind: FilterKind, smartLayer: UUID?, editingFilter: UUID?) {
+    /// `seed`: settings to start from instead of the defaults (tests, scripted dialogs).
+    init(kind: FilterKind, smartLayer: UUID?, editingFilter: UUID?, seed: FilterInstance? = nil) {
         self.kind = kind
         self.smartLayer = smartLayer
         self.editingFilter = editingFilter
         var inst = FilterInstance(kind: kind, colors: [AppModel.shared.foreground, AppModel.shared.background])
         if kind == .displace { inst.payload = AppActions.pendingFilterPayload }
-        if let eid = editingFilter, let sl = smartLayer, let so = AppActions.doc?.state.layer(sl)?.smart, let ex = so.filters.first(where: { $0.id == eid }) {
+        let doc = AppActions.doc
+        centerContext = kind.usesCenter ? doc.map { FilterCenterResolver.context($0) } : nil
+        if let eid = editingFilter, let sl = smartLayer, let so = doc?.state.layer(sl)?.smart, let ex = so.filters.first(where: { $0.id == eid }) {
             inst = ex
+            inst.adoptLegacyCenter()   // (a filter from before the Center option shows as Canvas / Custom and renders the same)
         } else {
-            // a selected element spins / zooms about its own middle; a new smart filter is masked by the selection
-            if kind == .spinBlur || kind == .radialBlur, let (cx, cy) = AppActions.filterCenter(AppActions.doc) { inst.values["cx"] = cx; inst.values["cy"] = cy }
-            if smartLayer != nil { inst = AppActions.withSelectionMask(inst, AppActions.doc) }
+            // the centre: the object, the selection while there is one (a selected element twirls / spins about its own
+            // middle), the canvas or a custom point — remembered per filter; a new smart filter is masked by the selection
+            if let ctx = centerContext { FilterCenterMemory.start(&inst, ctx) }
+            if let seed, seed.kind == kind { inst = seed }
+            if smartLayer != nil { inst = AppActions.withSelectionMask(inst, doc) }
         }
         _f = State(initialValue: inst)
     }
 
     var body: some View {
         DialogFrame(title: kind.displayName + (smartLayer != nil ? " (Smart Filter)" : AppActions.filterTargetSuffix(AppActions.doc)), width: 360, onOK: ok, onCancel: cancel) {
-            ForEach(kind.params) { p in paramControl(p) }
+            ForEach(kind.params.filter { !(kind.usesCenter && FilterCenterKey.all.contains($0.key)) }) { p in paramControl(p) }
+            if let ctx = centerContext {
+                Divider()
+                FilterCenterSection(f: $f, ctx: ctx, thumbnail: centerThumb)
+            }
             if smartLayer != nil {
                 Divider()
                 HStack {
@@ -360,7 +374,10 @@ struct FilterDialog: View {
         }
         .onChange(of: f) { _, _ in updatePreview() }
         .onChange(of: preview) { _, _ in updatePreview() }
-        .onAppear { updatePreview() }
+        .onAppear {
+            updatePreview()
+            if centerContext != nil, let d = AppActions.doc { centerThumb = FilterCenterSection.thumbnail(smartLayer != nil ? d.committedState : d.state) }
+        }
     }
 
     @ViewBuilder func paramControl(_ p: FilterParam) -> some View {
@@ -409,6 +426,8 @@ struct FilterDialog: View {
 
     func ok() {
         guard let d = AppActions.doc else { return }
+        CanvasSampler.shared.disarm(FilterCenterSection.samplerToken); FilterCenterSection.endCanvasDrag()
+        FilterCenterMemory.save(f)
         if let sl = smartLayer {
             var filters = d.committedState.layer(sl)?.smart?.filters ?? []
             if let eid = editingFilter, let i = filters.firstIndex(where: { $0.id == eid }) { filters[i] = f } else { filters.append(f) }
@@ -422,6 +441,7 @@ struct FilterDialog: View {
     }
 
     func cancel() {
+        CanvasSampler.shared.disarm(FilterCenterSection.samplerToken); FilterCenterSection.endCanvasDrag()
         guard let d = AppActions.doc else { return }
         if smartLayer != nil { d.revertUncommitted() } else { AppActions.setPreview(nil) }
     }

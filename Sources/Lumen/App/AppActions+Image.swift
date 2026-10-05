@@ -219,7 +219,7 @@ extension AppActions {
     }
 
     static func cropToSelection() {
-        guard let d = doc, let b = d.state.selection?.opaqueBounds() else { NSSound.beep(); return }
+        guard let d = doc, let b = d.state.selection?.opaqueBounds() else { Beep.play(); return }
         crop(to: b, deletePixels: false)
     }
 
@@ -227,7 +227,7 @@ extension AppActions {
         guard let d = doc else { return }
         let sp = space(d)
         let buf = RenderEngine.renderBuffer(Compositor.shared.composite(d), docRect: d.state.canvasRect, space: sp)
-        guard let b = buf.opaqueBounds() else { NSSound.beep(); return }
+        guard let b = buf.opaqueBounds() else { Beep.play(); return }
         crop(to: b, deletePixels: false)
     }
 
@@ -244,8 +244,10 @@ extension AppActions {
 
     /// Renders `f(content)` back into the active layer (respecting selection). Returns false if not applicable.
     /// `layerPixels`: the edit is for the layer's pixels even while its layer mask is the edit target (Liquify).
+    /// `coverCanvas`: the edit may put pixels anywhere on the canvas (Liquify): the layer's buffer first grows to cover the
+    /// canvas (keeping everything outside it), so nothing is clipped to the layer's old bounds.
     @discardableResult
-    static func applyToActiveLayer(name: String, layerPixels: Bool = false, _ f: @escaping (CIImage) -> CIImage) -> Bool {
+    static func applyToActiveLayer(name: String, layerPixels: Bool = false, coverCanvas: Bool = false, _ f: @escaping (CIImage) -> CIImage) -> Bool {
         if let d = doc, d.quickMask {
             // Quick Mask mode: filters and adjustments change the mask (the selection), not the layer
             let sp = space(d)
@@ -262,11 +264,39 @@ extension AppActions {
         d.contentOverrides.removeValue(forKey: id)
         d.maskOverrides.removeValue(forKey: id)
         let edit = restricted(d, l, target: target, f)
-        guard let (w, o) = d.beginPixelEdit(layerID: id, target: target, coverCanvas: false) else { return false }
+        guard let (w, o) = d.beginPixelEdit(layerID: id, target: target, coverCanvas: coverCanvas) else { return false }
         let orig = sp.place(w, at: o)
         RenderEngine.render(edit(orig), into: w, docOrigin: o, space: sp)
         d.commit(name)
         return true
+    }
+
+    /// Liquify's OK, like Photoshop. The whole canvas is the working area: on a pixel layer the warp may push pixels
+    /// anywhere on the canvas (the layer grows to hold them) and pixels outside the canvas are kept as they are. On a
+    /// smart object (`smartLayer`, or the active layer when it is one) the warp becomes a Liquify smart filter — or
+    /// updates `editingFilter` — whose result likewise reaches up to the canvas and follows later transforms. With a
+    /// selection only the selected area changes (a new smart filter takes it as its filter mask).
+    @discardableResult
+    static func applyLiquify(_ field: DisplacementField, smartLayer: UUID? = nil, editingFilter: UUID? = nil) -> Bool {
+        guard let d = doc else { return false }
+        let sid = smartLayer ?? (!d.quickMask && d.activeLayer?.isSmartObject == true ? d.activeLayerID : nil)
+        if let sid, let so = d.state.layer(sid)?.smart {
+            let mesh = field.mesh(reference: so.quad)
+            if let eid = editingFilter, let i = so.filters.firstIndex(where: { $0.id == eid }) {
+                d.updateLayer(sid) { $0.smart?.filters[i].liquify = mesh }
+            } else {
+                guard !field.isIdentity else { return false }
+                var f = FilterInstance(kind: .liquify)
+                f.liquify = mesh
+                f = withSelectionMask(f, d)
+                d.updateLayer(sid) { $0.smart?.filters.append(f) }
+            }
+            d.commit("Liquify")
+            return true
+        }
+        guard !field.isIdentity else { return false }
+        let sp = space(d)
+        return applyToActiveLayer(name: "Liquify", layerPixels: true, coverCanvas: true) { field.warp($0, space: sp) }
     }
 
     /// What a destructive filter or adjustment changes: the layer mask while it is the edit target (as in Photoshop),
@@ -318,7 +348,9 @@ extension AppActions {
         applyToActiveLayer(name: s.kind.displayName) { AdjustmentEngine.apply(s, to: $0) }
     }
 
-    static func applyFilter(_ f: FilterInstance) {
+    static func applyFilter(_ f0: FilterInstance) {
+        // a filter centred on the object or the selection is centred on them as they are now (Repeat Filter, actions)
+        let f = FilterCenterResolver.resolved(f0, doc)
         ActionRecorder.record(.filter(f))
         guard let d = doc, let l = d.activeLayer else { return }
         if l.isSmartObject && !d.quickMask {
@@ -341,13 +373,6 @@ extension AppActions {
         return g
     }
 
-    /// Where a new filter that turns about a centre (Spin Blur, Radial Blur) starts: the middle of the selection, so a
-    /// selected element spins about itself; the middle of the canvas without one. Normalized (0…1, y down).
-    static func filterCenter(_ d: Document?) -> (Double, Double)? {
-        guard let d, let b = d.state.selection?.opaqueBounds(), d.state.width > 0, d.state.height > 0 else { return nil }
-        return ((Double(b.x) + Double(b.width) / 2) / Double(d.state.width), (Double(b.y) + Double(b.height) / 2) / Double(d.state.height))
-    }
-
     /// Dialog title suffix naming what a destructive filter will change when that is not the layer's pixels.
     static func filterTargetSuffix(_ d: Document?) -> String {
         guard let d, let l = d.activeLayer else { return "" }
@@ -356,7 +381,7 @@ extension AppActions {
     }
 
     static func repeatLastFilter() {
-        guard let f = lastFilter else { NSSound.beep(); return }
+        guard let f = lastFilter else { Beep.play(); return }
         guard FilterLauncher.prepare() else { return }
         applyFilter(f)
     }

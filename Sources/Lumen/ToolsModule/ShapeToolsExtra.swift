@@ -81,17 +81,8 @@ final class TriangleTool: Tool {
             }
             d.commit("Work Path")
         case .pixels:
-            guard let (dd, id, tgt) = tool?.requirePixelTarget(), let (w, o) = dd.beginPixelEdit(layerID: id, target: tgt) else { return }
-            let ctx = w.context
-            ctx.saveGState()
-            ctx.translateBy(x: CGFloat(-o.x), y: CGFloat(-o.y))
-            if let sel = dd.editSelection { w.clip(toMask: sel.makeCGImage(), in: dd.state.canvasCGRect) }
-            ctx.addPath(g.vectorPath.cgPath)
-            ctx.setFillColor((tgt.isMask ? RGBA(gray: app.foreground.luminance) : app.foreground).cgColor)
-            ctx.fillPath()
-            ctx.restoreGState()
-            w.markDirty()
-            dd.commit("Triangle")
+            guard let tool else { return }
+            ShapePixels.paint(tool, g.vectorPath, name: "Triangle")
         }
     }
 

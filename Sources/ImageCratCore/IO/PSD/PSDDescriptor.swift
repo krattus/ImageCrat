@@ -385,11 +385,13 @@ package enum PSDLayerStyle {
     /// Payload of an 'lfx2' block: u32 version 0, u32 descriptor version 16, descriptor.
     /// Layout follows current Photoshop: an effect with one instance uses its classic key ('DrSh'…),
     /// one with several instances uses the CC '…Multi' list key inside the same 'lfx2' block.
-    package static func encode(_ fx: LayerEffects) -> Data {
+    /// `globalLight`: the document's Global Light. Effects that use it are written with its angle (and altitude), the
+    /// direction Photoshop draws them in, rather than their own stored angle.
+    package static func encode(_ fx: LayerEffects, globalLight: GlobalLight? = nil) -> Data {
         var w = PSDDescriptorWriter()
         w.u32(0)
         w.u32(16)
-        w.descriptor(descriptor(fx))
+        w.descriptor(descriptor(fx, globalLight: globalLight))
         return w.data
     }
 
@@ -410,8 +412,9 @@ package enum PSDLayerStyle {
 
     // MARK: Building
 
-    package static func descriptor(_ fx: LayerEffects) -> PSDDescriptor {
+    package static func descriptor(_ fx: LayerEffects, globalLight: GlobalLight? = nil) -> PSDDescriptor {
         var root = PSDDescriptor(classID: "null")
+        let light = globalLight.flatMap { $0.angle.isFinite && $0.altitude.isFinite ? $0 : nil }
         root["Scl "] = pct(100)
         root["masterFXSwitch"] = .bool(fx.enabled)
 
@@ -433,15 +436,15 @@ package enum PSDLayerStyle {
         }
 
         // Photoshop CC key order.
-        put("DrSh", "dropShadowMulti", drops.map { shadow($0, inner: false) })
-        put("IrSh", "innerShadowMulti", inners.map { shadow($0, inner: true) })
+        put("DrSh", "dropShadowMulti", drops.map { shadow($0, inner: false, light: light) })
+        put("IrSh", "innerShadowMulti", inners.map { shadow($0, inner: true, light: light) })
         if fx.outerGlow.isListed { root["OrGl"] = .object(glow(fx.outerGlow, inner: false)) }
         put("SoFi", "solidFillMulti", fills.map(colorOverlay))
         put("GrFl", "gradientFillMulti", grads.map(gradientOverlay))
         if fx.patternOverlay.isListed { root["patternFill"] = .object(patternOverlay(fx.patternOverlay)) }
         put("FrFX", "frameFXMulti", strokes.map(stroke))
         if fx.innerGlow.isListed { root["IrGl"] = .object(glow(fx.innerGlow, inner: true)) }
-        if fx.bevel.isListed { root["ebbl"] = .object(bevel(fx.bevel)) }
+        if fx.bevel.isListed { root["ebbl"] = .object(bevel(fx.bevel, light: light)) }
         if fx.satin.isListed { root["ChFX"] = .object(satin(fx.satin)) }
         if usedMulti {
             let singles = [fx.outerGlow.isListed, fx.innerGlow.isListed, fx.bevel.isListed, fx.patternOverlay.isListed, fx.satin.isListed]
@@ -482,13 +485,14 @@ package enum PSDLayerStyle {
         [("enab", .bool(enabled)), ("present", .bool(true)), ("showInDialog", .bool(true))]
     }
 
-    private static func shadow(_ s: ShadowEffect, inner: Bool) -> PSDDescriptor {
+    private static func shadow(_ s: ShadowEffect, inner: Bool, light: GlobalLight? = nil) -> PSDDescriptor {
+        let angle = s.useGlobalLight ? (light?.angle ?? s.angle) : s.angle
         var items = head(s.enabled) + [
             ("Md  ", mode(s.blendMode)),
             ("Clr ", color(s.color)),
             ("Opct", opacity(s.opacity, s.color)),
             ("uglg", .bool(s.useGlobalLight)),
-            ("lagl", ang(fin(s.angle, 120))),
+            ("lagl", ang(fin(angle, 120))),
             ("Dstn", px(max(0, fin(s.distance)))),
             ("Ckmt", px(clamp(fin(s.spread), 0, 100))),
             ("blur", px(max(0, fin(s.size)))),
@@ -517,7 +521,9 @@ package enum PSDLayerStyle {
         return PSDDescriptor(classID: inner ? "IrGl" : "OrGl", items)
     }
 
-    private static func bevel(_ b: BevelEffect) -> PSDDescriptor {
+    private static func bevel(_ b: BevelEffect, light: GlobalLight? = nil) -> PSDDescriptor {
+        let angle = b.useGlobalLight ? (light?.angle ?? b.angle) : b.angle
+        let altitude = b.useGlobalLight ? (light?.altitude ?? b.altitude) : b.altitude
         let style: String
         switch b.style {
         case .innerBevel: style = "InrB"
@@ -541,8 +547,8 @@ package enum PSDLayerStyle {
             ("bvlT", en("bvlT", tech)),
             ("bvlS", en("BESl", style)),
             ("uglg", .bool(b.useGlobalLight)),
-            ("lagl", ang(fin(b.angle, 120))),
-            ("Lald", ang(fin(b.altitude, 30))),
+            ("lagl", ang(fin(angle, 120))),
+            ("Lald", ang(fin(altitude, 30))),
             ("srgR", pct(max(0, fin(b.depth, 100)))),
             ("blur", px(max(0, fin(b.size)))),
             ("bvlD", en("BESs", b.directionUp ? "In  " : "Out ")),
@@ -684,15 +690,16 @@ package enum PSDLayerStyle {
         // are the ones Photoshop draws (a 70 px glow in a 300 ppi file reaches ~60 px, not 290)
         let scale = 1.0
 
+        // Photoshop writes an effect that is not part of the style with 'present' false (the dialog keeps its settings),
+        // sometimes as a '…Multi' list holding only such placeholders next to the classic key with the real effect: the
+        // list wins only when it holds an effect that is present.
         func instances(_ single: String, _ multi: String?) -> [PSDDescriptor] {
-            var out: [PSDDescriptor] = []
+            func present(_ l: [PSDDescriptor]) -> [PSDDescriptor] { l.filter { $0.bool("present") ?? true } }
             if let multi, let l = root.list(multi) {
-                out = l.compactMap(\.objectValue)
+                let out = present(l.compactMap(\.objectValue))
+                if !out.isEmpty { return out }
             }
-            if out.isEmpty, let o = root.object(single) {
-                out = [o]
-            }
-            return out.filter { $0.bool("present") ?? true }
+            return present(root.object(single).map { [$0] } ?? [])
         }
 
         let drops = instances("DrSh", "dropShadowMulti").map { parseShadow($0, base: d.dropShadow, scale: scale) }
@@ -1048,8 +1055,22 @@ extension BlendMode {
         case "Sbtr": self = .subtract
         case "Dvd ": self = .divide
         default:
-            guard let m = BlendMode.allCases.first(where: { $0.descriptorKey == descriptorKey }) else { return nil }
-            self = m
+            if let m = BlendMode.allCases.first(where: { $0.descriptorKey == descriptorKey }) {
+                self = m
+            } else if let m = BlendMode.longDescriptorKeys[descriptorKey] {
+                // newer Photoshop versions write the long string IDs ('multiply', 'screen'…) in layer styles
+                self = m
+            } else {
+                return nil
+            }
         }
     }
+
+    /// Photoshop's long string IDs for the modes whose descriptor key is a four-character code.
+    package static let longDescriptorKeys: [String: BlendMode] = [
+        "passThrough": .passThrough, "normal": .normal, "dissolve": .dissolve, "darken": .darken, "multiply": .multiply,
+        "colorBurn": .colorBurn, "lighten": .lighten, "screen": .screen, "colorDodge": .colorDodge, "overlay": .overlay,
+        "softLight": .softLight, "hardLight": .hardLight, "difference": .difference, "exclusion": .exclusion,
+        "subtract": .subtract, "divide": .divide, "hue": .hue, "saturation": .saturation, "color": .color, "luminosity": .luminosity,
+    ]
 }

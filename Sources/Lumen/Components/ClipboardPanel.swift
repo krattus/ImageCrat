@@ -122,9 +122,9 @@ struct ClipboardPanel: View {
     }
 
     func act(_ mode: ClipPasteMode) {
-        guard let id = ui.selected, let d = app.activeDocument, let it = history.item(id) else { NSSound.beep(); return }
-        guard ClipboardHistory.modes(for: it).contains(mode) || (mode == .newLayer) else { NSSound.beep(); return }
-        if !history.paste(id, mode: mode, into: d) { NSSound.beep() }
+        guard let id = ui.selected, let d = app.activeDocument, let it = history.item(id) else { Beep.play(); return }
+        guard ClipboardHistory.modes(for: it).contains(mode) || (mode == .newLayer) else { Beep.play(); return }
+        if !history.paste(id, mode: mode, into: d) { Beep.play() }
     }
 }
 
@@ -187,8 +187,8 @@ struct ClipRow: View {
     }
 
     func paste(_ m: ClipPasteMode) {
-        guard let d = AppActions.doc else { NSSound.beep(); return }
-        if !ClipboardHistory.shared.paste(item.id, mode: m, into: d) { NSSound.beep() }
+        guard let d = AppActions.doc else { Beep.play(); return }
+        if !ClipboardHistory.shared.paste(item.id, mode: m, into: d) { Beep.play() }
     }
 }
 
@@ -267,7 +267,7 @@ final class ClipboardPopupPanel: NSPanel {
                 onChoose?(state.items[state.index], e.modifierFlags.contains(.shift) ? .inPlace : nil)
             }
         default:
-            if let ch = e.charactersIgnoringModifiers, let k = Int(ch), k >= 1, k <= min(9, n) { onChoose?(state.items[k - 1], nil) } else { NSSound.beep() }
+            if let ch = e.charactersIgnoringModifiers, let k = Int(ch), k >= 1, k <= min(9, n) { onChoose?(state.items[k - 1], nil) } else { Beep.play() }
         }
     }
 
@@ -303,10 +303,10 @@ enum ClipboardPopup {
         p.state.items = history.items
         p.onChoose = { [weak p] item, mode in
             p?.close()
-            guard let d = AppActions.doc else { NSSound.beep(); return }
+            guard let d = AppActions.doc else { Beep.play(); return }
             let m = mode ?? ClipboardHistory.modes(for: item)[0]
             let at = (m == .inPlace || item.kind == .style || item.kind == .color) ? nil : docPoint
-            if !history.paste(item.id, mode: m, into: d, at: at) { NSSound.beep() }
+            if !history.paste(item.id, mode: m, into: d, at: at) { Beep.play() }
         }
         let host = NSHostingView(rootView: ClipboardPopupView(state: p.state, choose: { p.onChoose?($0, $1) }))
         p.contentView = host

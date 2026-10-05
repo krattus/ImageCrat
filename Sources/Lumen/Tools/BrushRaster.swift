@@ -20,6 +20,26 @@ final class TipSource {
     /// Half extents of the tip bitmap relative to its longer side (1 = the longer side).
     let aspectX: Double
     let aspectY: Double
+    /// Animated tips (GIMP image pipes): every frame, and how a dab picks one. Empty for ordinary tips.
+    private(set) var frames: [TipSource] = []
+    private(set) var selection: BrushFrameSelection = .incremental
+
+    /// The frame for a dab (`random` in 0..<1).
+    func frame(dab index: Int, angle: Double, pressure: Double, random: Double) -> TipSource {
+        guard !frames.isEmpty else { return self }
+        let n = frames.count
+        var i: Int
+        switch selection {
+        case .incremental: i = index % n
+        case .random, .velocity: i = Int(random * Double(n))
+        case .angular:
+            var a = angle.truncatingRemainder(dividingBy: 360)
+            if a < 0 { a += 360 }
+            i = Int(a / 360 * Double(n))
+        case .pressure: i = Int(clamp(pressure, 0, 0.9999) * Double(n))
+        }
+        return frames[max(0, min(n - 1, i))]
+    }
 
     private init(round id: String) {
         self.id = id; isRound = true; levels = []; aspectX = 1; aspectY = 1
@@ -78,7 +98,11 @@ final class TipSource {
         let t: TipSource
         if tipID == "round" {
             t = TipSource(round: tipID)
-        } else if let b = AppModel.shared.customBrushTips[tipID] ?? BrushLibrary.shared.tipBuffer(tipID) {
+        } else if let fr = BrushLibrary.tipFramesAnywhere(tipID), fr.buffers.count > 1 {
+            t = TipSource(id: tipID, buffer: fr.buffers[0])
+            t.frames = fr.buffers.enumerated().map { TipSource(id: "\(tipID)#\($0.offset)", buffer: $0.element) }
+            t.selection = fr.selection
+        } else if let b = AppModel.shared.customBrushTips[tipID] ?? BrushLibrary.tipFramesAnywhere(tipID)?.buffers.first {
             t = TipSource(id: tipID, buffer: b)
         } else if let img = BrushTips.texture(tipID) {
             t = TipSource(id: tipID, buffer: PixelBuffer(cgImage: img, format: .gray))
@@ -242,8 +266,12 @@ enum DabRaster {
     /// Stamps a dab. RGBA buffers (premultiplied) get source-over paint of `color` (0...1, unpremultiplied);
     /// gray buffers accumulate coverage with max (used for the dual brush). Returns the touched rect.
     @discardableResult
+    /// `ceiling`: the stroke's opacity at this dab (pen-pressure opacity): paint builds up to it, never past it, so
+    /// overlapping dabs of a light stroke stay light (Photoshop's opacity vs. flow).
     static func stamp(_ d: Dab, tip: TipSource, into buf: PixelBuffer, color: (Float, Float, Float) = (0, 0, 0),
-                      alpha: Float, texture: Texture? = nil) -> IRect {
+                      alpha: Float, texture: Texture? = nil, ceiling: Float = 1) -> IRect {
+        let capped = ceiling < 0.999
+        let cap255 = max(0, ceiling) * 255
         var r = d.diameter / 2
         var a = alpha
         if d.diameter < 1 { a *= Float(max(0, d.diameter * d.diameter)); r = 0.5 }
@@ -328,6 +356,8 @@ enum DabRaster {
                         if gray {
                             let v = av * 255 + 0.5
                             if v > Float(p[0]) { p[0] = UInt8(min(255, v)) }
+                        } else if capped {
+                            DabRaster.overCapped(p, cr, cg, cb, av, cap255)
                         } else {
                             let inv = 1 - av
                             p[0] = UInt8(min(255, cr * av + Float(p[0]) * inv + 0.5))
@@ -381,6 +411,8 @@ enum DabRaster {
                         if gray {
                             let v = av * 255 + 0.5
                             if v > Float(p[0]) { p[0] = UInt8(min(255, v)) }
+                        } else if capped {
+                            DabRaster.overCapped(p, cr, cg, cb, av, cap255)
                         } else {
                             let inv = 1 - av
                             p[0] = UInt8(min(255, cr * av + Float(p[0]) * inv + 0.5))
@@ -393,5 +425,21 @@ enum DabRaster {
             }
         }
         return IRect(x: x0, y: y0, width: x1 - x0, height: y1 - y0)
+    }
+
+    /// Source-over of premultiplied `c * av` onto `p`, stopped where the alpha reaches `cap255`.
+    @inline(__always)
+    static func overCapped(_ p: UnsafeMutablePointer<UInt8>, _ cr: Float, _ cg: Float, _ cb: Float, _ av: Float, _ cap255: Float) {
+        let oa = Float(p[3])
+        if oa >= cap255 { return }
+        let inv = 1 - av
+        var nr = cr * av + Float(p[0]) * inv, ng = cg * av + Float(p[1]) * inv, nb = cb * av + Float(p[2]) * inv
+        var na = 255 * av + oa * inv
+        if na > cap255 {
+            let t = (cap255 - oa) / max(0.0001, na - oa)
+            nr = Float(p[0]) + (nr - Float(p[0])) * t; ng = Float(p[1]) + (ng - Float(p[1])) * t
+            nb = Float(p[2]) + (nb - Float(p[2])) * t; na = cap255
+        }
+        p[0] = UInt8(min(255, nr + 0.5)); p[1] = UInt8(min(255, ng + 0.5)); p[2] = UInt8(min(255, nb + 0.5)); p[3] = UInt8(min(255, na + 0.5))
     }
 }

@@ -101,7 +101,7 @@ extension AppActions {
         // artboards never go into a group (Photoshop disables Group Layers while an artboard is selected)
         guard !selectionHasArtboard(d) else {
             AppModel.shared.setStatus("Artboards can't be grouped: select layers inside or outside the artboards.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         let ids = d.orderedSelection
@@ -145,7 +145,7 @@ extension AppActions {
         guard let d = doc, let id = d.activeLayerID else { return }
         if d.selectedLayerIDs.count > 1 { mergeLayers(d.orderedSelection); return }
         let sib = d.state.siblings(of: id)
-        guard let i = sib.firstIndex(where: { $0.id == id }), i > 0 else { NSSound.beep(); return }
+        guard let i = sib.firstIndex(where: { $0.id == id }), i > 0 else { Beep.play(); return }
         mergeLayers([sib[i - 1].id, id])
     }
 
@@ -255,7 +255,7 @@ extension AppActions {
         let ids = d.withoutDescendants(d.orderedSelection)
         guard !ids.isEmpty else { return }
         let layers = ids.compactMap { d.state.layer($0) }
-        guard let b0 = smartObjectSourceBounds(d) else { NSSound.beep(); return }
+        guard let b0 = smartObjectSourceBounds(d) else { Beep.play(); return }
         func fxExtent(_ l: Layer) -> Double { max(l.effects.enabled ? l.effects.extent : 0, l.children.map(fxExtent).max() ?? 0) }
         let maxFx = layers.map(fxExtent).max() ?? 0
         let b = IRect(enclosing: b0.insetBy(dx: -CGFloat(maxFx), dy: -CGFloat(maxFx)))
@@ -346,7 +346,7 @@ extension AppActions {
 
     static func addMask(_ kind: MaskInit) {
         guard let d = doc, let id = d.activeLayerID, let l = d.state.layer(id) else { return }
-        if l.mask != nil { NSSound.beep(); return }
+        if l.mask != nil { Beep.play(); return }
         let W = d.state.width, H = d.state.height
         var m: LayerMask
         switch kind {
@@ -517,7 +517,7 @@ extension AppActions {
         guard let d = doc else { return }
         var items: [(UUID, CGRect)] = []
         for id in d.withoutDescendants(d.orderedSelection) { if let l = d.state.layer(id), !l.locks.positionLocked, let b = Compositor.shared.contentBounds(l, state: d.state) { items.append((id, b)) } }
-        guard items.count >= 3 else { NSSound.beep(); return }
+        guard items.count >= 3 else { Beep.play(); return }
         items.sort { horizontal ? $0.1.midX < $1.1.midX : $0.1.midY < $1.1.midY }
         let first = horizontal ? items.first!.1.midX : items.first!.1.midY
         let last = horizontal ? items.last!.1.midX : items.last!.1.midY
@@ -559,7 +559,7 @@ extension AppActions {
         let emoji = TextRenderer.hasColorGlyphs(t)
         if emoji, outline.boundingBoxOfPath.isEmpty {
             app.setStatus("Colour emoji have no outlines, so they can't become a shape. Use Rasterize Layer to keep them as pixels.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         let vp = VectorPath.from(cgPath: outline)

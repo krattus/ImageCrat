@@ -529,7 +529,7 @@ final class PSDExportContext {
 
         // Photoshop's order: content blocks, style, name and id (a group's section marker follows its id)
         var blocks = (group ? [] : kindBlocks) + vector
-        if PSDLayerStyle.shouldEncode(l.effects) { blocks.append(("lfx2", PSDLayerStyle.encode(l.effects))) }
+        if PSDLayerStyle.shouldEncode(l.effects) { blocks.append(("lfx2", PSDLayerStyle.encode(l.effects, globalLight: st.globalLight))) }
         blocks.append(("luni", luni(l.name)))
         blocks.append(("lyid", PSDExport.u32(r.layerID)))
         if group { blocks += kindBlocks }

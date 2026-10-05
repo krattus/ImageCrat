@@ -667,6 +667,13 @@ struct LayerDropDelegate: DropDelegate {
         dropTarget = nil
         guard let item = info.itemProviders(for: [.text]).first else { return false }
         item.loadObject(ofClass: NSString.self) { obj, _ in
+            if let s = obj as? String, let fx = LayerFX.parseDrag(s) {
+                // an effect row (or the Effects row) of another layer: move it here, ⌥ copies (LayersPanelEffects.swift)
+                DispatchQueue.main.async {
+                    if let d = AppActions.doc { LayerFX.transfer(d, from: fx.layer, slot: fx.slot, to: target.id, copy: NSEvent.modifierFlags.contains(.option)) }
+                }
+                return
+            }
             guard let s = obj as? String, let id = UUID(uuidString: s) else { return }
             DispatchQueue.main.async {
                 // ⌥-drag duplicates the layer to the drop position (like Photoshop)

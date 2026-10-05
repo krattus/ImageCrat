@@ -396,7 +396,7 @@ final class MoveTool: Tool {
         if session != nil { return }
         guard let s = selectionOnly ? TransformSession(selectionOf: d) : TransformSession(doc: d, layerIDs: MoveTool.transformLayerIDs(d)) else {
             status("Nothing to transform.")
-            NSSound.beep()
+            Beep.play()
             return
         }
         session = s
