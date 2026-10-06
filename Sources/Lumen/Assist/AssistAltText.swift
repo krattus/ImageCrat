@@ -251,15 +251,15 @@ struct AssistDescribeDialog: View {
         DialogFrame(title: "Describe Image", width: 460, okTitle: "Copy", onOK: { if let d = m.d { Assist.copyToClipboard(d.report) } },
                     extraButtons: AnyView(Button("Copy Caption") { if let d = m.d { Assist.copyToClipboard(d.caption) } }.buttonStyle(PanelButtonStyle()).disabled(m.d == nil))) {
             if let d = m.d {
-                section("Caption") { Text(d.caption).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) }
+                section("Caption") { Text(tr(d.caption)).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) }
                 if d.detailed != d.caption {
-                    section("Description") { Text(d.detailed).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) }
+                    section("Description") { Text(tr(d.detailed)).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) }
                 }
                 if !d.objects.isEmpty {
-                    section("Objects") { Text(d.objects.map { $0.count > 1 ? "\($0.label) ×\($0.count)" : $0.label }.joined(separator: " · ")).textSelection(.enabled) }
+                    section("Objects") { Text(tr(d.objects.map { $0.count > 1 ? "\($0.label) ×\($0.count)" : $0.label }.joined(separator: " · "))).textSelection(.enabled) }
                 }
                 if !d.text.isEmpty {
-                    section("Text in image") { Text(d.text.prefix(8).joined(separator: "\n")).textSelection(.enabled).lineLimit(8) }
+                    section("Text in image") { Text(tr(d.text.prefix(8).joined(separator: "\n"))).textSelection(.enabled).lineLimit(8) }
                 }
                 section("Colours") {
                     HStack(spacing: 8) {
@@ -271,8 +271,8 @@ struct AssistDescribeDialog: View {
                         }
                     }
                 }
-                if !d.keywords.isEmpty { section("Keywords") { Text(d.keywords.joined(separator: ", ")).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) } }
-                Text(String(format: "%@ · on-device · %.1f s", d.engine, d.seconds)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                if !d.keywords.isEmpty { section("Keywords") { Text(tr(d.keywords.joined(separator: ", "))).textSelection(.enabled).fixedSize(horizontal: false, vertical: true) } }
+                Text(tr(String(format: "%@ · on-device · %.1f s", d.engine, d.seconds))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             } else {
                 HStack { ProgressView().controlSize(.small); Text("Looking at the image…").foregroundStyle(Theme.textDim) }
             }
@@ -309,17 +309,17 @@ struct AssistAltExportDialog: View {
             }
             TextEditor(text: $m.alt).font(Theme.font).frame(height: 84)
                 .scrollContentBackground(.hidden).padding(4).background(RoundedRectangle(cornerRadius: 4).fill(Theme.fieldBG))
-            Text("\(m.alt.count) characters" + (m.alt.count > 250 ? " — screen readers work best under ~250" : "")).font(Theme.fontSmall).foregroundStyle(m.alt.count > 250 ? Color.orange : Theme.textFaint)
+            Text(tr("\(m.alt.count) characters" + (m.alt.count > 250 ? " — screen readers work best under ~250" : ""))).font(Theme.fontSmall).foregroundStyle(m.alt.count > 250 ? Color.orange : Theme.textFaint)
             Caption("Keywords")
             TextField("comma separated", text: $m.keywords).textFieldStyle(.plain).font(Theme.font)
                 .padding(4).background(RoundedRectangle(cornerRadius: 4).fill(Theme.fieldBG))
             HStack {
-                Picker("Format", selection: $format) { ForEach([ExportFormat.jpeg, .png, .tiff, .heic]) { Text($0.rawValue).tag($0) } }.frame(width: 170)
+                Picker("Format", selection: $format) { ForEach([ExportFormat.jpeg, .png, .tiff, .heic]) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 170)
                 if format.supportsQuality { ValueSlider(label: "Quality", value: $quality, range: 1...100, unit: "%", labelWidth: 46) }
             }
             HStack { Toggle2(label: "Copy alt text to the clipboard", on: $copyAlt); Toggle2(label: "Copy <img> snippet instead", on: $copyHTML) }
-            Text("Written to XMP dc:description, IPTC Alt Text (Accessibility), IPTC Caption and keywords. Generated on this Mac"
-                 + (AssistCaptioner.shared.isAvailable ? " with Florence-2." : " from Vision labels (install Florence-2 for full sentences)."))
+            Text(tr("Written to XMP dc:description, IPTC Alt Text (Accessibility), IPTC Caption and keywords. Generated on this Mac"
+                 + (AssistCaptioner.shared.isAvailable ? " with Florence-2." : " from Vision labels (install Florence-2 for full sentences).")))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         }
         .onAppear { if m.d == nil { m.run() } }

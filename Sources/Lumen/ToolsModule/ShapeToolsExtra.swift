@@ -152,7 +152,7 @@ struct LineArrowOptions: View {
         Button { open.toggle() } label: {
             HStack(spacing: 3) {
                 Image(systemName: "arrow.right")
-                Text(ts.arrowStart || app.shapeTool.arrowEnd ? "Arrows" : "No Arrows").font(Theme.fontSmall)
+                Text(tr(ts.arrowStart || app.shapeTool.arrowEnd ? "Arrows" : "No Arrows")).font(Theme.fontSmall)
                 Image(systemName: "chevron.down").font(.system(size: 7))
             }
             .padding(.horizontal, 5).padding(.vertical, 2)

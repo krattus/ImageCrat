@@ -171,11 +171,11 @@ enum AppActions {
         guard let d = d ?? doc else { return }
         if d.isDirty && d.smartParent == nil {
             let a = NSAlert()
-            a.messageText = "Save changes to “\(d.name)” before closing?"
-            a.informativeText = "Your changes will be lost if you don't save them."
-            a.addButton(withTitle: "Save")
-            a.addButton(withTitle: "Don't Save")
-            a.addButton(withTitle: "Cancel")
+            a.messageText = tr("Save changes to “\(d.name)” before closing?")
+            a.informativeText = tr("Your changes will be lost if you don't save them.")
+            a.addButton(withTitle: tr("Save"))
+            a.addButton(withTitle: tr("Don't Save"))
+            a.addButton(withTitle: tr("Cancel"))
             let r = UIBlock.run(a)
             if r == .alertThirdButtonReturn { return }
             if r == .alertFirstButtonReturn {
@@ -185,9 +185,9 @@ enum AppActions {
             }
         } else if let parent = d.smartParent, let lid = d.smartParentLayerID, d.isDirty {
             let a = NSAlert()
-            a.messageText = "Apply changes to the Smart Object?"
-            a.addButton(withTitle: "Apply")
-            a.addButton(withTitle: "Discard")
+            a.messageText = tr("Apply changes to the Smart Object?")
+            a.addButton(withTitle: tr("Apply"))
+            a.addButton(withTitle: tr("Discard"))
             if UIBlock.run(a) == .alertFirstButtonReturn { updateSmartObject(parent: parent, layerID: lid, from: d) }
         }
         app.close(d)
@@ -246,18 +246,18 @@ enum AppActions {
         // A self-test run has nobody to dismiss a modal panel: log it instead of blocking the whole suite.
         if CommandLine.arguments.contains("--selftest") { print("ALERT (not shown): \(title) \(info)"); return }
         let a = NSAlert()
-        a.messageText = title
-        a.informativeText = info
+        a.messageText = tr(title)
+        a.informativeText = tr(info)
         UIBlock.run(a)
     }
 
     static func confirm(_ title: String, _ info: String, ok: String) -> Bool {
         if let h = modalHook { return h(title, info) }
         let a = NSAlert()
-        a.messageText = title
-        a.informativeText = info
-        a.addButton(withTitle: ok)
-        a.addButton(withTitle: "Cancel")
+        a.messageText = tr(title)
+        a.informativeText = tr(info)
+        a.addButton(withTitle: tr(ok))
+        a.addButton(withTitle: tr("Cancel"))
         return UIBlock.run(a) == .alertFirstButtonReturn
     }
 

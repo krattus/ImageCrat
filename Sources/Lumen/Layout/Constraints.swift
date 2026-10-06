@@ -108,11 +108,11 @@ struct ConstraintProperties: View {
                     Picker("", selection: Binding(get: { c.horizontal }, set: { v in
                         var n = c; n.horizontal = v
                         LayoutConstraintEngine.set(doc, ids: ids, n)
-                    })) { ForEach(LayoutConstraints.Axis.allCases) { Text($0.title(horizontal: true)).tag($0) } }.labelsHidden().frame(width: 130)
+                    })) { ForEach(LayoutConstraints.Axis.allCases) { Text(tr($0.title(horizontal: true))).tag($0) } }.labelsHidden().frame(width: 130)
                     Picker("", selection: Binding(get: { c.vertical }, set: { v in
                         var n = c; n.vertical = v
                         LayoutConstraintEngine.set(doc, ids: ids, n)
-                    })) { ForEach(LayoutConstraints.Axis.allCases) { Text($0.title(horizontal: false)).tag($0) } }.labelsHidden().frame(width: 130)
+                    })) { ForEach(LayoutConstraints.Axis.allCases) { Text(tr($0.title(horizontal: false))).tag($0) } }.labelsHidden().frame(width: 130)
                 }
             }
             Text("Pinned edges keep their distance, Centre keeps the offset from the middle, Scale resizes in proportion. Used by Canvas Size, artboard resizing and Smart Resize.")

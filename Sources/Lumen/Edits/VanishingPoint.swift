@@ -590,7 +590,7 @@ struct VanishingPointWorkspace: View {
                 side.frame(width: 220)
             }
             HStack {
-                Text(help).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                Text(tr(help)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 Spacer()
                 Button("Cancel") { AppModel.shared.dialog = nil }.buttonStyle(PanelButtonStyle()).keyboardShortcut(.cancelAction)
                 Button("OK") { apply() }.buttonStyle(PanelButtonStyle(prominent: true)).keyboardShortcut(.defaultAction)

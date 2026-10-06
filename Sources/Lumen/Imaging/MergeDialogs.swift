@@ -66,7 +66,7 @@ struct PhotomergeDialog: View {
                     Caption("Layout")
                     ForEach(PanoLayout.allCases) { l in
                         Button { o.layout = l } label: {
-                            HStack { Image(systemName: o.layout == l ? "largecircle.fill.circle" : "circle"); Text(l.rawValue) }
+                            HStack { Image(systemName: o.layout == l ? "largecircle.fill.circle" : "circle"); Text(tr(l.rawValue)) }
                         }.buttonStyle(.plain)
                     }
                 }.frame(width: 130, alignment: .leading)
@@ -110,7 +110,7 @@ struct AutoAlignDialog: View {
         }) {
             Caption("Projection")
             ForEach(PanoLayout.allCases) { l in
-                Button { layout = l } label: { HStack { Image(systemName: layout == l ? "largecircle.fill.circle" : "circle"); Text(l.rawValue) } }.buttonStyle(.plain)
+                Button { layout = l } label: { HStack { Image(systemName: layout == l ? "largecircle.fill.circle" : "circle"); Text(tr(l.rawValue)) } }.buttonStyle(.plain)
             }
             Caption("Lens Correction")
             Toggle2(label: "Vignette Removal", on: $vignette)
@@ -132,10 +132,10 @@ struct AutoBlendDialog: View {
         }) {
             Caption("Blend Method")
             ForEach(MergeActions.BlendMethod.allCases) { m in
-                Button { method = m } label: { HStack { Image(systemName: method == m ? "largecircle.fill.circle" : "circle"); Text(m.rawValue) } }.buttonStyle(.plain)
+                Button { method = m } label: { HStack { Image(systemName: method == m ? "largecircle.fill.circle" : "circle"); Text(tr(m.rawValue)) } }.buttonStyle(.plain)
             }
             Toggle2(label: "Seamless Tones and Colors", on: $seamless)
-            Text(method == .stack ? "Keeps the sharpest areas of each layer (focus stacking)." : "Creates seam masks and balances exposure between overlapping layers.")
+            Text(tr(method == .stack ? "Keeps the sharpest areas of each layer (focus stacking)." : "Creates seam masks and balances exposure between overlapping layers."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
     }

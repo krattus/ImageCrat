@@ -99,7 +99,7 @@ struct DocTab: View {
     var body: some View {
         HStack(spacing: 6) {
             Button { AppModel.shared.activeDocumentID = doc.id } label: {
-                Text(title).font(Theme.font).foregroundStyle(active ? Theme.text : Theme.textDim).lineLimit(1)
+                Text(tr(title)).font(Theme.font).foregroundStyle(active ? Theme.text : Theme.textDim).lineLimit(1)
                     .frame(height: 28).contentShape(Rectangle())
             }.buttonStyle(.plain)
             Button { AppActions.closeDocument(doc) } label: {
@@ -119,7 +119,7 @@ struct DocTab: View {
 
     var title: String {
         let layerName = doc.activeLayer?.name ?? ""
-        return "\(doc.name) @ \(ZoomMath.format(doc.zoom)) (\(layerName), \(doc.state.colorMode.short)/\(doc.state.bitDepth.rawValue)\(doc.proofColors && doc.state.colorMode != .cmyk ? "/Proof" : ""))"
+        return "\(doc.name) @ \(ZoomMath.format(doc.zoom)) (\(layerName), \(tr(doc.state.colorMode.short))/\(doc.state.bitDepth.rawValue)\(doc.proofColors && doc.state.colorMode != .cmyk ? "/Proof" : ""))"
     }
 }
 
@@ -145,9 +145,9 @@ struct StatusBar: View {
                 }
                 Spacer(minLength: 6)
                 // the least important text: truncates first, then disappears
-                Text(app.statusMessage).font(Theme.font).foregroundStyle(Theme.textDim).lineLimit(1).truncationMode(.tail)
+                Text(tr(app.statusMessage)).font(Theme.font).foregroundStyle(Theme.textDim).lineLimit(1).truncationMode(.tail)
                     .frame(minWidth: 0).layoutPriority(-1)
-                    .help(app.statusMessage)
+                    .help(tr(app.statusMessage))
                 StatusBarChips(tier: tier, preview: preview)
             }
             .padding(.leading, 6).padding(.trailing, 10)
@@ -169,7 +169,7 @@ struct WelcomeView: View {
                     .font(.system(size: 64, weight: .thin))
                     .foregroundStyle(LinearGradient(colors: [Color(red: 0.4, green: 0.7, blue: 1), Color(red: 0.7, green: 0.4, blue: 1)], startPoint: .topLeading, endPoint: .bottomTrailing))
             }
-            Text(Brand.name).font(.system(size: 34, weight: .light)).foregroundStyle(Theme.text)
+            Text(tr(Brand.name)).font(.system(size: 34, weight: .light)).foregroundStyle(Theme.text)
             Text("Layers · Smart Objects · Layer Styles · Filters · Vectors").font(Theme.font).foregroundStyle(Theme.textDim)
             HStack(spacing: 12) {
                 Button("New File…") { AppModel.shared.dialog = .newDocument }.buttonStyle(PanelButtonStyle(prominent: true))

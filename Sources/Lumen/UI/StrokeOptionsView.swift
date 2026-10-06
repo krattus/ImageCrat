@@ -253,7 +253,7 @@ struct StrokeOptionsEditor: View {
                 Button { store.delete(cur.id) } label: { Image(systemName: "trash") }.buttonStyle(.plain).foregroundStyle(Theme.textDim)
                     .help("Delete the saved preset “\(cur.name)”")
             }
-            Button(naming ? "Cancel" : "Save…") { naming.toggle(); newName = "" }
+            Button(tr(naming ? "Cancel" : "Save…")) { naming.toggle(); newName = "" }
                 .buttonStyle(.plain).foregroundStyle(Theme.accent)
                 .help("Save the current alignment, caps, corners and dashes as a preset")
         }
@@ -274,14 +274,14 @@ struct StrokeOptionsEditor: View {
                 } label: {
                     VStack(spacing: 1) {
                         StrokePreviewImage(stroke: Self.sample(p), sample: .line).frame(height: 12)
-                        Text(p.name).font(.system(size: 8)).foregroundStyle(Theme.textDim).lineLimit(1)
+                        Text(tr(p.name)).font(.system(size: 8)).foregroundStyle(Theme.textDim).lineLimit(1)
                     }
                     .padding(.vertical, 3).padding(.horizontal, 2)
                     .background(RoundedRectangle(cornerRadius: 3).fill(on ? Theme.selection : Theme.fieldBG))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help(p.name + (store.isBuiltIn(p) ? "" : " (saved)"))
+                .help(tr(p.name + (store.isBuiltIn(p) ? "" : " (saved)")))
             }
         }
     }
@@ -323,7 +323,7 @@ struct StrokeOptionsEditor: View {
                     var ps = stroke.dashPairs
                     if i < ps.count { ps[i].1 = max(0, v / k); stroke.setDashPairs(ps) }
                 }), width: 38, format: "%.2g", onCommit: onCommit)
-                Text(px ? "px" : "×").foregroundStyle(Theme.textFaint)
+                Text(tr(px ? "px" : "×")).foregroundStyle(Theme.textFaint)
                 Spacer(minLength: 0)
                 if pairs.count > 1 {
                     Button {
@@ -423,7 +423,7 @@ struct ShapeStrokeOptionsButton: View {
         .popover(isPresented: $open, arrowEdge: .bottom) {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Stroke Options").font(Theme.fontBold)
-                Text(activeShapeID != nil ? "Applies to new shapes and the selected shape layer." : "Applies to new shapes.")
+                Text(tr(activeShapeID != nil ? "Applies to new shapes and the selected shape layer." : "Applies to new shapes."))
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 StrokeOptionsEditor(stroke: binding, onCommit: { changed = true })
             }

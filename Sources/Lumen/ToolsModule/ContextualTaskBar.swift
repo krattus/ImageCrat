@@ -128,13 +128,13 @@ struct ContextualTaskBar: View {
                     Button { TaskBarContext.perform(a) } label: {
                         HStack(spacing: 4) {
                             Image(systemName: TaskBarContext.symbol(a)).font(.system(size: 10))
-                            Text(a).lineLimit(1)
+                            Text(tr(a)).lineLimit(1)
                         }
                         .padding(.horizontal, 7).padding(.vertical, 4)
                         .background(RoundedRectangle(cornerRadius: 5).fill(a == "Generative Fill…" ? Theme.accent : Color.white.opacity(0.06)))
                     }
                     .buttonStyle(.plain)
-                    .help(a)
+                    .help(tr(a))
                 }
             }
             Menu {

@@ -116,7 +116,7 @@ final class CommandPalette: NSObject, NSWindowDelegate {
         p.isMovableByWindowBackground = true
         p.appearance = NSAppearance(named: .darkAqua)
         p.delegate = self
-        p.contentView = NSHostingView(rootView: CommandPaletteView(model: m).environment(\.colorScheme, .dark))
+        p.contentView = NSHostingView(rootView: CommandPaletteView(model: m).environment(\.colorScheme, .dark).l10nRoot())
         let host = NSApp.mainWindow ?? NSApp.keyWindow ?? NSApp.windows.first { $0.isVisible }
         if let f = host?.frame {
             p.setFrameOrigin(NSPoint(x: f.midX - size.width / 2, y: f.maxY - size.height - max(90, f.height * 0.16)))
@@ -215,7 +215,7 @@ struct CommandPaletteView: View {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass").font(.system(size: 17, weight: .medium)).foregroundStyle(Color(white: 0.6))
                 if staticField {
-                    Text(model.query.isEmpty ? "Search commands, tools, layers… or type “opacity 50”" : model.query)
+                    Text(tr(model.query.isEmpty ? "Search commands, tools, layers… or type “opacity 50”" : model.query))
                         .font(.system(size: 19)).foregroundStyle(model.query.isEmpty ? Color(white: 1, opacity: 0.32) : .white).lineLimit(1)
                     Spacer()
                 } else {
@@ -261,9 +261,9 @@ struct CommandPaletteView: View {
 
     func hint(_ key: String, _ text: String) -> some View {
         HStack(spacing: 4) {
-            Text(key).font(.system(size: 9, weight: .semibold)).foregroundStyle(Color(white: 0.75))
+            Text(tr(key)).font(.system(size: 9, weight: .semibold)).foregroundStyle(Color(white: 0.75))
                 .padding(.horizontal, 4).padding(.vertical, 1).background(RoundedRectangle(cornerRadius: 3).fill(Color.white.opacity(0.1)))
-            Text(text).font(.system(size: 10)).foregroundStyle(Color(white: 0.5))
+            Text(tr(text)).font(.system(size: 10)).foregroundStyle(Color(white: 0.5))
         }
     }
 }
@@ -281,16 +281,16 @@ struct PaletteRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 highlighted(it.title, result.matched, enabled: it.enabled).font(.system(size: 13)).lineLimit(1)
                 if !it.subtitle.isEmpty {
-                    Text(it.subtitle).font(.system(size: 10)).foregroundStyle(selected && it.enabled ? Color(white: 1, opacity: 0.78) : Color(white: it.enabled ? 0.52 : 0.33)).lineLimit(1)
+                    Text(tr(it.subtitle)).font(.system(size: 10)).foregroundStyle(selected && it.enabled ? Color(white: 1, opacity: 0.78) : Color(white: it.enabled ? 0.52 : 0.33)).lineLimit(1)
                 }
             }
             Spacer(minLength: 8)
             if !it.enabled { Text("unavailable").font(.system(size: 9)).foregroundStyle(Color(white: 0.4)) }
             if !it.shortcut.isEmpty {
-                Text(it.shortcut).font(.system(size: 11, weight: .medium)).foregroundStyle(selected && it.enabled ? Color.white : Color(white: it.enabled ? 0.72 : 0.38))
+                Text(tr(it.shortcut)).font(.system(size: 11, weight: .medium)).foregroundStyle(selected && it.enabled ? Color.white : Color(white: it.enabled ? 0.72 : 0.38))
                     .padding(.horizontal, 6).padding(.vertical, 2).background(RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(selected ? 0.18 : 0.08)))
             }
-            Text(it.category.rawValue).font(.system(size: 9, weight: .medium)).foregroundStyle(selected && it.enabled ? Color(white: 1, opacity: 0.75) : Color(white: 0.45))
+            Text(tr(it.category.rawValue)).font(.system(size: 9, weight: .medium)).foregroundStyle(selected && it.enabled ? Color(white: 1, opacity: 0.75) : Color(white: 0.45))
                 .frame(width: 66, alignment: .trailing)
         }
         .padding(.horizontal, 10).frame(height: it.subtitle.isEmpty ? 30 : 38)
@@ -299,7 +299,7 @@ struct PaletteRow: View {
 
     func highlighted(_ s: String, _ positions: [Int], enabled: Bool) -> Text {
         let base = enabled ? Color(white: 0.9) : Color(white: 0.42)
-        guard !positions.isEmpty else { return Text(s).foregroundColor(base) }
+        guard !positions.isEmpty else { return Text(tr(s)).foregroundColor(base) }
         let set = Set(positions)
         var out = Text("")
         var run = "", runHit = false

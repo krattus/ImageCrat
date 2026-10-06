@@ -11,7 +11,7 @@ struct OptionsBar: View {
                 .foregroundStyle(Theme.text)
                 .frame(width: 42, height: 26)
                 .background(RoundedRectangle(cornerRadius: 4).fill(Theme.fieldBG))
-                .help(app.tool.displayName + " — tool presets")
+                .help(tr(app.tool.displayName) + tr(" — tool presets"))
             Rectangle().fill(Theme.divider).frame(width: 1, height: 20)
             toolOptions
             if SymmetryControls.supports(app.tool) { SymmetryMenu() }
@@ -79,7 +79,7 @@ struct CompactSlider: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(label).foregroundStyle(Theme.textDim)
+            Text(tr(label)).foregroundStyle(Theme.textDim)
             Button { showSlider.toggle() } label: {
                 HStack(spacing: 2) {
                     Text(String(format: "%.0f", value * scale) + unit).font(Theme.mono)
@@ -100,7 +100,7 @@ struct Toggle2: View {
     let label: String
     @Binding var on: Bool
     var body: some View {
-        Toggle(label, isOn: $on).toggleStyle(.checkbox).font(Theme.font)
+        Toggle(tr(label), isOn: $on).toggleStyle(.checkbox).font(Theme.font)
     }
 }
 
@@ -108,7 +108,7 @@ struct ModePicker: View {
     @Binding var mode: ShapeMode
     var body: some View {
         Picker("", selection: $mode) {
-            ForEach(ShapeMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            ForEach(ShapeMode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) }
         }
         .pickerStyle(.segmented)
         .frame(width: 170)
@@ -145,7 +145,7 @@ struct MoveOptions: View {
         let session = (AppActions.canvas?.currentTool as? MoveTool)?.session
         Toggle2(label: "Auto-Select:", on: $app.moveAutoSelect)
             .help("Click a layer's pixels on the canvas to select it (⌘-click does the opposite of this setting)")
-        Picker("", selection: $app.moveAutoSelectMode) { ForEach(AutoSelectMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
+        Picker("", selection: $app.moveAutoSelectMode) { ForEach(AutoSelectMode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }
             .labelsHidden().frame(width: 74).disabled(!app.moveAutoSelect)
             .help("Auto-select the layer under the cursor, or the top-level group that contains it")
         Toggle2(label: "Show Transform Controls", on: $app.moveShowTransform)
@@ -162,7 +162,7 @@ struct MoveOptions: View {
         }
         if session != nil || app.statusMessage.hasPrefix("X:") {
             Rectangle().fill(Theme.divider).frame(width: 1, height: 20)
-            Text(app.statusMessage).font(Theme.mono).foregroundStyle(Theme.textDim)
+            Text(tr(app.statusMessage)).font(Theme.mono).foregroundStyle(Theme.textDim)
             Button { AppActions.canvas?.cancelCurrentTool() } label: { Image(systemName: "xmark.circle") }.buttonStyle(.plain).help("Cancel Transform (Esc)")
             Button { AppActions.canvas?.commitCurrentTool() } label: { Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.accent) }.buttonStyle(.plain).help("Commit Transform (Return)")
             Text("⌘ distort · ⌘⇧ skew · ⌘⌥⇧ perspective · ⇧ free scale").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -222,7 +222,7 @@ struct CropOptions: View {
             Button("3 : 2") { app.crop.ratioW = 3; app.crop.ratioH = 2 }
             Button("4 : 3") { app.crop.ratioW = 4; app.crop.ratioH = 3 }
             Button("16 : 9") { app.crop.ratioW = 16; app.crop.ratioH = 9 }
-        } label: { Text(app.crop.ratioW > 0 ? "\(Int(app.crop.ratioW)) : \(Int(app.crop.ratioH))" : "Ratio") }
+        } label: { Text(tr(app.crop.ratioW > 0 ? "\(Int(app.crop.ratioW)) : \(Int(app.crop.ratioH))" : "Ratio")) }
             .menuStyle(.borderlessButton).frame(width: 80)
         NumberField(label: "", value: $app.crop.ratioW, width: 36)
         Image(systemName: "arrow.left.arrow.right").font(.system(size: 9)).onTapGesture { swap(&app.crop.ratioW, &app.crop.ratioH) }
@@ -268,7 +268,7 @@ struct BrushOptions: View {
         .popover(isPresented: $showBrushes, arrowEdge: .bottom) { BrushSettingsView(settings: s).frame(width: 300).padding(10) }
 
         if app.tool == .eraser {
-            Picker("Mode", selection: $app.eraserMode) { ForEach(EraserMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.frame(width: 120)
+            Picker("Mode", selection: $app.eraserMode) { ForEach(EraserMode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 120)
         } else if app.tool != .historyBrush && app.tool != .healing && app.tool != .spotHealing {
             Text("Mode").foregroundStyle(Theme.textDim)
             BlendModePicker(mode: s.blendMode, width: 110)
@@ -312,7 +312,7 @@ struct RetouchOptions: View {
         switch app.tool {
         case .dodge, .burn:
             Picker("Range", selection: $app.retouch.range) {
-                ForEach(RetouchRange.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) }
+                ForEach(RetouchRange.allCases, id: \.self) { Text(tr($0.rawValue.capitalized)).tag($0) }
             }.frame(width: 150)
             CompactSlider(label: "Exposure", value: $app.retouch.exposure, range: 0.01...1, unit: "%", scale: 100)
         case .sponge:
@@ -372,7 +372,7 @@ struct GradientOptions: View {
         Button("Edit…") { app.dialog = .gradientEditor }.buttonStyle(PanelButtonStyle())
         HStack(spacing: 2) {
             ForEach(GradientType.allCases) { t in
-                IconButton(symbol: icon(t), help: "\(t.displayName) Gradient", active: app.gradientTool.type == t) { app.gradientTool.type = t }
+                IconButton(symbol: icon(t), help: "\(tr(t.displayName)) Gradient", active: app.gradientTool.type == t) { app.gradientTool.type = t }
             }
         }
         Text("Mode").foregroundStyle(Theme.textDim)
@@ -406,7 +406,7 @@ struct GradientPresetGrid: View {
                     .frame(width: 52, height: 30)
                     .overlay(RoundedRectangle(cornerRadius: 3).stroke(selected.id == g.id ? Theme.accent : .clear, lineWidth: 2))
                     .onTapGesture { selected = g }
-                    .help(g.name)
+                    .help(tr(g.name))
             }
         }
     }
@@ -446,7 +446,7 @@ struct PatternPicker: View {
                     PatternThumb(pattern: p).frame(width: 40, height: 40)
                         .overlay(RoundedRectangle(cornerRadius: 2).stroke(p.id == patternID ? Theme.accent : .clear, lineWidth: 2))
                         .onTapGesture { patternID = p.id; open = false }
-                        .help(p.name)
+                        .help(tr(p.name))
                 }
             }.padding(10)
         }
@@ -493,8 +493,8 @@ struct PathOperationMenu: View {
 
     var body: some View {
         Menu {
-            if allowNew { Button(PathOperationMenu.name(nil)) { onPick(nil) } }
-            ForEach(PathOperation.allCases, id: \.self) { op in Button(PathOperationMenu.name(op)) { onPick(op) } }
+            if allowNew { Button(tr(PathOperationMenu.name(nil))) { onPick(nil) } }
+            ForEach(PathOperation.allCases, id: \.self) { op in Button(tr(PathOperationMenu.name(op))) { onPick(op) } }
             if showMerge {
                 Divider()
                 Button("Merge Shape Components") { VectorEditing.mergeComponents() }
@@ -503,7 +503,7 @@ struct PathOperationMenu: View {
             Image(systemName: PathOperationMenu.symbol(current))
         }
         .menuStyle(.borderlessButton).fixedSize()
-        .help("Path operations: " + PathOperationMenu.name(current))
+        .help(tr("Path operations: " + PathOperationMenu.name(current)))
     }
 }
 
@@ -569,7 +569,7 @@ struct FontPicker: View {
         let family = NSFont(name: fontName, size: 12)?.familyName ?? fontName
         Menu {
             ForEach(FontCatalog.families, id: \.self) { f in
-                Button(f) {
+                Button(tr(f)) {
                     if let first = FontCatalog.members(f).first { fontName = first.0 }
                 }
             }
@@ -577,9 +577,9 @@ struct FontPicker: View {
             .menuStyle(.borderlessButton).frame(width: 150)
         Menu {
             ForEach(FontCatalog.members(family), id: \.0) { m in
-                Button(m.1) { fontName = m.0 }
+                Button(tr(m.1)) { fontName = m.0 }
             }
-        } label: { Text(FontCatalog.members(family).first { $0.0 == fontName }?.1 ?? "Regular").lineLimit(1) }
+        } label: { Text(tr(FontCatalog.members(family).first { $0.0 == fontName }?.1 ?? "Regular")).lineLimit(1) }
             .menuStyle(.borderlessButton).frame(width: 90)
     }
 }
@@ -641,19 +641,19 @@ struct ShapeLibraryPicker: View {
             }
         }
         .buttonStyle(.plain)
-        .help("Shape: " + (ShapeLibrary.shape(id)?.name ?? ""))
+        .help(tr("Shape: " + (ShapeLibrary.shape(id)?.name ?? "")))
         .popover(isPresented: $open) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(ShapeLibrary.categories, id: \.self) { cat in
-                        Text(cat).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                        Text(tr(cat)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
                         LazyVGrid(columns: Array(repeating: GridItem(.fixed(40), spacing: 6), count: 6), spacing: 6) {
                             ForEach(ShapeLibrary.all.filter { $0.category == cat }) { s in
                                 ShapeThumb(id: s.id)
                                     .frame(width: 40, height: 40)
                                     .padding(3)
                                     .background(RoundedRectangle(cornerRadius: 4).fill(s.id == id ? Theme.selection : Theme.fieldBG))
-                                    .help(s.name)
+                                    .help(tr(s.name))
                                     .onTapGesture { id = s.id; open = false }
                             }
                         }
@@ -765,7 +765,7 @@ struct GradientFillEditor: View {
         VStack(alignment: .leading, spacing: 8) {
             GradientPresetGrid(selected: $fill.gradient)
             GradientStopsEditor(gradient: $fill.gradient)
-            Picker("Style", selection: $fill.type) { ForEach(GradientType.allCases) { Text($0.displayName).tag($0) } }
+            Picker("Style", selection: $fill.type) { ForEach(GradientType.allCases) { Text(tr($0.displayName)).tag($0) } }
             WrappingHStack {
                 Text("Angle").foregroundStyle(Theme.textDim)
                 AngleDial(angle: $fill.angle)
@@ -811,7 +811,7 @@ struct ObjectSelectOptions: View {
     @Bindable var app = AppModel.shared
     var body: some View {
         CombineModeButtons(mode: $app.selection.combine)
-        Picker("Mode", selection: $app.objectSelectMode) { ForEach(ObjectSelectMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.frame(width: 150)
+        Picker("Mode", selection: $app.objectSelectMode) { ForEach(ObjectSelectMode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 150)
         Button("Select Subject") { AppActions.selectSubject() }.buttonStyle(PanelButtonStyle())
         Button("Select and Mask…") { AppModel.shared.dialog = .selectAndMask }.buttonStyle(PanelButtonStyle())
     }
@@ -821,7 +821,7 @@ struct PatchOptions: View {
     @Bindable var app = AppModel.shared
     var body: some View {
         CombineModeButtons(mode: $app.selection.combine)
-        Picker("Patch", selection: $app.patchMode) { ForEach(PatchMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).frame(width: 190)
+        Picker("Patch", selection: $app.patchMode) { ForEach(PatchMode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented).frame(width: 190)
         Text("Draw around an area, then drag the selection to a sample area.").foregroundStyle(Theme.textFaint)
     }
 }
@@ -830,7 +830,7 @@ struct ContentAwareMoveOptions: View {
     @Bindable var app = AppModel.shared
     var body: some View {
         CombineModeButtons(mode: $app.selection.combine)
-        Picker("Mode", selection: $app.contentAwareMoveMode) { ForEach(ContentAwareMoveMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).frame(width: 160)
+        Picker("Mode", selection: $app.contentAwareMoveMode) { ForEach(ContentAwareMoveMode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented).frame(width: 160)
         Text("Select an object, then drag it to its new place.").foregroundStyle(Theme.textFaint)
     }
 }
@@ -854,7 +854,7 @@ struct ColorReplacementOptions: View {
         Picker("Mode", selection: $app.colorReplace.mode) {
             Text("Hue").tag(BlendMode.hue); Text("Saturation").tag(BlendMode.saturation); Text("Color").tag(BlendMode.color); Text("Luminosity").tag(BlendMode.luminosity)
         }.frame(width: 150)
-        Picker("Sampling", selection: $app.colorReplace.sampling) { ForEach(ColorSampling.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.frame(width: 200)
+        Picker("Sampling", selection: $app.colorReplace.sampling) { ForEach(ColorSampling.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 200)
         CompactSlider(label: "Tolerance", value: $app.colorReplace.tolerance, range: 1...100, unit: "%")
     }
 }
@@ -885,7 +885,7 @@ struct InteractiveSessionOptions: View {
 
     var body: some View {
         let _ = app.sessionTick
-        Text(session.title).font(Theme.fontBold)
+        Text(tr(session.title)).font(Theme.fontBold)
         Rectangle().fill(Theme.divider).frame(width: 1, height: 20)
         if let sw = session as? SplitWarpSession {
             SplitWarpOptions(w: sw, bump: bump)
@@ -895,7 +895,7 @@ struct InteractiveSessionOptions: View {
             }.frame(width: 110)
             Picker("Warp", selection: Binding(get: { w.style }, set: { w.style = $0; bump() })) {
                 Text("Custom").tag(WarpStyle.none)
-                ForEach(WarpStyle.allCases.filter { $0 != .none }) { Text($0.displayName).tag($0) }
+                ForEach(WarpStyle.allCases.filter { $0 != .none }) { Text(tr($0.displayName)).tag($0) }
             }.frame(width: 160)
             if w.style != .none {
                 CompactSlider(label: "Bend", value: Binding(get: { w.bend * 100 }, set: { w.bend = $0 / 100; bump() }), range: -100...100, unit: "%")
@@ -913,7 +913,7 @@ struct InteractiveSessionOptions: View {
             Text("Click to add pins, drag to deform · ⌥-click removes a pin").foregroundStyle(Theme.textFaint)
         } else if let pw = session as? PerspectiveWarpSession {
             Picker("", selection: Binding(get: { pw.mode }, set: { pw.mode = $0; bump(); AppActions.canvas?.overlay.needsDisplay = true })) {
-                ForEach(PerspectiveWarpSession.Mode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                ForEach(PerspectiveWarpSession.Mode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) }
             }.pickerStyle(.segmented).labelsHidden().frame(width: 140)
             if pw.mode == .layout {
                 Button("Split Vertically") { pw.split(horizontal: true); bump(); AppActions.canvas?.overlay.needsDisplay = true }.buttonStyle(PanelButtonStyle())
@@ -926,7 +926,7 @@ struct InteractiveSessionOptions: View {
             CompactSlider(label: "Amount", value: Binding(get: { cas.amount }, set: { cas.amount = $0; bump() }), range: 0...100, unit: "%")
             Picker("Protect", selection: Binding(get: { cas.protectChannel }, set: { cas.protectChannel = $0; bump() })) {
                 Text("None").tag(UUID?.none)
-                ForEach(app.activeDocument?.state.alphaChannels ?? []) { ch in Text(ch.name).tag(UUID?.some(ch.id)) }
+                ForEach(app.activeDocument?.state.alphaChannels ?? []) { ch in Text(tr(ch.name)).tag(UUID?.some(ch.id)) }
             }.frame(width: 160)
         }
         Button { AppActions.canvas?.cancelCurrentTool() } label: { Image(systemName: "xmark.circle") }.buttonStyle(.plain).help("Cancel (Esc)")

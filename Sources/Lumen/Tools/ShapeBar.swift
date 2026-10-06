@@ -197,7 +197,7 @@ struct ShapeSizeFields: View {
         }
         .disabled(!editable)
         .opacity(editable ? 1 : 0.5)
-        .help(editable ? "Width and height of the selected shape" : "Select a shape layer to set its width and height")
+        .help(tr(editable ? "Width and height of the selected shape" : "Select a shape layer to set its width and height"))
     }
 }
 

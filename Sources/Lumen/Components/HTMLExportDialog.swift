@@ -300,9 +300,9 @@ struct HTMLExportDialog: View {
             HStack(spacing: 5) {
                 Image(systemName: r.error != nil ? "questionmark.circle" : (good ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"))
                     .foregroundStyle(r.error != nil ? Theme.textDim : (good ? Color.green : Color.orange))
-                Text(r.label).font(Theme.fontBold)
+                Text(tr(r.label)).font(Theme.fontBold)
             }
-            .help(r.detail.isEmpty ? "The exported page is rendered off screen and compared with the document." : r.detail)
+            .help(tr(r.detail.isEmpty ? "The exported page is rendered off screen and compared with the document." : r.detail))
         }
     }
 
@@ -321,7 +321,7 @@ struct HTMLExportDialog: View {
                         compareImage(b, "Web page (WebKit)")
                     }.padding(8)
                 } else {
-                    Text(checking ? "Rendering…" : (report?.error ?? "No comparison yet")).foregroundStyle(Theme.textDim)
+                    Text(tr(checking ? "Rendering…" : (report?.error ?? "No comparison yet"))).foregroundStyle(Theme.textDim)
                 }
             }
         }
@@ -332,13 +332,13 @@ struct HTMLExportDialog: View {
         VStack(spacing: 4) {
             Image(decorative: cg, scale: 1).resizable().interpolation(.high).aspectRatio(contentMode: .fit)
                 .overlay(Rectangle().stroke(Color(white: 0.3), lineWidth: 0.5))
-            Text(label).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+            Text(tr(label)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
         }
     }
 
     private func codeView(_ s: String) -> some View {
         ScrollView([.vertical, .horizontal]) {
-            Text(s.count > 60_000 ? String(s.prefix(60_000)) + "\n…" : s)
+            Text(tr(s.count > 60_000 ? String(s.prefix(60_000)) + "\n…" : s))
                 .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Color(white: 0.85))
                 .textSelection(.enabled).padding(8).frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -353,7 +353,7 @@ struct HTMLExportDialog: View {
                     row("Source") {
                         Picker("", selection: $model.opt.artboardID) {
                             Text("Whole Document").tag(UUID?.none)
-                            ForEach(boards) { b in Text(b.name).tag(Optional(b.id)) }
+                            ForEach(boards) { b in Text(tr(b.name)).tag(Optional(b.id)) }
                         }.labelsHidden()
                     }
                 }
@@ -364,16 +364,16 @@ struct HTMLExportDialog: View {
                     .background(RoundedRectangle(cornerRadius: 3).fill(Theme.fieldBG))
             }
             row("Layout") {
-                Picker("", selection: $model.opt.layout) { ForEach(HTMLExportOptions.Layout.allCases) { Text($0.rawValue).tag($0) } }.labelsHidden()
+                Picker("", selection: $model.opt.layout) { ForEach(HTMLExportOptions.Layout.allCases) { Text(tr($0.rawValue)).tag($0) } }.labelsHidden()
             }
-            Text(opt.layout == .absolute ? "Every element is positioned exactly where it is in the document." : "Groups whose layers form an evenly spaced row or column become flexbox containers with a gap; plates behind them become padding.")
+            Text(tr(opt.layout == .absolute ? "Every element is positioned exactly where it is in the document." : "Groups whose layers form an evenly spaced row or column become flexbox containers with a gap; plates behind them become padding."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
             row("Units") {
-                Picker("", selection: $model.opt.units) { ForEach(HTMLExportOptions.Units.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).labelsHidden().frame(width: 110)
+                Picker("", selection: $model.opt.units) { ForEach(HTMLExportOptions.Units.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented).labelsHidden().frame(width: 110)
             }
             row("Images") {
                 Picker("", selection: $model.opt.imageFormat) {
-                    ForEach(HTMLExportOptions.ImageFormat.allCases.filter { $0 != .webp || WebFormat.available.contains(.webp) }) { Text($0.rawValue).tag($0) }
+                    ForEach(HTMLExportOptions.ImageFormat.allCases.filter { $0 != .webp || WebFormat.available.contains(.webp) }) { Text(tr($0.rawValue)).tag($0) }
                 }.labelsHidden()
             }
             if opt.imageFormat != .png {
@@ -390,7 +390,7 @@ struct HTMLExportDialog: View {
                 Caption("Alt text")
                 ForEach(r.images, id: \.id) { im in
                     HStack(spacing: 6) {
-                        Text(im.name).lineLimit(1).frame(width: 90, alignment: .leading).foregroundStyle(Theme.textDim)
+                        Text(tr(im.name)).lineLimit(1).frame(width: 90, alignment: .leading).foregroundStyle(Theme.textDim)
                         AltField(text: im.alt) { v in model.opt.altText[im.id] = v }
                     }
                 }
@@ -399,7 +399,7 @@ struct HTMLExportDialog: View {
                 Divider()
                 Caption("Notes (\(r.warnings.count))")
                 ForEach(Array(Set(r.warnings)).sorted().prefix(8), id: \.self) { w in
-                    Text("• " + w).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
+                    Text(tr("• " + w)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
@@ -407,7 +407,7 @@ struct HTMLExportDialog: View {
 
     private func row<V: View>(_ label: String, @ViewBuilder _ content: () -> V) -> some View {
         HStack(spacing: 6) {
-            Text(label).foregroundStyle(Theme.textDim).frame(width: 56, alignment: .leading)
+            Text(tr(label)).foregroundStyle(Theme.textDim).frame(width: 56, alignment: .leading)
             content()
             Spacer(minLength: 0)
         }
@@ -426,8 +426,8 @@ struct HTMLExportDialog: View {
         p.canChooseDirectories = true
         p.canChooseFiles = false
         p.canCreateDirectories = true
-        p.prompt = "Export"
-        p.message = opt.singleFile ? "Choose a folder for the HTML file" : "Choose a folder for index.html, style.css and the assets folder"
+        p.prompt = tr("Export")
+        p.message = tr(opt.singleFile ? "Choose a folder for the HTML file" : "Choose a folder for index.html, style.css and the assets folder")
         guard p.runModal() == .OK, let folder = p.url else { return }
         do {
             let base = HTMLExportBuilder.slug((d.name as NSString).deletingPathExtension)

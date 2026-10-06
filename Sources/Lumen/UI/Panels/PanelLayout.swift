@@ -174,7 +174,7 @@ enum PanelSizing {
     /// be that narrow.
     static func natural(_ id: String, width: CGFloat) -> (width: CGFloat, height: CGFloat?) {
         let big: CGFloat = 20000
-        let h = NSHostingController(rootView: PanelContentRoot.panel(id).environment(\.panelWidth, width).environment(\.colorScheme, Theme.colorScheme).font(Theme.font))
+        let h = NSHostingController(rootView: PanelContentRoot.panel(id).environment(\.panelWidth, width).environment(\.colorScheme, Theme.colorScheme).font(Theme.font).l10nRoot())
         h.sizingOptions = []
         let tall = h.sizeThatFits(in: CGSize(width: width, height: big))
         let w = tall.width.isFinite ? max(width, tall.width) : width

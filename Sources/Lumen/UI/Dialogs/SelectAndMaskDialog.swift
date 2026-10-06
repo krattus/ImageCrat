@@ -12,7 +12,7 @@ struct SelectAndMaskDialog: View {
                 Text("No selection — the whole layer is used. Make a selection first for best results.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
             Caption("View Mode")
-            Picker("View", selection: $s.viewMode) { ForEach(RefineViewMode.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("View", selection: $s.viewMode) { ForEach(RefineViewMode.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if s.viewMode == .onionSkin || s.viewMode == .overlay {
                 ValueSlider(label: "Opacity", value: $s.opacity, range: 0...100, unit: "%")
             }
@@ -28,7 +28,7 @@ struct SelectAndMaskDialog: View {
             Caption("Output Settings")
             Toggle2(label: "Decontaminate Colors", on: $s.decontaminate)
             if s.decontaminate { ValueSlider(label: "Amount", value: $s.decontaminateAmount, range: 0...100, unit: "%") }
-            Picker("Output To", selection: $s.output) { ForEach(RefineOutput.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Output To", selection: $s.output) { ForEach(RefineOutput.allCases) { Text(tr($0.rawValue)).tag($0) } }
         }
         .onAppear { hasSelection = AppActions.doc?.state.selection != nil; updatePreview() }
         .onChange(of: s) { _, _ in updatePreview() }

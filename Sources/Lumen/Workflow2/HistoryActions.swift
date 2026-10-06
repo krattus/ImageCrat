@@ -299,8 +299,8 @@ struct HistoryActionDialog: View {
                                 }
                                 Text("\(m.index).").font(Theme.mono).foregroundStyle(Theme.textFaint).frame(width: 24, alignment: .trailing)
                                 VStack(alignment: .leading, spacing: 0) {
-                                    Text(m.step?.title ?? m.name).foregroundStyle(m.step == nil ? Theme.textDim : Theme.text).lineLimit(1)
-                                    Text(m.marker ? m.detail : (m.step == nil ? "Can't be recorded — \(m.detail)" : (m.step?.detail ?? m.detail)))
+                                    Text(tr(m.step?.title ?? m.name)).foregroundStyle(m.step == nil ? Theme.textDim : Theme.text).lineLimit(1)
+                                    Text(tr(m.marker ? m.detail : (m.step == nil ? "Can't be recorded — \(m.detail)" : (m.step?.detail ?? m.detail))))
                                         .font(Theme.fontSmall).foregroundStyle(m.step == nil && !m.marker ? Color.orange.opacity(0.85) : Theme.textFaint).lineLimit(1)
                                 }
                                 Spacer()
@@ -313,7 +313,7 @@ struct HistoryActionDialog: View {
                 .background(RoundedRectangle(cornerRadius: 5).fill(Theme.fieldBG))
                 let ok = mapped.filter { $0.step != nil && !off.contains($0.index) }.count
                 let bad = mapped.filter { $0.step == nil && !$0.marker }.count
-                Text("\(ok) step\(ok == 1 ? "" : "s") will be recorded" + (bad > 0 ? " · \(bad) can't be recorded and will be left out" : ""))
+                Text(tr("\(ok) step\(ok == 1 ? "" : "s") will be recorded" + (bad > 0 ? " · \(bad) can't be recorded and will be left out" : "")))
                     .font(Theme.fontSmall).foregroundStyle(bad > 0 ? Color.orange : Theme.textFaint)
                 HStack {
                     Spacer()

@@ -81,23 +81,23 @@ enum VideoImport {
     static func importPanel() {
         let p = NSOpenPanel()
         p.allowedContentTypes = [.movie, .mpeg4Movie, .quickTimeMovie, .video]
-        p.message = "Choose a video to import as layers"
+        p.message = tr("Choose a video to import as layers")
         guard UIBlock.run(p) == .OK, let url = p.url else { return }
 
         let a = NSAlert()
-        a.messageText = "Import Video To Layers"
+        a.messageText = tr("Import Video To Layers")
         a.informativeText = url.lastPathComponent
         let v = NSView(frame: NSRect(x: 0, y: 0, width: 280, height: 84))
-        let l1 = NSTextField(labelWithString: "Every Nth frame:"); l1.frame = NSRect(x: 0, y: 60, width: 150, height: 18)
+        let l1 = NSTextField(labelWithString: tr("Every Nth frame:")); l1.frame = NSRect(x: 0, y: 60, width: 150, height: 18)
         let nth = NSTextField(string: "1"); nth.frame = NSRect(x: 160, y: 58, width: 60, height: 22)
-        let l2 = NSTextField(labelWithString: "Limit to frames:"); l2.frame = NSRect(x: 0, y: 32, width: 150, height: 18)
+        let l2 = NSTextField(labelWithString: tr("Limit to frames:")); l2.frame = NSRect(x: 0, y: 32, width: 150, height: 18)
         let maxF = NSTextField(string: "100"); maxF.frame = NSRect(x: 160, y: 30, width: 60, height: 22)
-        let anim = NSButton(checkboxWithTitle: "Make Frame Animation", target: nil, action: nil)
+        let anim = NSButton(checkboxWithTitle: tr("Make Frame Animation"), target: nil, action: nil)
         anim.frame = NSRect(x: 0, y: 2, width: 260, height: 20); anim.state = .on
         for s in [l1, nth, l2, maxF, anim] as [NSView] { v.addSubview(s) }
         a.accessoryView = v
-        a.addButton(withTitle: "OK")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK"))
+        a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return }
         let n = max(1, Int(nth.stringValue.trimmingCharacters(in: .whitespaces)) ?? 1)
         let m = max(1, min(2000, Int(maxF.stringValue.trimmingCharacters(in: .whitespaces)) ?? 100))

@@ -88,6 +88,8 @@ final class ScriptEngine {
 /// ("active" or null = the active one). Results are JSON-compatible values.
 enum ScriptAPI {
     static var app: AppModel { AppModel.shared }
+    /// Told about every file a script writes (the MCP server's run_script reports them, see MCPToolsMore.swift).
+    static var didWriteFile: ((URL) -> Void)?
 
     // MARK: Lookup
 
@@ -257,9 +259,9 @@ enum ScriptAPI {
         case "app.prompt":
             let m = str(arg(0)) ?? "", def = str(arg(1)) ?? ""
             guard interactive && !FilesModule.headless else { engine?.log?("[prompt] " + m + " → " + def); return def }
-            let al = NSAlert(); al.messageText = m
+            let al = NSAlert(); al.messageText = tr(m)
             let f = NSTextField(string: def); f.frame = NSRect(x: 0, y: 0, width: 260, height: 24); al.accessoryView = f
-            al.addButton(withTitle: "OK"); al.addButton(withTitle: "Cancel")
+            al.addButton(withTitle: tr("OK")); al.addButton(withTitle: tr("Cancel"))
             return UIBlock.run(al) == .alertFirstButtonReturn ? f.stringValue : nil
         case "app.chooseFolder":
             guard interactive && !FilesModule.headless else { return nil }
@@ -280,6 +282,7 @@ enum ScriptAPI {
         case "app.writeFile":
             guard let p = str(arg(0)) else { return false }
             try (str(arg(1)) ?? "").write(toFile: (p as NSString).expandingTildeInPath, atomically: true, encoding: .utf8)
+            didWriteFile?(URL(fileURLWithPath: (p as NSString).expandingTildeInPath))
             return true
         case "app.filters":
             return FilterKind.allCases.map { k in
@@ -451,6 +454,7 @@ enum ScriptAPI {
             case "dcm": try DICOM.export(d.state, to: url)
             default: return try dispatch("doc.export", [d.id.uuidString, p, [:] as [String: Any]], engine: engine)
             }
+            didWriteFile?(url)
             return url.path
         case "doc.export":
             let d = try doc(arg(0))
@@ -460,6 +464,7 @@ enum ScriptAPI {
             let ext = (str(o["format"]) ?? url.pathExtension).lowercased()
             let fmt = ExportFormat.allCases.first { $0.ext == ext || $0.rawValue.lowercased() == ext } ?? (ext == "jpeg" ? .jpeg : (ext == "tif" ? .tiff : .png))
             try DocumentIO.export(d.state, to: url, format: fmt, quality: num(o["quality"], 90) / (num(o["quality"], 90) > 1 ? 100 : 1), scale: num(o["scale"], 1))
+            didWriteFile?(url)
             return url.path
         case "doc.close":
             let d = try doc(arg(0))

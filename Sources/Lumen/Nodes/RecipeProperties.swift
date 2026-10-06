@@ -21,7 +21,7 @@ struct RecipeExposedControls: View {
                 if let n = g.node(e.node), let p = RecipeLibrary.spec(n.type)?.param(e.key) {
                     if p.portType != nil, let c = g.input(n.id, p.portName), let src = g.node(c.from) {
                         HStack {
-                            Text(e.label).foregroundStyle(Theme.textDim)
+                            Text(tr(e.label)).foregroundStyle(Theme.textDim)
                             Spacer()
                             Text("driven by \(src.title ?? RecipeLibrary.spec(src.type)?.name ?? "a node")").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                         }
@@ -53,9 +53,9 @@ struct RecipeLayerProperties: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 5) {
                         Image(systemName: "point.3.connected.trianglepath.dotted").foregroundStyle(Theme.textDim)
-                        Text(g.name).font(Theme.fontBold).lineLimit(1)
+                        Text(tr(g.name)).font(Theme.fontBold).lineLimit(1)
                         Spacer()
-                        Text(t == .layer(layerID) ? "Recipe Layer" : "Recipe Filter").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                        Text(tr(t == .layer(layerID) ? "Recipe Layer" : "Recipe Filter")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                     }
                     RecipeExposedControls(doc: doc, target: t)
                     let errs = RecipeRuntime.shared.errors(target: t.cacheID)
@@ -66,9 +66,9 @@ struct RecipeLayerProperties: View {
                     HStack {
                         Button("Edit Recipe…") { RecipePresetStore.shared.loadIfNeeded(); RecipeEditorWindow.shared.open(document: doc, target: t) }.buttonStyle(PanelButtonStyle(prominent: true))
                         Menu("Presets") {
-                            Section("Built-in") { ForEach(RecipePresets.builtIn) { p in Button(p.name) { load(p, t) } } }
+                            Section("Built-in") { ForEach(RecipePresets.builtIn) { p in Button(tr(p.name)) { load(p, t) } } }
                             let user = RecipePresetStore.shared.user
-                            if !user.isEmpty { Section("My Recipes") { ForEach(user) { p in Button(p.name) { load(p, t) } } } }
+                            if !user.isEmpty { Section("My Recipes") { ForEach(user) { p in Button(tr(p.name)) { load(p, t) } } } }
                             Divider()
                             Button("Save as Preset") {
                                 _ = try? RecipePresetStore.shared.save(name: g.name, graph: g)
@@ -77,7 +77,7 @@ struct RecipeLayerProperties: View {
                         }.menuStyle(.borderlessButton).fixedSize()
                         if case .layer = t { Button("Rasterize") { RecipeActions.rasterize(layerID) }.buttonStyle(PanelButtonStyle()) }
                     }
-                    Text("\(g.nodes.count) nodes" + (g.solo != nil ? " · viewing a single node" : "")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                    Text(tr("\(g.nodes.count) nodes" + (g.solo != nil ? " · viewing a single node" : ""))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 }
                 Divider()
             }
@@ -184,9 +184,9 @@ struct RecipePresetCell: View {
             .frame(width: 120, height: 80)
             .clipShape(RoundedRectangle(cornerRadius: 4))
             .overlay(RoundedRectangle(cornerRadius: 4).stroke(selected ? Theme.accent : Color(white: 0.3), lineWidth: selected ? 2 : 0.5))
-            Text(preset.name).font(Theme.fontSmall).lineLimit(1).frame(width: 120, alignment: .leading)
+            Text(tr(preset.name)).font(Theme.fontSmall).lineLimit(1).frame(width: 120, alignment: .leading)
         }
-        .help(preset.blurb)
+        .help(tr(preset.blurb))
     }
 }
 
@@ -201,8 +201,8 @@ struct RecipePresetDialog: View {
     var body: some View {
         let presets = store.all.filter { !asFilter || $0.usesSource }
         DialogFrame(title: asFilter ? "Recipe Filter" : "New Recipe Layer", width: 560, okTitle: asFilter ? "Apply" : "Create", onOK: create) {
-            Text(asFilter ? "A recipe is a node graph applied non-destructively as a smart filter. Pick a starting point:"
-                 : "A Recipe layer's pixels are computed by a node graph — from the layers below, from procedural textures, or both. Pick a starting point:")
+            Text(tr(asFilter ? "A recipe is a node graph applied non-destructively as a smart filter. Pick a starting point:"
+                 : "A Recipe layer's pixels are computed by a node graph — from the layers below, from procedural textures, or both. Pick a starting point:"))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
             ScrollView {
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(120), spacing: 10), count: 4), alignment: .leading, spacing: 10) {
@@ -223,7 +223,7 @@ struct RecipePresetDialog: View {
             }
             .frame(height: 300)
             if let id = selected, let p = presets.first(where: { $0.id == id }) {
-                Text(p.blurb.isEmpty ? p.name : p.blurb).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                Text(tr(p.blurb.isEmpty ? p.name : p.blurb)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
             } else {
                 Text("Starts with Layer Below → Output; build the rest in the editor.").font(Theme.fontSmall).foregroundStyle(Theme.textDim)
             }

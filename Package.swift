@@ -57,8 +57,47 @@ let package = Package(
     ]
 )
 #else
+// Windows / Linux: the portable core and its tests, plus the Windows technical preview (docs/WINDOWS-PORT.md):
+// - ImageCratWinSupport: portable support code for the preview (file loading, self-check, synthetic samples);
+// - imagecrat-cli: console tool (portable: also builds on Linux);
+// - ImageCratPreview: the Win32 GUI (Windows only, WinSDK).
+// windows/build.ps1 links each executable with its own Windows resources (icon, manifest, version information).
+var targets: [Target] = [
+    core,
+    coreTests,
+    .target(
+        name: "ImageCratWinSupport",
+        dependencies: ["ImageCratCore"],
+        path: "Sources/ImageCratWinSupport",
+        swiftSettings: [.swiftLanguageMode(.v5)]
+    ),
+    .executableTarget(
+        name: "ImageCratCLI",
+        dependencies: ["ImageCratCore", "ImageCratWinSupport"],
+        path: "Sources/ImageCratCLI",
+        swiftSettings: [.swiftLanguageMode(.v5)]
+    ),
+]
+var products: [Product] = [.executable(name: "imagecrat-cli", targets: ["ImageCratCLI"])]
+
+#if os(Windows)
+targets.append(.executableTarget(
+    name: "ImageCratPreview",
+    dependencies: ["ImageCratCore", "ImageCratWinSupport"],
+    path: "Sources/ImageCratPreview",
+    swiftSettings: [.swiftLanguageMode(.v5)],
+    linkerSettings: [
+        // a GUI program (no console window) that still starts at Swift's main
+        .unsafeFlags(["-Xlinker", "/SUBSYSTEM:WINDOWS", "-Xlinker", "/ENTRY:mainCRTStartup"]),
+        .linkedLibrary("user32"), .linkedLibrary("gdi32"), .linkedLibrary("comctl32"), .linkedLibrary("comdlg32"), .linkedLibrary("shell32"),
+    ]
+))
+products.append(.executable(name: "ImageCratPreview", targets: ["ImageCratPreview"]))
+#endif
+
 let package = Package(
     name: "ImageCrat",
-    targets: [core, coreTests]
+    products: products,
+    targets: targets
 )
 #endif

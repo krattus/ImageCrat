@@ -127,7 +127,7 @@ struct SymmetryMenu: View {
                     ToolsModule.refreshCanvas()
                 } label: {
                     let title = t == .radial || t == .mandala ? t.rawValue + "…" : t.rawValue
-                    if ts.symmetry.enabled && ts.symmetry.type == t { Label(title, systemImage: "checkmark") } else { Text(title) }
+                    if ts.symmetry.enabled && ts.symmetry.type == t { Label(tr(title), systemImage: "checkmark") } else { Text(tr(title)) }
                 }
             }
             Divider()
@@ -143,7 +143,7 @@ struct SymmetryMenu: View {
             HStack(spacing: 3) {
                 Image(systemName: "arrow.left.and.right.righttriangle.left.righttriangle.right")
                     .foregroundStyle(ts.symmetry.enabled ? Theme.accent : Theme.text)
-                if ts.symmetry.enabled { Text(ts.symmetry.type.rawValue).font(Theme.fontSmall) }
+                if ts.symmetry.enabled { Text(tr(ts.symmetry.type.rawValue)).font(Theme.fontSmall) }
             }
         }
         .menuStyle(.borderlessButton)
@@ -160,7 +160,7 @@ struct SymmetrySegmentsDialog: View {
     @State private var cy: Double = Double(ToolsSettings.shared.symmetry.center.y * 100)
 
     var body: some View {
-        DialogFrame(title: "\(ts.symmetry.type.rawValue) Symmetry", width: 320, onOK: {
+        DialogFrame(title: "\(tr(ts.symmetry.type.rawValue)) Symmetry", width: 320, onOK: {
             ts.symmetry.segments = Int(segments.rounded())
             ts.symmetry.angle = angle
             ts.symmetry.center = CGPoint(x: cx / 100, y: cy / 100)

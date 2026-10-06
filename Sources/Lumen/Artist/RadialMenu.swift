@@ -485,11 +485,11 @@ struct RadialMenuPreferencesSection: View {
 
     var body: some View {
         Toggle2(label: "Enable the radial quick menu", on: $settings.prefs.pie.enabled)
-        Picker("Hold key", selection: $settings.prefs.pie.trigger) { ForEach(PieTriggerKey.allCases) { Text($0.title).tag($0) } }
+        Picker("Hold key", selection: $settings.prefs.pie.trigger) { ForEach(PieTriggerKey.allCases) { Text(tr($0.title)).tag($0) } }
         Caption("Favourite tools")
         ForEach(0..<8, id: \.self) { i in
-            Picker(directions[i], selection: Binding(get: { settings.prefs.pie.tools[i] }, set: { settings.prefs.pie.tools[i] = $0 })) {
-                ForEach(RadialMenuPreferencesSection.allTools) { k in Text(PieRenderer.shortName(k)).tag(k.rawValue) }
+            Picker(tr(directions[i]), selection: Binding(get: { settings.prefs.pie.tools[i] }, set: { settings.prefs.pie.tools[i] = $0 })) {
+                ForEach(RadialMenuPreferencesSection.allTools) { k in Text(tr(PieRenderer.shortName(k))).tag(k.rawValue) }
             }
         }
         HStack(spacing: 12) {

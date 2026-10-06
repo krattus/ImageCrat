@@ -520,7 +520,7 @@ final class AssistOCRModel {
                 self.lines = lines
                 self.selected = []
                 self.running = false
-                self.message = lines.isEmpty ? "No text found." : "\(lines.count) line\(lines.count == 1 ? "" : "s") — click a box on the canvas to copy its text."
+                self.message = tr(lines.isEmpty ? "No text found." : "\(lines.count) line\(lines.count == 1 ? "" : "s") — click a box on the canvas to copy its text.")
                 d.setNeedsOverlay()
             }
         }
@@ -561,9 +561,9 @@ final class AssistOCRModel {
                 self.lines.removeAll { ids.contains($0.id) }
                 self.selected = []
                 if let r {
-                    self.message = String(format: "Created %d type layer%@%@ (%.1f s).", r.textLayerIDs.count, r.textLayerIDs.count == 1 ? "" : "s",
-                                          r.patchLayerID != nil ? "; original text painted out with \(r.engine)" : "", r.seconds)
-                } else { self.message = "Conversion failed." }
+                    self.message = tr(String(format: "Created %d type layer%@%@ (%.1f s).", r.textLayerIDs.count, r.textLayerIDs.count == 1 ? "" : "s",
+                                          r.patchLayerID != nil ? "; original text painted out with \(r.engine)" : "", r.seconds))
+                } else { self.message = tr("Conversion failed.") }
                 AppModel.shared.setStatus(self.message)
                 d.setNeedsOverlay()
             }
@@ -599,7 +599,7 @@ struct AssistOCRDialog: View {
         DialogFrame(title: "Text in Image", width: 340, okTitle: "Done", onOK: { m.stop() }, onCancel: { m.stop() }) {
             HStack {
                 if m.running { ProgressView().controlSize(.small) }
-                Text(m.message).font(Theme.font).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
+                Text(tr(m.message)).font(Theme.font).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
             }
             if !m.lines.isEmpty {
                 ScrollView {
@@ -608,7 +608,7 @@ struct AssistOCRDialog: View {
                             let on = m.selected.contains(l.id)
                             HStack(spacing: 6) {
                                 Image(systemName: on ? "checkmark.square.fill" : "square").foregroundStyle(on ? Theme.accent : Theme.textFaint)
-                                Text(l.text).font(Theme.font).lineLimit(1)
+                                Text(tr(l.text)).font(Theme.font).lineLimit(1)
                                 Spacer()
                                 Text("\(Int(l.confidence * 100))%").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                             }
@@ -624,12 +624,12 @@ struct AssistOCRDialog: View {
                 }
                 .frame(maxHeight: 190)
                 HStack(spacing: 6) {
-                    Button(m.selected.isEmpty ? "Copy All" : "Copy") {
+                    Button(tr(m.selected.isEmpty ? "Copy All" : "Copy")) {
                         let t = (m.selected.isEmpty ? m.lines : m.lines.filter { m.selected.contains($0.id) }).map(\.text).joined(separator: "\n")
                         Assist.copyToClipboard(t)
-                        m.message = "Copied \(t.count) characters."
+                        m.message = tr("Copied \(t.count) characters.")
                     }.buttonStyle(PanelButtonStyle())
-                    Button(m.selected.isEmpty ? "Convert All to Editable Text" : "Convert to Editable Text") { m.convert(all: m.selected.isEmpty) }
+                    Button(tr(m.selected.isEmpty ? "Convert All to Editable Text" : "Convert to Editable Text")) { m.convert(all: m.selected.isEmpty) }
                         .buttonStyle(PanelButtonStyle(prominent: true)).disabled(m.running)
                 }
                 Toggle2(label: "Paint out the original text (on its own layer)", on: $m.removeOriginal)

@@ -174,7 +174,7 @@ struct TextureDialog: View {
                     HStack(alignment: .top, spacing: 10) {
                         TexturePreview(settings: m.settings, size: CGSize(width: 168, height: 126))
                         VStack(alignment: .leading, spacing: 5) {
-                            Picker("Output", selection: $m.output) { ForEach(TextureOutput.allCases) { Text($0.rawValue).tag($0) } }
+                            Picker("Output", selection: $m.output) { ForEach(TextureOutput.allCases) { Text(tr($0.rawValue)).tag($0) } }
                             if m.output == .pattern {
                                 Picker("Tile", selection: $m.patternSize) { ForEach([128, 256, 512, 1024], id: \.self) { Text("\($0) px").tag($0) } }
                                 Text("Patterns are always rendered seamless.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -213,7 +213,7 @@ struct TextureDialog: View {
                         if !list.isEmpty {
                             Caption(cat.rawValue).padding(.top, 6).padding(.bottom, 2)
                             ForEach(list, id: \.id) { g in
-                                Text(g.name).lineLimit(1)
+                                Text(tr(g.name)).lineLimit(1)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .padding(.horizontal, 6).frame(height: 20)
                                     .background(RoundedRectangle(cornerRadius: 3).fill(g.id == m.settings.gen ? Theme.selection : .clear))
@@ -241,7 +241,7 @@ struct TextureParamList: View {
         ForEach(gen.params, id: \.key) { p in row(p) }
         ForEach(gen.colors, id: \.key) { c in
             HStack {
-                Text(c.label).foregroundStyle(Theme.textDim).frame(width: 110, alignment: .leading)
+                Text(tr(c.label)).foregroundStyle(Theme.textDim).frame(width: 110, alignment: .leading)
                 ColorWell(color: Binding(get: { settings.colors[c.key] ?? c.def }, set: { settings.colors[c.key] = $0 }), size: 18)
                 Spacer()
             }
@@ -254,7 +254,7 @@ struct TextureParamList: View {
                 Menu("Presets") {
                     Button("Default") { settings.ramp = gen.ramp }
                     Button("Black, White") { settings.ramp = .twoColor(.black, .white, name: "Black, White") }
-                    ForEach(AppModel.shared.gradients) { g in Button(g.name) { settings.ramp = g } }
+                    ForEach(AppModel.shared.gradients) { g in Button(tr(g.name)) { settings.ramp = g } }
                 }.menuStyle(.borderlessButton).fixedSize()
             }
             GradientStopsEditor(gradient: Binding(get: { settings.ramp ?? gen.ramp }, set: { settings.ramp = $0 })).padding(.horizontal, 7)
@@ -265,7 +265,7 @@ struct TextureParamList: View {
             }
         }
         if settings.value("tileable") > 0.5 {
-            Text(gen.nativeTile(settings.values) ? "Repeats seamlessly (tile size 0 = canvas). Rotation snaps to 90° steps." : "This generator is made seamless by cross-blending its edges.")
+            Text(tr(gen.nativeTile(settings.values) ? "Repeats seamlessly (tile size 0 = canvas). Rotation snaps to 90° steps." : "This generator is made seamless by cross-blending its edges."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
     }
@@ -289,9 +289,9 @@ struct TextureParamList: View {
             Toggle2(label: p.label, on: Binding(get: { b.wrappedValue > 0.5 }, set: { b.wrappedValue = $0 ? 1 : 0 }))
         case .choice(let opts):
             HStack {
-                Text(p.label).foregroundStyle(Theme.textDim).frame(width: 110, alignment: .leading)
+                Text(tr(p.label)).foregroundStyle(Theme.textDim).frame(width: 110, alignment: .leading)
                 Picker("", selection: Binding(get: { Int(b.wrappedValue) }, set: { b.wrappedValue = Double($0) })) {
-                    ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(o).tag(i) }
+                    ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(tr(o)).tag(i) }
                 }.labelsHidden()
             }
         }

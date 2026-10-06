@@ -36,7 +36,7 @@ struct Caption: View {
     let text: String
     init(_ t: String) { text = t }
     var body: some View {
-        Text(text.uppercased()).font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.textFaint).tracking(0.5)
+        Text(tr(text).uppercased()).font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.textFaint).tracking(0.5)
     }
 }
 
@@ -58,7 +58,7 @@ struct IconButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(help)
+        .help(tr(help))
         .onHover { hovering = $0 }
     }
 }
@@ -177,7 +177,10 @@ struct ValueSlider: View {
         let _ = draft == nil ? () : FieldEdits.refresh(fieldID, commit: commitDraft, discard: { draft = nil })
         HStack(spacing: 6) {
             if !label.isEmpty {
-                Text(label).font(Theme.font).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading).lineLimit(1)
+                // (translations run longer than English: a little more room, and a slight shrink before "…")
+                Text(tr(label)).font(Theme.font).foregroundStyle(Theme.textDim).lineLimit(1)
+                    .minimumScaleFactor(L10n.shared.isEnglish ? 1 : 0.85)
+                    .frame(width: L10n.shared.isEnglish ? labelWidth : (labelWidth * 1.22).rounded(), alignment: .leading)
             }
             Slider(value: Binding(get: { clamp(value, range.lowerBound, range.upperBound) }, set: { v in
                 var nv = v
@@ -192,7 +195,7 @@ struct ValueSlider: View {
                     .multilineTextAlignment(.trailing)
                     .focused($focused)
                     .onSubmit { commitDraft() }
-                if !unit.isEmpty { Text(unit).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+                if !unit.isEmpty { Text(tr(unit)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
             }
             .padding(.horizontal, 4).padding(.vertical, 2)
             .frame(width: unit.isEmpty ? 46 : 58)
@@ -247,7 +250,7 @@ struct NumberField: View {
     var body: some View {
         let _ = draft == nil ? () : FieldEdits.refresh(fieldID, commit: commitDraft, discard: { draft = nil })
         HStack(spacing: 3) {
-            if !label.isEmpty { Text(label).font(Theme.font).foregroundStyle(Theme.textDim) }
+            if !label.isEmpty { Text(tr(label)).font(Theme.font).foregroundStyle(Theme.textDim) }
             TextField("", text: Binding(get: { draft ?? shown }, set: typed))
                 .textFieldStyle(.plain)
                 .font(Theme.mono)
@@ -287,19 +290,19 @@ struct BlendModePicker: View {
     var body: some View {
         Menu {
             if includePassThrough {
-                Button(BlendMode.passThrough.displayName) { mode = .passThrough; onChange?() }
+                Button(tr(BlendMode.passThrough.displayName)) { mode = .passThrough; onChange?() }
                 Divider()
             }
             ForEach(Array(BlendMode.groups.enumerated()), id: \.offset) { i, g in
                 ForEach(g) { m in
                     Button { mode = m; onChange?() } label: {
-                        if m == mode { Label(m.displayName, systemImage: "checkmark") } else { Text(m.displayName) }
+                        if m == mode { Label(tr(m.displayName), systemImage: "checkmark") } else { Text(tr(m.displayName)) }
                     }
                 }
                 if i < BlendMode.groups.count - 1 { Divider() }
             }
         } label: {
-            Text(mode.displayName).font(Theme.font)
+            Text(tr(mode.displayName)).font(Theme.font)
         }
         .menuStyle(.borderlessButton)
         .frame(width: width)
@@ -370,7 +373,7 @@ struct SectionHeader: View {
         Button { withAnimation(.easeInOut(duration: 0.12)) { expanded.toggle() } } label: {
             HStack(spacing: 4) {
                 Image(systemName: expanded ? "chevron.down" : "chevron.right").font(.system(size: 8, weight: .bold)).foregroundStyle(Theme.textFaint)
-                Text(title).font(Theme.fontBold).foregroundStyle(Theme.text)
+                Text(tr(title)).font(Theme.fontBold).foregroundStyle(Theme.text)
                 Spacer()
             }.contentShape(Rectangle())
         }.buttonStyle(.plain)

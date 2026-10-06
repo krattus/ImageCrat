@@ -7,6 +7,7 @@ struct LumenApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     init() {
+        L10n.install()   // first: every string lookup (SwiftUI literals included) goes through the interface language
         CorePlatform.install()   // before any PixelBuffer or document exists (CGContext pixel storage, core hooks)
         Beep.installHeadlessGuards()   // automated runs: no AppKit "unhandled key" beeps either
         LegacyMigration.runAtLaunch()   // first: carries Lumen's folder and preferences over before anything reads them
@@ -17,6 +18,7 @@ struct LumenApp: App {
         Window(Brand.name, id: "main") {
             MainView()
                 .frame(minWidth: 1000, minHeight: 640)
+                .l10nRoot()
         }
         .windowStyle(.titleBar)
         .windowToolbarStyle(.unifiedCompact)
@@ -56,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MemoryHygiene.install()
         TabletSettings.shared.applyAtLaunch()   // pressure-button defaults, pen-eraser proximity monitor (not in self tests)
         LegacyMigration.afterLaunch()   // Keychain items (in the background) and the one-time "Lumen is now ImageCrat" note
+        L10nRestart.reopenAfterRestart()   // documents that were open when Preferences ▸ Language ▸ Restart Now relaunched the app
         DispatchQueue.main.async {
             if let w = NSApp.windows.first {
                 w.titlebarAppearsTransparent = true
@@ -90,12 +93,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         let dirty = AppModel.shared.documents.filter { $0.isDirty && $0.smartParent == nil && !($0.history.count <= 1) }
-        if dirty.isEmpty { return .terminateNow }
+        if dirty.isEmpty || L10nRestart.restarting { return .terminateNow }   // (a restart keeps them in the autosave session)
         let a = NSAlert()
-        a.messageText = "You have \(dirty.count) document\(dirty.count == 1 ? "" : "s") with unsaved changes."
-        a.informativeText = "Do you want to quit anyway? Your changes will be lost."
-        a.addButton(withTitle: "Quit")
-        a.addButton(withTitle: "Cancel")
+        a.messageText = tr("You have \(dirty.count) document\(dirty.count == 1 ? "" : "s") with unsaved changes.")
+        a.informativeText = tr("Do you want to quit anyway? Your changes will be lost.")
+        a.addButton(withTitle: tr("Quit"))
+        a.addButton(withTitle: tr("Cancel"))
         return UIBlock.run(a) == .alertFirstButtonReturn ? .terminateNow : .terminateCancel
     }
 }
@@ -190,6 +193,7 @@ struct LumenCommands: Commands {
         }
         CommandGroup(replacing: .appSettings) {
             Button("Preferences…") { AppModel.shared.dialog = .preferences }.keyboardShortcut("k").disabled(dialogOpen)
+            LanguageMenu()
         }
         CommandGroup(replacing: .newItem) {
             Button("New…") { AppModel.shared.dialog = .newDocument }.keyboardShortcut("n").disabled(dialogOpen)
@@ -262,11 +266,11 @@ struct LumenCommands2: Commands {
             Group {
             Menu("Mode") {
                 ForEach(ColorMode.allCases) { m in
-                    Button((AppActions.doc?.state.colorMode == m ? "✓ " : "    ") + m.rawValue) { AppActions.convertMode(m) }
+                    Button((AppActions.doc?.state.colorMode == m ? "✓ " : "    ") + tr(m.rawValue)) { AppActions.convertMode(m) }
                 }
                 Divider()
                 ForEach(BitDepth.allCases) { b in
-                    Button((AppActions.doc?.state.bitDepth == b ? "✓ " : "    ") + b.displayName) { AppActions.setBitDepth(b) }
+                    Button((AppActions.doc?.state.bitDepth == b ? "✓ " : "    ") + tr(b.displayName)) { AppActions.setBitDepth(b) }
                 }
                 Divider()
                 Button("Assign Profile…") { AppModel.shared.dialog = .colorProfile(convert: false) }
@@ -343,7 +347,7 @@ struct LumenCommands2: Commands {
             Menu("Layer Style Options") {
                 // Photoshop's Layer ▸ Layer Style ▸ Blending Options… / <effect>…: opens Layer Style with that effect added
                 ForEach(StyleSection.allCases) { sec in
-                    Button(sec.menuTitle) { LayerStyleDialog.openFromMenu(sec) }
+                    Button(tr(sec.menuTitle)) { LayerStyleDialog.openFromMenu(sec) }
                     if sec == .blending { Divider() }
                 }
                 Divider()
@@ -361,7 +365,7 @@ struct LumenCommands2: Commands {
             }
             Menu("New Adjustment Layer") {
                 ForEach(AdjustmentKind.layerKinds) { k in
-                    Button(k.displayName + "…") { AppActions.newAdjustmentLayer(k) }
+                    Button(tr(k.displayName + "…")) { AppActions.newAdjustmentLayer(k) }
                 }
             }
             Divider()
@@ -503,9 +507,9 @@ struct LumenCommands3: Commands {
                 .disabled(!FilterLauncher.canRun(smartFilter: true, layerPixels: true))
             Divider()
             ForEach(FilterCategory.allCases, id: \.self) { cat in
-                Menu(cat.rawValue) {
+                Menu(tr(cat.rawValue)) {
                     ForEach(FilterKind.byCategory(cat)) { k in
-                        Button(k.displayName + (k.isImmediate ? "" : "…")) { FilterLauncher.launch(k) }.disabled(!FilterLauncher.canRun())
+                        Button(tr(k.displayName + (k.isImmediate ? "" : "…"))) { FilterLauncher.launch(k) }.disabled(!FilterLauncher.canRun())
                     }
                     ExtensionMenuItems(menu: "Filter/" + cat.rawValue)
                 }
@@ -567,6 +571,19 @@ struct LumenCommands3: Commands {
     }
 }
 
+/// ImageCrat ▸ Language: System Default / English / Eesti (switches live; also in Preferences ▸ General).
+struct LanguageMenu: View {
+    var body: some View {
+        let l = L10n.shared
+        Menu("Language") {
+            ForEach(AppLanguage.allCases) { lang in
+                Toggle(tr(lang.title), isOn: Binding(get: { l.choice == lang }, set: { _ in l.set(lang) }))
+                if lang == .system { Divider() }
+            }
+        }
+    }
+}
+
 /// Opens filters either immediately or via the parameter dialog.
 enum FilterLauncher {
     /// What a Filter command can do with the active layer.
@@ -623,7 +640,7 @@ enum FilterLauncher {
         case .displace:
             let p = NSOpenPanel()
             p.allowedContentTypes = AppActions.openTypes
-            p.message = "Choose a displacement map (red = horizontal, green = vertical)"
+            p.message = tr("Choose a displacement map (red = horizontal, green = vertical)")
             guard UIBlock.run(p) == .OK, let url = p.url, let (cg, _) = DocumentIO.loadImage(url: url) else { return }
             AppActions.pendingFilterPayload = PixelBuffer(cgImage: cg)
         default: break
@@ -645,7 +662,7 @@ struct PluginCommands: Commands {
             let items = MenuRegistry.items(for: "Plugins")
             ForEach(items) { item in
                 if item.dividerBefore { Divider() }
-                Button(item.title, action: item.action).disabled(dialogOpen)
+                Button(tr(item.title), action: item.action).disabled(dialogOpen)
             }
         }
     }
@@ -665,9 +682,9 @@ struct ZoomMenuItem: View {
     var body: some View {
         let on = command == .zoomIn || command == .zoomOut || ZoomController.isEnabled(command)
         if let k = command.shortcut {
-            Button(command.title) { ZoomController.run(command) }.keyboardShortcut(k.key, modifiers: k.modifiers).disabled(!on)
+            Button(tr(command.title)) { ZoomController.run(command) }.keyboardShortcut(k.key, modifiers: k.modifiers).disabled(!on)
         } else {
-            Button(command.title) { ZoomController.run(command) }.disabled(!on)
+            Button(tr(command.title)) { ZoomController.run(command) }.disabled(!on)
         }
     }
 }

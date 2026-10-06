@@ -273,21 +273,21 @@ final class TimelineController {
     func showTweenDialog(_ d: Document) {
         guard let i = selectedIndex(d), d.state.frames.count > 1 else { Beep.play(); return }
         let a = NSAlert()
-        a.messageText = "Tween"
-        a.informativeText = "Insert frames that interpolate layer position and opacity."
+        a.messageText = tr("Tween")
+        a.informativeText = tr("Insert frames that interpolate layer position and opacity.")
         let v = NSView(frame: NSRect(x: 0, y: 0, width: 260, height: 110))
         let withPopup = NSPopUpButton(frame: NSRect(x: 100, y: 82, width: 160, height: 24))
         withPopup.addItems(withTitles: ["Next Frame", "Previous Frame"])
         if i == d.state.frames.count - 1 { withPopup.selectItem(at: 1) }
-        let l1 = NSTextField(labelWithString: "Tween With:"); l1.frame = NSRect(x: 0, y: 86, width: 96, height: 18)
+        let l1 = NSTextField(labelWithString: tr("Tween With:")); l1.frame = NSRect(x: 0, y: 86, width: 96, height: 18)
         let countField = NSTextField(string: "5"); countField.frame = NSRect(x: 100, y: 56, width: 60, height: 22)
-        let l2 = NSTextField(labelWithString: "Frames to Add:"); l2.frame = NSRect(x: 0, y: 58, width: 96, height: 18)
-        let pos = NSButton(checkboxWithTitle: "Position", target: nil, action: nil); pos.frame = NSRect(x: 100, y: 28, width: 150, height: 20); pos.state = .on
-        let op = NSButton(checkboxWithTitle: "Opacity", target: nil, action: nil); op.frame = NSRect(x: 100, y: 4, width: 150, height: 20); op.state = .on
+        let l2 = NSTextField(labelWithString: tr("Frames to Add:")); l2.frame = NSRect(x: 0, y: 58, width: 96, height: 18)
+        let pos = NSButton(checkboxWithTitle: tr("Position"), target: nil, action: nil); pos.frame = NSRect(x: 100, y: 28, width: 150, height: 20); pos.state = .on
+        let op = NSButton(checkboxWithTitle: tr("Opacity"), target: nil, action: nil); op.frame = NSRect(x: 100, y: 4, width: 150, height: 20); op.state = .on
         for s in [withPopup, l1, countField, l2, pos, op] as [NSView] { v.addSubview(s) }
         a.accessoryView = v
-        a.addButton(withTitle: "OK")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK"))
+        a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return }
         let n = max(1, min(500, Int(countField.stringValue.trimmingCharacters(in: .whitespaces)) ?? 5))
         tween(d, count: n, withNext: withPopup.indexOfSelectedItem == 0, position: pos.state == .on, opacity: op.state == .on)
@@ -296,13 +296,13 @@ final class TimelineController {
     /// "Other…" delay entry. Returns nil when cancelled.
     static func askDelay(current: Double) -> Double? {
         let a = NSAlert()
-        a.messageText = "Set Frame Delay"
+        a.messageText = tr("Set Frame Delay")
         let f = NSTextField(string: String(format: "%g", current))
         f.frame = NSRect(x: 0, y: 0, width: 120, height: 22)
         a.accessoryView = f
-        a.informativeText = "Delay in seconds:"
-        a.addButton(withTitle: "OK")
-        a.addButton(withTitle: "Cancel")
+        a.informativeText = tr("Delay in seconds:")
+        a.addButton(withTitle: tr("OK"))
+        a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn,
               let v = Double(f.stringValue.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)), v.isFinite else { return nil }
         return min(max(0, v), 240)

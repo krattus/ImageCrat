@@ -152,7 +152,7 @@ enum FrameSupport {
         }
         let p = NSOpenPanel()
         p.allowedContentTypes = AppActions.openTypes
-        p.prompt = "Place"
+        p.prompt = tr("Place")
         guard UIBlock.run(p) == .OK, let u = p.url else { return }
         d.selectLayer(fid)
         AppActions.place([u], linked: false)
@@ -197,7 +197,7 @@ struct FrameOptions: View {
             IconButton(symbol: "circle", help: "Create a new elliptical frame", active: ts.frameShape == .ellipse) { ts.frameShape = .ellipse }
         }
         Picker("Placed Content", selection: $ts.frameFit) {
-            ForEach(FrameFit.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            ForEach(FrameFit.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) }
         }.frame(width: 210)
         Button("Place Image in Frame…") { FrameSupport.placeIntoSelectedFrame() }.buttonStyle(PanelButtonStyle())
         Button("Fit Content") {

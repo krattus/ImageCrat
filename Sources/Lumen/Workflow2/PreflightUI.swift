@@ -84,7 +84,7 @@ struct PreflightPanel: View {
             Image(systemName: worst >= 2 ? "exclamationmark.octagon.fill" : (worst == 1 ? "exclamationmark.triangle.fill" : "checkmark.seal.fill"))
                 .foregroundStyle(PreflightPanel.color(worst))
             VStack(alignment: .leading, spacing: 0) {
-                Text(n == 0 ? "Healthy" : "\(n) issue\(n == 1 ? "" : "s")").font(Theme.fontBold)
+                Text(tr(n == 0 ? "Healthy" : "\(n) issue\(n == 1 ? "" : "s")")).font(Theme.fontBold)
                 Text("≈ \(Workflow2Util.byteString(rep?.totalBytes ?? 0)) on disk").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
             Spacer()
@@ -110,7 +110,7 @@ struct PreflightPanel: View {
             HStack(spacing: 6) {
                 Image(systemName: open ? "chevron.down" : "chevron.right").font(.system(size: 7, weight: .bold)).foregroundStyle(Theme.textDim).frame(width: 10)
                 Image(systemName: k.symbol).font(.system(size: 10)).foregroundStyle(PreflightPanel.color(k.severity)).frame(width: 14)
-                Text(k.title).font(Theme.fontBold).lineLimit(1)
+                Text(tr(k.title)).font(Theme.fontBold).lineLimit(1)
                 Text("\(issues.reduce(0) { $0 + max(1, $1.layerIDs.count) })").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 Spacer()
                 if let f = k.fixTitle, issues.count > 1 {
@@ -128,14 +128,14 @@ struct PreflightPanel: View {
     func issueRow(_ d: Document, _ i: PreflightIssue) -> some View {
         HStack(alignment: .top, spacing: 6) {
             VStack(alignment: .leading, spacing: 1) {
-                Text(i.title).foregroundStyle(Theme.text).lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                Text(i.detail + (i.saves > 50_000 ? "  ·  saves ≈ \(Workflow2Util.byteString(i.saves))" : ""))
+                Text(tr(i.title)).foregroundStyle(Theme.text).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                Text(tr(i.detail + (i.saves > 50_000 ? "  ·  saves ≈ \(Workflow2Util.byteString(i.saves))" : "")))
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(4).fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
             VStack(alignment: .trailing, spacing: 3) {
                 if let f = i.kind.fixTitle {
-                    Button(f) { fix(d, [i], i.kind) }.buttonStyle(PanelButtonStyle(prominent: true))
+                    Button(tr(f)) { fix(d, [i], i.kind) }.buttonStyle(PanelButtonStyle(prominent: true))
                 }
                 switch i.kind {
                 case .defaultName: Button("Rename…") { select(d, i); DialogRegistry.show("batchRename") }.buttonStyle(PanelButtonStyle())
@@ -181,8 +181,8 @@ struct PreflightPanel: View {
             ForEach(rows) { r in
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
-                        Text(r.name).lineLimit(1).truncationMode(.middle)
-                        Text(r.kind).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
+                        Text(tr(r.name)).lineLimit(1).truncationMode(.middle)
+                        Text(tr(r.kind)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
                         Spacer()
                         Text(Workflow2Util.byteString(r.bytes)).font(Theme.mono).foregroundStyle(Theme.textDim)
                         Text(String(format: "%2.0f%%", 100 * Double(r.bytes) / Double(max(1, rep.totalBytes)))).font(Theme.mono).foregroundStyle(Theme.textFaint).frame(width: 32, alignment: .trailing)
@@ -201,7 +201,7 @@ struct PreflightPanel: View {
                 .onTapGesture { if let id = r.layerID, d.state.layer(id) != nil { d.selectLayer(id) } }
             }
             if rep.sizes.count > 8 {
-                Button(model.showAllSizes ? "Show fewer" : "Show all \(rep.sizes.count)") { model.showAllSizes.toggle() }
+                Button(tr(model.showAllSizes ? "Show fewer" : "Show all \(rep.sizes.count)")) { model.showAllSizes.toggle() }
                     .buttonStyle(.plain).font(Theme.fontSmall).foregroundStyle(Theme.accent).padding(.horizontal, 10).padding(.vertical, 5)
             }
         }
@@ -239,8 +239,8 @@ struct CleanUpDialog: View {
                             Image(systemName: k.symbol).font(.system(size: 10)).foregroundStyle(PreflightPanel.color(k.severity)).frame(width: 14)
                             VStack(alignment: .leading, spacing: 0) {
                                 Text("\(k.fixTitle ?? "Fix") — \(k.title.lowercased()) (\(count))")
-                                Text(k.cleanupDefault ? "Does not change how the document looks" + (saves > 50_000 ? " · saves ≈ \(Workflow2Util.byteString(saves))" : "")
-                                     : "May change the document" + (saves > 50_000 ? " · saves ≈ \(Workflow2Util.byteString(saves))" : ""))
+                                Text(tr(k.cleanupDefault ? "Does not change how the document looks" + (saves > 50_000 ? " · saves ≈ \(Workflow2Util.byteString(saves))" : "")
+                                     : "May change the document" + (saves > 50_000 ? " · saves ≈ \(Workflow2Util.byteString(saves))" : "")))
                                     .font(Theme.fontSmall).foregroundStyle(k.cleanupDefault ? Theme.textFaint : Color.orange.opacity(0.9))
                             }
                             Spacer()

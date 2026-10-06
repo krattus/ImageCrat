@@ -163,7 +163,7 @@ enum PendingEdits {
         while let s = m.supermenu, s !== NSApp.mainMenu { m = s }
         guard m.supermenu === NSApp.mainMenu else { return "" }      // context / pop-up menu
         if let main = NSApp.mainMenu, let i = main.items.firstIndex(where: { $0.submenu === m }), i == 0 { return appMenu }
-        return m.title
+        return L10nMenus.english(of: m.title, item: nil)   // (the English name, whatever the interface language)
     }
 
     /// True for clicks outside the canvas column: the panel columns to its right, the status bar / timeline below it,

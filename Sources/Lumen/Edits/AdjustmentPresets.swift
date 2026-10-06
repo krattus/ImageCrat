@@ -149,13 +149,13 @@ enum AdjustmentPresets {
     /// Asks for a preset name.
     static func promptName(_ suggested: String) -> String? {
         let a = NSAlert()
-        a.messageText = "Save Adjustment Preset"
-        a.informativeText = "Name:"
+        a.messageText = tr("Save Adjustment Preset")
+        a.informativeText = tr("Name:")
         let tf = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
         tf.stringValue = suggested
         a.accessoryView = tf
-        a.addButton(withTitle: "Save")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("Save"))
+        a.addButton(withTitle: tr("Cancel"))
         a.window.initialFirstResponder = tf
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return nil }
         let n = tf.stringValue.trimmingCharacters(in: .whitespaces)
@@ -175,15 +175,15 @@ struct AdjustmentPresetPicker: View {
         let user = AdjustmentPresets.userPresets(s.kind)
         HStack(spacing: 6) {
             Text("Preset").foregroundStyle(Theme.textDim)
-            Menu(AdjustmentPresets.matching(s) ?? "Custom") {
+            Menu(tr(AdjustmentPresets.matching(s) ?? "Custom")) {
                 Button("Default") { load(AdjustmentSettings(kind: s.kind)) }
                 if !builtIns.isEmpty {
                     Divider()
-                    ForEach(builtIns, id: \.name) { p in Button(p.name) { load(p.settings) } }
+                    ForEach(builtIns, id: \.name) { p in Button(tr(p.name)) { load(p.settings) } }
                 }
                 if !user.isEmpty {
                     Divider()
-                    ForEach(user, id: \.name) { p in Button(p.name) { load(p.settings) } }
+                    ForEach(user, id: \.name) { p in Button(tr(p.name)) { load(p.settings) } }
                 }
                 Divider()
                 Button("Save Preset…") {
@@ -193,7 +193,7 @@ struct AdjustmentPresetPicker: View {
                 }
                 if !user.isEmpty {
                     Menu("Delete Preset") {
-                        ForEach(user, id: \.name) { p in Button(p.name) { AdjustmentPresets.delete(p.name, kind: s.kind); tick += 1 } }
+                        ForEach(user, id: \.name) { p in Button(tr(p.name)) { AdjustmentPresets.delete(p.name, kind: s.kind); tick += 1 } }
                     }
                 }
             }

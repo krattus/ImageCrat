@@ -421,7 +421,7 @@ struct SkyReplacementDialog: View {
                                     VStack(spacing: 2) {
                                         Image(decorative: t, scale: 1).resizable().frame(width: 70, height: 46).clipShape(RoundedRectangle(cornerRadius: 3))
                                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(m.s.customSky == nil && m.s.presetIndex == i ? Theme.accent : .clear, lineWidth: 2))
-                                        Text(SkyPresets.presets[i].name).font(Theme.fontSmall).lineLimit(1)
+                                        Text(tr(SkyPresets.presets[i].name)).font(Theme.fontSmall).lineLimit(1)
                                     }
                                 }.buttonStyle(.plain)
                             }
@@ -455,7 +455,7 @@ struct SkyReplacementDialog: View {
                     HStack {
                         Toggle2(label: "Show Sky Mask", on: $m.showMask)
                         Spacer()
-                        Text(m.maskSource.isEmpty ? "" : "Mask: \(m.maskSource)").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                        Text(tr(m.maskSource.isEmpty ? "" : "Mask: \(m.maskSource)")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                     }
                 }
             }

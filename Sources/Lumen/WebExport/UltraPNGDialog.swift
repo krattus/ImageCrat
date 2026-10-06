@@ -332,7 +332,7 @@ struct UltraPNGDialog: View {
 
     private var previewBar: some View {
         HStack(spacing: 10) {
-            Picker("", selection: $session.view) { ForEach(UltraPNGSession.ViewMode.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $session.view) { ForEach(UltraPNGSession.ViewMode.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 300)
             Picker("", selection: $session.zoom) { Text("100%").tag(1.0); Text("200%").tag(2.0); Text("300%").tag(3.0); Text("400%").tag(4.0) }
                 .labelsHidden().frame(width: 80)
@@ -345,12 +345,12 @@ struct UltraPNGDialog: View {
     private var protectBar: some View {
         HStack(spacing: 8) {
             Text("Protect").foregroundStyle(Theme.textDim)
-            Picker("", selection: $session.protectTool) { ForEach(UltraPNGSession.ProtectTool.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $session.protectTool) { ForEach(UltraPNGSession.ProtectTool.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 190)
             if session.protectTool == .brush { ValueSlider(label: "Size", value: $session.brushSize, range: 4...120, unit: "px", labelWidth: 30).frame(width: 190) }
             Button("Clear") { session.clearProtect() }.buttonStyle(PanelButtonStyle()).disabled(session.protectedPixels == 0)
             Spacer()
-            Text(session.protectedPixels > 0 ? "\(session.protectedPixels) px stay pristine" : "Drag on the preview to mark regions that must stay pristine")
+            Text(tr(session.protectedPixels > 0 ? "\(session.protectedPixels) px stay pristine" : "Drag on the preview to mark regions that must stay pristine"))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
     }
@@ -373,7 +373,7 @@ struct UltraPNGDialog: View {
                 Toggle2(label: "Keep colour hidden under transparency", on: $session.keepHiddenRGB)
             }
             Caption("Effort")
-            Picker("", selection: $session.effort) { ForEach(UPEffort.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented).labelsHidden()
+            Picker("", selection: $session.effort) { ForEach(UPEffort.allCases) { Text(tr($0.title)).tag($0) } }.pickerStyle(.segmented).labelsHidden()
             HStack {
                 Text("Size").foregroundStyle(Theme.textDim)
                 Picker("", selection: $session.scalePercent) { Text("25%").tag(25.0); Text("50%").tag(50.0); Text("75%").tag(75.0); Text("100%").tag(100.0); Text("200%").tag(200.0) }
@@ -386,10 +386,10 @@ struct UltraPNGDialog: View {
             HStack { Text("Copyright").foregroundStyle(Theme.textDim); TextField("none", text: $session.copyright, onCommit: { session.schedule() }).frame(width: 190) }
             Divider()
             Caption("Result")
-            Text(session.sizeLine).font(Theme.fontBold).fixedSize(horizontal: false, vertical: true)
-            if !session.info.isEmpty { Text(session.info).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true) }
+            Text(tr(session.sizeLine)).font(Theme.fontBold).fixedSize(horizontal: false, vertical: true)
+            if !session.info.isEmpty { Text(tr(session.info)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true) }
             if let q = session.quality, session.lossy {
-                Text(String(format: "SSIM %.4f · perceptual Q %.4f · edge ΔE %.1f · banding %.2f", q.ssim, q.q, q.edgeDE, q.banding))
+                Text(tr(String(format: "SSIM %.4f · perceptual Q %.4f · edge ΔE %.1f · banding %.2f", q.ssim, q.q, q.edgeDE, q.banding)))
                     .font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
                 if !session.targetMet { Text("The target cannot be reached with these limits — best effort shown.").font(Theme.fontSmall).foregroundStyle(.orange) }
             }
@@ -401,7 +401,7 @@ struct UltraPNGDialog: View {
         HStack(spacing: 10) {
             if session.busy {
                 ProgressView(value: session.progress).frame(width: 220)
-                Text(session.stage).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                Text(tr(session.stage)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
                 Button("Stop") { session.cancelWork() }.buttonStyle(PanelButtonStyle())
             }
             Spacer()

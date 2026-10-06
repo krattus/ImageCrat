@@ -101,7 +101,7 @@ struct HistorySnapshotsSection: View {
                         TextField("", text: $renameText).textFieldStyle(.plain).font(Theme.font)
                             .onSubmit { store.rename(doc, s.id, to: renameText); renaming = nil }
                     } else {
-                        Text(s.name).font(Theme.font).foregroundStyle(Theme.text).lineLimit(1)
+                        Text(tr(s.name)).font(Theme.font).foregroundStyle(Theme.text).lineLimit(1)
                     }
                     Spacer()
                 }

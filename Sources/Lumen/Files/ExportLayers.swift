@@ -107,7 +107,7 @@ struct LayersToFilesDialog: View {
                     Text("File Prefix").frame(width: 80, alignment: .leading)
                     TextField("", text: $prefix).frame(width: 200)
                 }
-                Picker("File Type", selection: $format) { ForEach(LayersToFiles.Format.allCases) { Text($0.rawValue).tag($0) } }.frame(width: 220)
+                Picker("File Type", selection: $format) { ForEach(LayersToFiles.Format.allCases) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 220)
                 if format == .jpeg { ValueSlider(label: "Quality", value: $quality, range: 0.1...1, format: "%.2f") }
                 Toggle2(label: "Visible Layers Only", on: $visibleOnly)
                 Toggle2(label: "Trim Layers", on: $trim)
@@ -448,8 +448,8 @@ struct SaveForWebDialog: View {
                     NumberFieldPct(value: $percent)
                     if let s = source { Text("\(Int(Double(s.width) * pct / 100)) × \(Int(Double(s.height) * pct / 100)) px").foregroundStyle(Theme.textDim) }
                     Spacer()
-                    Picker("Metadata", selection: $metadata) { ForEach(WebMetadata.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.frame(width: 250)
-                    Picker("", selection: $speedIndex) { ForEach(Array(Self.speeds.enumerated()), id: \.offset) { Text($1.0).tag($0) } }.labelsHidden().frame(width: 150)
+                    Picker("Metadata", selection: $metadata) { ForEach(WebMetadata.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 250)
+                    Picker("", selection: $speedIndex) { ForEach(Array(Self.speeds.enumerated()), id: \.offset) { Text(tr($1.0)).tag($0) } }.labelsHidden().frame(width: 150)
                 }
                 if metadata != .none {
                     HStack { Text("Copyright").frame(width: 70, alignment: .leading); TextField("© Your Name", text: $copyright).frame(width: 260) }
@@ -488,9 +488,9 @@ struct SaveForWebDialog: View {
             HStack {
                 if let i {
                     let r = results[i]
-                    Text(panes[i].format.rawValue).font(Theme.fontBold)
-                    Text(r.map { WebEncoder.sizeLabel($0.data.count) } ?? "…")
-                    Text(r.map { String(format: "%.1f sec @ %@", WebEncoder.downloadTime($0.data.count, bitsPerSecond: Self.speeds[speedIndex].1), Self.speeds[speedIndex].0) } ?? "")
+                    Text(tr(panes[i].format.rawValue)).font(Theme.fontBold)
+                    Text(tr(r.map { WebEncoder.sizeLabel($0.data.count) } ?? "…"))
+                    Text(tr(r.map { String(format: "%.1f sec @ %@", WebEncoder.downloadTime($0.data.count, bitsPerSecond: Self.speeds[speedIndex].1), Self.speeds[speedIndex].0) } ?? ""))
                         .foregroundStyle(Theme.textFaint)
                 } else {
                     Text("Original").font(Theme.fontBold)
@@ -509,7 +509,7 @@ struct SaveForWebDialog: View {
         let i = visiblePanes.contains(selected) ? selected : 0
         VStack(alignment: .leading, spacing: 8) {
             Text("Settings (pane \(i + 1))").font(Theme.fontBold)
-            Picker("Format", selection: $panes[i].format) { ForEach(WebFormat.available) { Text($0.rawValue).tag($0) } }
+            Picker("Format", selection: $panes[i].format) { ForEach(WebFormat.available) { Text(tr($0.rawValue)).tag($0) } }
             if panes[i].format.lossy {
                 ValueSlider(label: "Quality", value: $panes[i].quality, range: 0...100, labelWidth: 60)
                 if panes[i].format == .jpeg { Toggle2(label: "Progressive", on: $panes[i].progressive) }

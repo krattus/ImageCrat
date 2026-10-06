@@ -14,7 +14,7 @@ struct ModelDownloadButton: View {
                 Text("Downloading…").foregroundStyle(Theme.textFaint)
             }
         } else if !mm.isInstalled(id), let s = mm.spec(id) {
-            Button(label ?? "Download model (\(s.approxMB) MB)") {
+            Button(tr(label ?? "Download model (\(s.approxMB) MB)")) {
                 Task {
                     do {
                         try await mm.ensure(id)
@@ -29,7 +29,7 @@ struct ModelDownloadButton: View {
             }
             .buttonStyle(PanelButtonStyle(prominent: true))
             .help("\(s.name) — \(s.purpose). \(s.license).")
-            if let e = mm.errors[id] { Text(e).foregroundStyle(.red).lineLimit(1) }
+            if let e = mm.errors[id] { Text(tr(e)).foregroundStyle(.red).lineLimit(1) }
         }
     }
 }
@@ -42,7 +42,7 @@ struct ObjectSelectOptionsBar: View {
 
     var body: some View {
         CombineModeButtons(mode: $app.selection.combine)
-        Picker("Mode", selection: $app.objectSelectMode) { ForEach(ObjectSelectMode.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
+        Picker("Mode", selection: $app.objectSelectMode) { ForEach(ObjectSelectMode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }
             .frame(width: 140)
         if mm.isInstalled(SegModels.sam2) {
             Toggle2(label: "Object Finder", on: $s.objectFinder)
@@ -72,7 +72,7 @@ struct ObjectSelectOptionsBar: View {
         Button("Select and Mask…") { AppModel.shared.dialog = .selectAndMask }.buttonStyle(PanelButtonStyle())
         if let b = s.busy {
             ProgressView().controlSize(.small)
-            Text(b).foregroundStyle(Theme.textFaint)
+            Text(tr(b)).foregroundStyle(Theme.textFaint)
         } else if s.analyzing {
             ProgressView().controlSize(.small)
             Text("Analyzing image…").foregroundStyle(Theme.textFaint)
@@ -99,12 +99,12 @@ struct SelectByDescriptionDialog: View {
                 TextField("Describe what to select (e.g. “the red car”, “sky”, “person on the left”)", text: $prompt)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit(run)
-                Button(running ? "Finding…" : "Find", action: run).buttonStyle(PanelButtonStyle(prominent: true)).disabled(running || prompt.isEmpty)
+                Button(tr(running ? "Finding…" : "Find"), action: run).buttonStyle(PanelButtonStyle(prominent: true)).disabled(running || prompt.isEmpty)
             }
-            Picker("Engine", selection: $s.textEngine) { ForEach(SegmentationService.TextEngine.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Engine", selection: $s.textEngine) { ForEach(SegmentationService.TextEngine.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if s.textEngine == .highQuality, let why = SAM3Engine.unavailableReason {
                 HStack {
-                    Text(why + " Falls back to Fast.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                    Text(tr(why) + tr(" Falls back to Fast.")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                     if !SegModels.sam3Installed { ModelDownloadButton(id: SegModels.sam3, label: "Get SAM 3.1 (3.3 GB)") }
                 }
             }
@@ -124,14 +124,14 @@ struct SelectByDescriptionDialog: View {
                     Text("Subtract").tag(SelectionCombine.subtract); Text("Intersect").tag(SelectionCombine.intersect)
                 }.labelsHidden().frame(width: 110)
             }
-            if !message.isEmpty { Text(message).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
+            if !message.isEmpty { Text(tr(message)).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
             if !matches.isEmpty {
                 Caption("Matches")
                 ScrollView {
                     VStack(alignment: .leading, spacing: 3) {
                         ForEach(matches.indices, id: \.self) { i in
                             Toggle(isOn: Binding(get: { chosen.contains(i) }, set: { if $0 { chosen.insert(i) } else { chosen.remove(i) }; preview() })) {
-                                Text("\(i + 1). \(matches[i].label) — \(Int(matches[i].box.width))×\(Int(matches[i].box.height)) px, score \(String(format: "%.2f", matches[i].score))")
+                                Text("\(i + 1). \(tr(matches[i].label)) — \(Int(matches[i].box.width))×\(Int(matches[i].box.height)) px, score \(String(format: "%.2f", matches[i].score))")
                                     .font(Theme.font)
                             }.toggleStyle(.checkbox)
                         }
@@ -208,7 +208,7 @@ struct RefineHairButton: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Button(running ? "Refining…" : "Refine Hair") {
+            Button(tr(running ? "Refining…" : "Refine Hair")) {
                 running = true
                 ObjectSelectionModule.refineHair(mask: AppActions.doc?.state.selection, quality: s.hairQuality) { m in
                     running = false
@@ -218,7 +218,7 @@ struct RefineHairButton: View {
             .buttonStyle(PanelButtonStyle())
             .disabled(running || AppActions.doc?.state.selection == nil)
             .help("Refines hair and fine edges of the selection with an on-device matting model (BiRefNet)")
-            Picker("", selection: $s.hairQuality) { ForEach(SegMatting.Quality.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $s.hairQuality) { ForEach(SegMatting.Quality.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 .labelsHidden().frame(width: 110)
             if hairMask != nil {
                 Button("Reset") { hairMask = nil; onChange() }.buttonStyle(PanelButtonStyle())

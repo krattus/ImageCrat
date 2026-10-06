@@ -166,14 +166,14 @@ struct ArtboardPreferencesSection: View {
         Caption("Appearance")
         HStack {
             Text("Color").foregroundStyle(Theme.textDim).frame(width: 110, alignment: .leading)
-            Picker("", selection: $s.prefs.matte) { ForEach(ArtboardMatte.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $s.prefs.matte) { ForEach(ArtboardMatte.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 .labelsHidden().frame(width: 140)
             if s.prefs.matte == .custom { ColorWell(color: $s.prefs.customMatte) }
         }
         .help("The pasteboard around the artboards")
         HStack {
             Text("Border").foregroundStyle(Theme.textDim).frame(width: 110, alignment: .leading)
-            Picker("", selection: $s.prefs.border) { ForEach(ArtboardBorderStyle.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $s.prefs.border) { ForEach(ArtboardBorderStyle.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 .labelsHidden().frame(width: 140)
         }
         Toggle2(label: "Show Artboard Names", on: $s.prefs.showNames)

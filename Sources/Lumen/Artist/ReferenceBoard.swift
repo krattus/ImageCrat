@@ -526,7 +526,7 @@ final class ReferenceBoardController {
         panel.collectionBehavior = [.fullScreenAuxiliary, .moveToActiveSpace]
         panel.appearance = NSAppearance(named: .darkAqua)
         panel.minSize = NSSize(width: 440, height: 200)
-        let bar = NSHostingView(rootView: RefBoardToolbar(ui: ui, view: view, controller: self).environment(\.colorScheme, .dark))
+        let bar = NSHostingView(rootView: RefBoardToolbar(ui: ui, view: view, controller: self).environment(\.colorScheme, .dark).l10nRoot())
         let container = NSView(frame: NSRect(x: 0, y: 0, width: 460, height: 380))
         bar.frame = NSRect(x: 0, y: 352, width: 460, height: 28)
         bar.autoresizingMask = [.width, .minYMargin]
@@ -551,8 +551,8 @@ final class ReferenceBoardController {
 
     func updateTitle() {
         switch ui.scope {
-        case .global: panel.title = "Reference — Global"
-        case .document: panel.title = "Reference — " + (AppModel.shared.activeDocument?.name ?? "No Document")
+        case .global: panel.title = tr("Reference — Global")
+        case .document: panel.title = tr("Reference — ") + (AppModel.shared.activeDocument?.name ?? tr("No Document"))
         }
     }
 

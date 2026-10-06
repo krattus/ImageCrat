@@ -267,16 +267,16 @@ struct SVGExportDialog: View {
 
     var body: some View {
         DialogFrame(title: "Export SVG", width: 460, okTitle: "Save…", onOK: save) {
-            Picker("", selection: $mode) { ForEach(SVGExportOptions.Mode.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).labelsHidden()
+            Picker("", selection: $mode) { ForEach(SVGExportOptions.Mode.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented).labelsHidden()
             Toggle2(label: "Keep text live (<text>; needs the font on the viewer's machine)", on: $liveText)
             if mode == .hybrid { Toggle2(label: "Embedded pixels: Perceptual Ultra PNG (off = lossless)", on: $lossyRaster) }
             ValueSlider(label: "Precision", value: $precision, range: 0...4, step: 1, unit: " dp")
             if let r = result {
                 let t = WXTransfer.estimate(r.data, mime: "image/svg+xml")
                 Text("\(WXTransfer.bytes(r.data.count)) — \(WXTransfer.bytes(t.gzip)) gzip, \(WXTransfer.bytes(t.brotli)) Brotli on the wire").font(Theme.fontBold)
-                Text("\(r.vectorLayers) vector layer(s), \(r.rasterLayers) embedded raster layer(s)" + (r.embeddedBytes > 0 ? " (\(WXTransfer.bytes(r.embeddedBytes)) of PNG)" : ""))
+                Text(tr("\(r.vectorLayers) vector layer(s), \(r.rasterLayers) embedded raster layer(s)" + (r.embeddedBytes > 0 ? " (\(WXTransfer.bytes(r.embeddedBytes)) of PNG)" : "")))
                     .foregroundStyle(Theme.textDim)
-                ForEach(r.notes, id: \.self) { Text($0).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true) }
+                ForEach(r.notes, id: \.self) { Text(tr($0)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true) }
             }
         }
         .onAppear(perform: refresh)

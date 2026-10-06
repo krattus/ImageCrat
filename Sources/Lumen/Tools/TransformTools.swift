@@ -715,11 +715,11 @@ final class MoveTool: Tool {
             if d.activeLayerID == id { item.state = .on }
         }
         if !under.isEmpty { m.addItem(.separator()) }
-        m.addItem(withTitle: "Free Transform", action: #selector(MenuTarget.freeTransform), keyEquivalent: "").target = MenuTarget.shared
-        m.addItem(withTitle: "Flip Horizontal", action: #selector(MenuTarget.flipH), keyEquivalent: "").target = MenuTarget.shared
-        m.addItem(withTitle: "Flip Vertical", action: #selector(MenuTarget.flipV), keyEquivalent: "").target = MenuTarget.shared
-        m.addItem(withTitle: "Rotate 90° Clockwise", action: #selector(MenuTarget.rotateCW), keyEquivalent: "").target = MenuTarget.shared
-        m.addItem(withTitle: "Rotate 90° Counter Clockwise", action: #selector(MenuTarget.rotateCCW), keyEquivalent: "").target = MenuTarget.shared
+        m.addItem(withTitle: tr("Free Transform"), action: #selector(MenuTarget.freeTransform), keyEquivalent: "").target = MenuTarget.shared
+        m.addItem(withTitle: tr("Flip Horizontal"), action: #selector(MenuTarget.flipH), keyEquivalent: "").target = MenuTarget.shared
+        m.addItem(withTitle: tr("Flip Vertical"), action: #selector(MenuTarget.flipV), keyEquivalent: "").target = MenuTarget.shared
+        m.addItem(withTitle: tr("Rotate 90° Clockwise"), action: #selector(MenuTarget.rotateCW), keyEquivalent: "").target = MenuTarget.shared
+        m.addItem(withTitle: tr("Rotate 90° Counter Clockwise"), action: #selector(MenuTarget.rotateCCW), keyEquivalent: "").target = MenuTarget.shared
         if !AppActions.canFreeTransform { m.autoenablesItems = false; m.items.forEach { $0.isEnabled = $0.target === AutoSelectMenuTarget.shared } }
         return m
     }

@@ -105,9 +105,9 @@ enum GenPipeline {
     @MainActor static func confirmUpload(_ p: ProviderID, hasImage: Bool) throws {
         guard settings.confirmUploads, hasImage, !confirmedProviders.contains(p), !GenJobs.shared.headless else { return }
         let a = NSAlert()
-        a.messageText = "Upload image to \(p.displayName)?"
-        a.informativeText = "Part of your document will be sent to \(p.displayName) for processing. \(p.privacyNote)"
-        a.addButton(withTitle: "Upload"); a.addButton(withTitle: "Cancel")
+        a.messageText = tr("Upload image to \(tr(p.displayName))?")
+        a.informativeText = tr("Part of your document will be sent to \(tr(p.displayName)) for processing. \(p.privacyNote)")
+        a.addButton(withTitle: tr("Upload")); a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn else { throw GenError.cancelled }
         confirmedProviders.insert(p)
     }

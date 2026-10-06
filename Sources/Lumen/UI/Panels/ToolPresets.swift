@@ -95,7 +95,7 @@ struct ToolPresetsPanel: View {
                 LazyVStack(spacing: 0) {
                     let list = store.presets.filter { !store.currentToolOnly || $0.tool == app.tool }
                     if list.isEmpty {
-                        Text(store.currentToolOnly ? "No presets for this tool" : "No tool presets").foregroundStyle(Theme.textFaint).padding(12)
+                        Text(tr(store.currentToolOnly ? "No presets for this tool" : "No tool presets")).foregroundStyle(Theme.textFaint).padding(12)
                     }
                     ForEach(list) { p in
                         HStack(spacing: 6) {
@@ -106,7 +106,7 @@ struct ToolPresetsPanel: View {
                                     renaming = nil
                                 }
                             } else {
-                                Text(p.name).lineLimit(1)
+                                Text(tr(p.name)).lineLimit(1)
                             }
                             Spacer()
                         }
@@ -141,15 +141,15 @@ struct ToolPresetPicker: View {
     var body: some View {
         Menu {
             let list = store.presets.filter { $0.tool == app.tool }
-            ForEach(list) { p in Button(p.name) { ToolPresetStore.apply(p) } }
+            ForEach(list) { p in Button(tr(p.name)) { ToolPresetStore.apply(p) } }
             if !list.isEmpty { Divider() }
             Button("New Tool Preset…") {
                 let a = NSAlert()
-                a.messageText = "New Tool Preset"
+                a.messageText = tr("New Tool Preset")
                 let f = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
                 f.stringValue = "\(app.tool.displayName.replacingOccurrences(of: " Tool", with: "")) \(list.count + 1)"
                 a.accessoryView = f
-                a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel")
+                a.addButton(withTitle: tr("OK")); a.addButton(withTitle: tr("Cancel"))
                 if UIBlock.run(a) == .alertFirstButtonReturn { store.newPreset(name: f.stringValue) }
             }
             .disabled(ToolPresetStore.capture(app.tool) == nil)

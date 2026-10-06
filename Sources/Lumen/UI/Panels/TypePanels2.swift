@@ -70,7 +70,7 @@ struct ListControls: View {
             }
             onCommit()
         })) {
-            ForEach(Mode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            ForEach(Mode.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) }
         }
         .labelsHidden()
         .segmentedOrMenu()
@@ -79,7 +79,7 @@ struct ListControls: View {
                 WrappingHStack {
                     Text("Bullet").foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
                     Picker("", selection: Binding(get: { l.bullet }, set: { t.list?.bullet = $0; onCommit() })) {
-                        ForEach(BulletGlyph.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                        ForEach(BulletGlyph.allCases, id: \.self) { Text(tr($0.displayName)).tag($0) }
                     }
                     .labelsHidden()
                     if l.bullet == .custom {
@@ -92,11 +92,11 @@ struct ListControls: View {
                 WrappingHStack {
                     Text("Style").foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
                     Picker("", selection: Binding(get: { l.numbering }, set: { t.list?.numbering = $0; onCommit() })) {
-                        ForEach(NumberingStyle.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                        ForEach(NumberingStyle.allCases, id: \.self) { Text(tr($0.displayName)).tag($0) }
                     }
                     .labelsHidden()
                     Picker("", selection: Binding(get: { l.suffix }, set: { t.list?.suffix = $0; onCommit() })) {
-                        ForEach([".", ")", ":", ""], id: \.self) { Text($0.isEmpty ? "none" : $0).tag($0) }
+                        ForEach([".", ")", ":", ""], id: \.self) { Text(tr($0.isEmpty ? "none" : $0)).tag($0) }
                     }
                     .labelsHidden()
                     .frame(width: 56)
@@ -135,7 +135,7 @@ struct DynamicTextControls: View {
             Spacer()
         }
         if t.fitToBox != nil, let info = TextRenderer.fitInfo(t) {
-            Text(String(format: "Fitted size %.1f px", t.fontSize * Double(info.scale)) + (info.tracking > 0.5 ? String(format: ", tracking +%.0f", info.tracking) : ""))
+            Text(tr(String(format: "Fitted size %.1f px", t.fontSize * Double(info.scale)) + (info.tracking > 0.5 ? String(format: ", tracking +%.0f", info.tracking) : "")))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
     }
@@ -149,7 +149,7 @@ struct ComposerControls: View {
         Caption("Composer")
         HStack {
             Picker("", selection: Binding(get: { t.composer }, set: { t.composer = $0; onCommit() })) {
-                ForEach(TextComposer.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                ForEach(TextComposer.allCases, id: \.self) { Text(tr($0.displayName)).tag($0) }
             }
             .labelsHidden()
         }

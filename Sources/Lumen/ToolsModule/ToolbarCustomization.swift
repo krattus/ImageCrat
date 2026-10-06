@@ -187,8 +187,8 @@ struct ToolbarCustomizeDialog: View {
                                     })) {
                                         HStack(spacing: 6) {
                                             Image(systemName: t.symbol).frame(width: 16)
-                                            Text(t.displayName)
-                                            if !t.shortcut.isEmpty { Text(t.shortcut).foregroundStyle(Theme.textFaint) }
+                                            Text(tr(t.displayName))
+                                            if !t.shortcut.isEmpty { Text(tr(t.shortcut)).foregroundStyle(Theme.textFaint) }
                                         }.font(Theme.font)
                                     }.toggleStyle(.checkbox)
                                 }

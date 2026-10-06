@@ -192,7 +192,7 @@ struct ColorRangeProDialog: View {
         DialogFrame(title: "Color Range", width: 340, onOK: apply, onCancel: { AppActions.doc?.revertUncommitted() }) {
             Picker("Select", selection: Binding(get: { o.mode }, set: { setMode($0) })) {
                 ForEach(ColorRangeMode.allCases) { m in
-                    Text(m.rawValue).tag(m)
+                    Text(tr(m.rawValue)).tag(m)
                     if m == .sampled || m == .magentas || m == .shadows || m == .skinTones { Divider() }
                 }
             }
@@ -205,7 +205,7 @@ struct ColorRangeProDialog: View {
             }
             if o.mode == .skinTones {
                 Toggle2(label: "Detect Faces", on: $o.detectFaces)
-                if o.detectFaces { Text(smallFaces.isEmpty ? "No faces detected." : "\(smallFaces.count) face\(smallFaces.count == 1 ? "" : "s") detected.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+                if o.detectFaces { Text(tr(smallFaces.isEmpty ? "No faces detected." : "\(smallFaces.count) face\(smallFaces.count == 1 ? "" : "s") detected.")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
             }
             if o.mode.usesFuzziness {
                 ValueSlider(label: "Fuzziness", value: $o.fuzziness, range: o.mode.isTonal ? 0...100 : 0...200, unit: o.mode.isTonal ? "%" : "")

@@ -231,12 +231,12 @@ enum PDFVectorImport {
 
     private static func askPassword(_ name: String, retry: Bool) -> String? {
         let a = NSAlert()
-        a.messageText = retry ? "That password did not unlock “\(name)”." : "“\(name)” is password-protected."
-        a.informativeText = "Enter the password to open it."
+        a.messageText = tr(retry ? "That password did not unlock “\(name)”." : "“\(name)” is password-protected.")
+        a.informativeText = tr("Enter the password to open it.")
         let field = NSSecureTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
         a.accessoryView = field
-        a.addButton(withTitle: "Open")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("Open"))
+        a.addButton(withTitle: tr("Cancel"))
         a.window.initialFirstResponder = field
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return nil }
         return field.stringValue

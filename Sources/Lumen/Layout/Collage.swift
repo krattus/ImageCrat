@@ -303,9 +303,9 @@ struct CollageDialog: View {
 
     var body: some View {
         DialogFrame(title: "Auto Collage", width: 340, okTitle: "Create", onOK: { finish(true) }, onCancel: { finish(false) }) {
-            Picker("", selection: $s.style) { ForEach(CollageSettings.Style.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).labelsHidden()
+            Picker("", selection: $s.style) { ForEach(CollageSettings.Style.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented).labelsHidden()
             Picker("Fill", selection: $s.area) {
-                ForEach(CollageSettings.Area.allCases.filter { $0 != .artboard || hasArtboard }) { Text($0.rawValue).tag($0) }
+                ForEach(CollageSettings.Area.allCases.filter { $0 != .artboard || hasArtboard }) { Text(tr($0.rawValue)).tag($0) }
             }
             ValueSlider(label: "Gutter", value: $s.gutter, range: 0...120, unit: "px", labelWidth: 84)
             ValueSlider(label: "Margin", value: $s.margin, range: 0...300, unit: "px", labelWidth: 84)
@@ -321,7 +321,7 @@ struct CollageDialog: View {
                 Spacer()
                 Button("Add Images…") { chooseFiles() }.buttonStyle(PanelButtonStyle())
             }
-            Text(count == 0 ? "Select image layers, or add image files." : "\(count) image\(count == 1 ? "" : "s") · each cell is a frame: select the picture inside to move or scale it.")
+            Text(tr(count == 0 ? "Select image layers, or add image files." : "\(count) image\(count == 1 ? "" : "s") · each cell is a frame: select the picture inside to move or scale it."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         }
         .onAppear {
@@ -339,7 +339,7 @@ struct CollageDialog: View {
         let p = NSOpenPanel()
         p.allowsMultipleSelection = true
         p.allowedContentTypes = [.image]
-        p.prompt = "Add"
+        p.prompt = tr("Add")
         guard p.runModal() == .OK else { return }
         for u in p.urls {
             guard let (cg, _) = DocumentIO.loadImage(url: u) else { continue }

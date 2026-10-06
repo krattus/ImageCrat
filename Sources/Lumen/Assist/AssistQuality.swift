@@ -333,7 +333,7 @@ enum AssistQuality {
         let long = max(cg.width, cg.height), short = min(cg.width, cg.height)
         if long < needL || short < needS {
             let cmW = Double(cg.width) / 300 * 2.54, cmH = Double(cg.height) / 300 * 2.54
-            issues.append(Issue(kind: .lowResolution, severity: long < needL / 2 ? .problem : .warning, title: "Low resolution for \(use.rawValue)",
+            issues.append(Issue(kind: .lowResolution, severity: long < needL / 2 ? .problem : .warning, title: "Low resolution for \(tr(use.rawValue))",
                                 detail: String(format: "%d×%d px; %@ needs about %d×%d. Prints %.1f×%.1f cm at 300 ppi.", cg.width, cg.height, use.rawValue, needL, needS, cmW, cmH), fix: nil))
         }
         if let t = m.tiltDegrees, abs(t) >= 0.8, abs(t) <= 20 {
@@ -569,7 +569,7 @@ struct AssistAnalyzeDialog: View {
     var body: some View {
         DialogFrame(title: "Analyze Image", width: 440, okTitle: "Done", onOK: {}) {
             HStack {
-                Picker("Intended use", selection: $m.use) { ForEach(AssistQuality.Use.allCases) { Text($0.rawValue).tag($0) } }.frame(width: 260)
+                Picker("Intended use", selection: $m.use) { ForEach(AssistQuality.Use.allCases) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 260)
                     .onChange(of: m.use) { _, _ in m.analyze() }
                 Spacer()
                 if m.running { ProgressView().controlSize(.small) }
@@ -592,8 +592,8 @@ struct AssistAnalyzeDialog: View {
                                 HStack(alignment: .top, spacing: 8) {
                                     Circle().fill(i.severity == .problem ? Color.red : (i.severity == .warning ? Color.orange : Color.gray)).frame(width: 8, height: 8).padding(.top, 4)
                                     VStack(alignment: .leading, spacing: 1) {
-                                        Text(i.title).font(Theme.fontBold)
-                                        Text(i.detail).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
+                                        Text(tr(i.title)).font(Theme.fontBold)
+                                        Text(tr(i.detail)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
                                     }
                                     Spacer()
                                     if let f = i.fix { Button(f.title) { m.fix(i) }.buttonStyle(PanelButtonStyle()).disabled(m.running) }
@@ -603,7 +603,7 @@ struct AssistAnalyzeDialog: View {
                     }
                     .frame(maxHeight: 230)
                 }
-                if !m.log.isEmpty { Text("Added: " + m.log.joined(separator: ", ")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+                if !m.log.isEmpty { Text(tr("Added: " + m.log.joined(separator: ", "))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
                 HStack {
                     Button("Auto Enhance") {
                         if let d = AppActions.doc { m.log += ["Auto Enhance"]; AssistQuality.autoEnhance(d, report: r); m.analyze() }
@@ -622,8 +622,8 @@ struct AssistAnalyzeDialog: View {
 
     @ViewBuilder func metric(_ label: String, _ value: String) -> some View {
         HStack(spacing: 4) {
-            Text(label).foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
-            Text(value).font(Theme.mono)
+            Text(tr(label)).foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
+            Text(tr(value)).font(Theme.mono)
         }
     }
 }

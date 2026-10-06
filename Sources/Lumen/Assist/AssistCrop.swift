@@ -384,7 +384,7 @@ struct AssistCropDialog: View {
             HStack(spacing: 6) {
                 ForEach(AssistCrop.Ratio.standard) { r in
                     let on = m.ratios.contains(r.id)
-                    Button(r.label) { if on { m.ratios.remove(r.id) } else { m.ratios.insert(r.id) }; m.run() }
+                    Button(tr(r.label)) { if on { m.ratios.remove(r.id) } else { m.ratios.insert(r.id) }; m.run() }
                         .buttonStyle(.plain).font(Theme.font)
                         .padding(.horizontal, 8).padding(.vertical, 3)
                         .background(RoundedRectangle(cornerRadius: 10).fill(on ? Theme.accent.opacity(0.85) : Theme.fieldBG))
@@ -397,7 +397,7 @@ struct AssistCropDialog: View {
             if let t = m.tilt, abs(t) >= 0.8 {
                 HStack {
                     Image(systemName: "level").foregroundStyle(.orange)
-                    Text(String(format: "The horizon is tilted %.1f°.", abs(t))).font(Theme.font)
+                    Text(tr(String(format: "The horizon is tilted %.1f°.", abs(t)))).font(Theme.font)
                     Button("Straighten + Crop") {
                         if let d = AppActions.doc { AssistCrop.autoStraightenAndCrop(d, tiltDegrees: t); m.image = nil; m.context = nil; m.run() }
                     }.buttonStyle(PanelButtonStyle())
@@ -417,8 +417,8 @@ struct AssistCropDialog: View {
                 }
             }
             .frame(height: 360)
-            Text(m.candidates.isEmpty ? "Analysing saliency, faces and horizon…" :
-                    String(format: "Click to choose, ⌘-click to choose several. Crops never delete pixels. (%.1f s)", m.seconds))
+            Text(tr(m.candidates.isEmpty ? "Analysing saliency, faces and horizon…" :
+                    String(format: "Click to choose, ⌘-click to choose several. Crops never delete pixels. (%.1f s)", m.seconds)))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
         .onAppear { if m.candidates.isEmpty { m.run() } }
@@ -433,7 +433,7 @@ struct AssistCropDialog: View {
             }
             HStack(spacing: 4) {
                 Text("\(Int(c.score.rounded()))").font(Theme.fontBold).foregroundStyle(c.score > 70 ? Color.green : (c.score > 50 ? Color.orange : Theme.textDim))
-                Text(c.notes.prefix(2).joined(separator: ", ")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
+                Text(tr(c.notes.prefix(2).joined(separator: ", "))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
             }
             Text("\(Int(c.rect.width))×\(Int(c.rect.height))").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }

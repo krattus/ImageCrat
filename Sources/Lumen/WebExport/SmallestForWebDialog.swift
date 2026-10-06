@@ -172,10 +172,10 @@ struct SmallestForWebDialog: View {
                 Text("Quality").foregroundStyle(Theme.textDim)
                 Picker("", selection: $session.preset) { Text("Visually lossless").tag(0); Text("High").tag(1); Text("Medium").tag(2); Text("Small").tag(3) }
                     .labelsHidden().frame(width: 150)
-                Picker("", selection: $session.effort) { ForEach(UPEffort.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented).labelsHidden().frame(width: 220)
+                Picker("", selection: $session.effort) { ForEach(UPEffort.allCases) { Text(tr($0.title)).tag($0) } }.pickerStyle(.segmented).labelsHidden().frame(width: 220)
                 Toggle2(label: "Soften unimportant background", on: $session.smartBlur)
                 Spacer()
-                Button(session.candidates.isEmpty ? "Analyse" : "Analyse Again") { session.analyse() }.buttonStyle(PanelButtonStyle(prominent: session.candidates.isEmpty))
+                Button(tr(session.candidates.isEmpty ? "Analyse" : "Analyse Again")) { session.analyse() }.buttonStyle(PanelButtonStyle(prominent: session.candidates.isEmpty))
             }
             HStack(spacing: 10) {
                 Text("Try").foregroundStyle(Theme.textDim)
@@ -185,7 +185,7 @@ struct SmallestForWebDialog: View {
                 }
             }
             table
-            ForEach(WXEncoders.unavailableNotes, id: \.self) { Text($0).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+            ForEach(WXEncoders.unavailableNotes, id: \.self) { Text(tr($0)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
             if let g = session.gradient { hint("CSS", g.description + "  " + g.css) }
             if let v = session.vectorNote { hint("SVG", v) }
             Divider()
@@ -210,7 +210,7 @@ struct SmallestForWebDialog: View {
             HStack(spacing: 10) {
                 if session.busy {
                     ProgressView(value: session.progress).frame(width: 200)
-                    Text(session.stage).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                    Text(tr(session.stage)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
                     Button("Stop") { session.cancel() }.buttonStyle(PanelButtonStyle())
                 }
                 Spacer()
@@ -228,8 +228,8 @@ struct SmallestForWebDialog: View {
 
     private func hint(_ tag: String, _ text: String) -> some View {
         HStack(alignment: .top, spacing: 6) {
-            Text(tag).font(.system(size: 9, weight: .bold)).padding(.horizontal, 5).padding(.vertical, 2).background(RoundedRectangle(cornerRadius: 3).fill(Theme.accent.opacity(0.6)))
-            Text(text).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+            Text(tr(tag)).font(.system(size: 9, weight: .bold)).padding(.horizontal, 5).padding(.vertical, 2).background(RoundedRectangle(cornerRadius: 3).fill(Theme.accent.opacity(0.6)))
+            Text(tr(text)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
         }
     }
 
@@ -247,22 +247,22 @@ struct SmallestForWebDialog: View {
             .font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.textFaint).padding(.vertical, 3)
             Divider()
             if session.candidates.isEmpty {
-                Text(session.busy ? "Encoding every format to the same perceptual quality…" : "Press Analyse.").foregroundStyle(Theme.textFaint).frame(height: 120).frame(maxWidth: .infinity)
+                Text(tr(session.busy ? "Encoding every format to the same perceptual quality…" : "Press Analyse.")).foregroundStyle(Theme.textFaint).frame(height: 120).frame(maxWidth: .infinity)
             }
             ForEach(session.candidates) { c in
                 HStack(spacing: 0) {
                     Image(systemName: session.selected.contains(c.kind) ? "checkmark.square.fill" : "square").frame(width: 26)
                         .foregroundStyle(session.selected.contains(c.kind) ? Theme.accent : Theme.textFaint)
                     HStack(spacing: 4) {
-                        Text(c.kind.rawValue).fontWeight(c.kind == session.winner ? .semibold : .regular)
+                        Text(tr(c.kind.rawValue)).fontWeight(c.kind == session.winner ? .semibold : .regular)
                         if c.kind == session.winner { Text("smallest").font(.system(size: 8, weight: .bold)).padding(.horizontal, 4).padding(.vertical, 1).background(Capsule().fill(Color.green.opacity(0.55))) }
                     }.frame(width: 170, alignment: .leading)
                     Text(WXTransfer.bytes(c.totalBytes)).font(Theme.mono).frame(width: 80, alignment: .trailing)
-                    Text(c.lossless ? "lossless" : String(format: "%.4f", c.quality.ssim)).font(Theme.mono).frame(width: 60, alignment: .trailing)
-                    Text(c.lossless ? "" : String(format: "%.4f", c.quality.q)).font(Theme.mono).frame(width: 60, alignment: .trailing)
-                    Text(c.setting + (c.targetMet ? "" : " — target not reached")).lineLimit(1).foregroundStyle(c.targetMet ? Theme.textDim : Color.orange)
+                    Text(tr(c.lossless ? "lossless" : String(format: "%.4f", c.quality.ssim))).font(Theme.mono).frame(width: 60, alignment: .trailing)
+                    Text(tr(c.lossless ? "" : String(format: "%.4f", c.quality.q))).font(Theme.mono).frame(width: 60, alignment: .trailing)
+                    Text(tr(c.setting + (c.targetMet ? "" : " — target not reached"))).lineLimit(1).foregroundStyle(c.targetMet ? Theme.textDim : Color.orange)
                         .frame(width: 210, alignment: .leading).padding(.leading, 12)
-                    Text(c.kind.support).lineLimit(1).foregroundStyle(Theme.textFaint).frame(maxWidth: .infinity, alignment: .leading)
+                    Text(tr(c.kind.support)).lineLimit(1).foregroundStyle(Theme.textFaint).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(.vertical, 3)
                 .background(c.kind == session.winner ? Theme.selection.opacity(0.35) : Color.clear)
@@ -271,7 +271,7 @@ struct SmallestForWebDialog: View {
             }
             if let c = session.candidates.first(where: { session.selected.contains($0.kind) }) {
                 let t = WXTransfer.estimate(c.data, mime: c.kind.mime)
-                Text("\(c.kind.rawValue): \(t.raw) B on disk · as a data: URI \(t.dataURI) B (\(t.dataURIGzip) B after gzip, \(t.dataURIBrotli) B after Brotli) · the file itself gzips to \(t.gzip) B")
+                Text("\(tr(c.kind.rawValue)): \(t.raw) B on disk · as a data: URI \(t.dataURI) B (\(t.dataURIGzip) B after gzip, \(t.dataURIBrotli) B after Brotli) · the file itself gzips to \(t.gzip) B")
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).padding(.top, 4)
             }
         }

@@ -240,8 +240,8 @@ struct ExportSlicesDialog: View {
             panel.canChooseDirectories = true
             panel.canChooseFiles = false
             panel.canCreateDirectories = true
-            panel.prompt = "Export"
-            panel.message = "Choose a folder for the slice images"
+            panel.prompt = tr("Export")
+            panel.message = tr("Choose a folder for the slice images")
             guard UIBlock.run(panel) == .OK, let dir = panel.url else { return }
             let base = (d.name as NSString).deletingPathExtension
             do {
@@ -277,7 +277,7 @@ struct SliceOptions: View {
                 d.commit("Delete Slice")
             }
         } else {
-            Text(app.tool == .slice ? "Drag to create a slice. ⌘-drag selects." : "Click a slice to select it.").foregroundStyle(Theme.textFaint)
+            Text(tr(app.tool == .slice ? "Drag to create a slice. ⌘-drag selects." : "Click a slice to select it.")).foregroundStyle(Theme.textFaint)
         }
         Button("Slices From Guides") { if let d = app.activeDocument { SliceTool.slicesFromGuides(d) } }.buttonStyle(PanelButtonStyle())
         Button("Clear Slices") {

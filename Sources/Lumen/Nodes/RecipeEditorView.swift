@@ -76,9 +76,9 @@ struct RecipeEditorView: View {
                 }.buttonStyle(PanelButtonStyle(prominent: true)).help("Click to view the Output again")
             }
             Menu {
-                Section("Built-in") { ForEach(RecipePresets.builtIn) { p in Button(p.name) { model.loadPreset(p) } } }
+                Section("Built-in") { ForEach(RecipePresets.builtIn) { p in Button(tr(p.name)) { model.loadPreset(p) } } }
                 let user = RecipePresetStore.shared.user
-                if !user.isEmpty { Section("My Recipes") { ForEach(user) { p in Button(p.name) { model.loadPreset(p) } } } }
+                if !user.isEmpty { Section("My Recipes") { ForEach(user) { p in Button(tr(p.name)) { model.loadPreset(p) } } } }
             } label: { Label("Presets", systemImage: "books.vertical") }
             .menuStyle(.borderlessButton).fixedSize().help("Replace the graph with a preset")
             Button("Save Preset…") { presetName = model.graph?.name ?? "Recipe"; askName = true }.buttonStyle(PanelButtonStyle())
@@ -96,9 +96,9 @@ struct RecipeEditorView: View {
 
     var statusBar: some View {
         HStack(spacing: 10) {
-            if let e = model.graphError { Label(e, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
+            if let e = model.graphError { Label(tr(e), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
             else if !model.errors.isEmpty { Label("\(model.errors.count) node\(model.errors.count == 1 ? "" : "s") with a problem", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange) }
-            Text(model.status).foregroundStyle(Theme.textDim).lineLimit(1)
+            Text(tr(model.status)).foregroundStyle(Theme.textDim).lineLimit(1)
             Spacer()
             Text("\(model.graph?.nodes.count ?? 0) nodes · Tab: add · drag sockets to wire · scroll: pan · ⌘scroll / pinch: zoom").foregroundStyle(Theme.textFaint).lineLimit(1)
         }
@@ -117,12 +117,12 @@ struct RecipeAddMenu: View {
                 ForEach(RecipeLibrary.groups(cat), id: \.self) { grp in
                     let items = RecipeLibrary.byCategory(cat).filter { $0.group == grp }
                     if grp.isEmpty {
-                        ForEach(items, id: \.type) { s in Button(s.name) { add(s.type) } }
+                        ForEach(items, id: \.type) { s in Button(tr(s.name)) { add(s.type) } }
                     } else {
-                        Menu(grp) { ForEach(items, id: \.type) { s in Button(s.name) { add(s.type) } } }
+                        Menu(tr(grp)) { ForEach(items, id: \.type) { s in Button(tr(s.name)) { add(s.type) } } }
                     }
                 }
-            } label: { Label(cat.rawValue, systemImage: cat.symbol) }
+            } label: { Label(tr(cat.rawValue), systemImage: cat.symbol) }
         }
     }
 }
@@ -292,7 +292,7 @@ struct RecipeCanvasView: View {
         grip.move(to: CGPoint(x: f.rect.maxX - 4, y: f.rect.maxY - 7)); grip.addLine(to: CGPoint(x: f.rect.maxX - 7, y: f.rect.maxY - 4))
         ctx.stroke(grip, with: .color(col.opacity(0.9)), lineWidth: 1.2)
         if !f.note.isEmpty {
-            ctx.draw(Text(f.note).font(.system(size: 10)).foregroundColor(Color(white: 0.75)), at: CGPoint(x: f.rect.minX + 9, y: f.rect.maxY - 10), anchor: .leading)
+            ctx.draw(Text(tr(f.note)).font(.system(size: 10)).foregroundColor(Color(white: 0.75)), at: CGPoint(x: f.rect.minX + 9, y: f.rect.maxY - 10), anchor: .leading)
         }
     }
 
@@ -372,10 +372,10 @@ struct RecipeNodeView: View {
             model.dragOffset = CGSize(width: v.translation.width / model.zoom, height: v.translation.height / model.zoom)
         }.onEnded { _ in model.endNodeDrag() })
         .contextMenu {
-            Button(node.muted ? "Unmute" : "Mute (Bypass)") { model.selectOnly(node.id); model.toggleMute() }
-            Button(solo ? "View Output" : "View This Node") { model.toggleSolo(node.id) }
-            Button(node.showPreview ? "Hide Preview" : "Show Preview") { model.selectOnly(node.id); model.togglePreview() }
-            Button(node.collapsed ? "Expand" : "Collapse") { model.selectOnly(node.id); model.toggleCollapse() }
+            Button(tr(node.muted ? "Unmute" : "Mute (Bypass)")) { model.selectOnly(node.id); model.toggleMute() }
+            Button(tr(solo ? "View Output" : "View This Node")) { model.toggleSolo(node.id) }
+            Button(tr(node.showPreview ? "Hide Preview" : "Show Preview")) { model.selectOnly(node.id); model.togglePreview() }
+            Button(tr(node.collapsed ? "Expand" : "Collapse")) { model.selectOnly(node.id); model.toggleCollapse() }
             Divider()
             Button("Duplicate") { if !model.selection.contains(node.id) { model.selectOnly(node.id) }; model.duplicateSelection() }
             Button("Copy") { if !model.selection.contains(node.id) { model.selectOnly(node.id) }; model.copySelection() }
@@ -389,9 +389,9 @@ struct RecipeNodeView: View {
         let tint = Color(nsColor: (spec?.category.rgba ?? RGBA(gray: 0.4)).nsColor)
         return HStack(spacing: 4) {
             Image(systemName: spec?.category.symbol ?? "questionmark").font(.system(size: 9)).foregroundStyle(.white.opacity(0.85))
-            Text(node.title ?? spec?.name ?? node.type).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
+            Text(tr(node.title ?? spec?.name ?? node.type)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white).lineLimit(1)
             Spacer(minLength: 2)
-            if let e = error { Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 10)).foregroundStyle(.yellow).help(e) }
+            if let e = error { Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 10)).foregroundStyle(.yellow).help(tr(e)) }
             if node.muted { Image(systemName: "speaker.slash.fill").font(.system(size: 9)).foregroundStyle(.white.opacity(0.8)) }
             if solo { Image(systemName: "eye.fill").font(.system(size: 10)).foregroundStyle(.white) }
         }
@@ -403,11 +403,11 @@ struct RecipeNodeView: View {
     func outputRow(_ o: RecipePortSpec) -> some View {
         HStack(spacing: 4) {
             Spacer()
-            Text(o.name).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+            Text(tr(o.name)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
             RecipeSocket(type: o.type, connected: graph.connections.contains { $0.from == node.id && $0.fromPort == o.name })
                 .offset(x: 5)
                 .gesture(socketDrag(port: o.name, isOutput: true))
-                .help(o.type.displayName)
+                .help(tr(o.type.displayName))
         }
         .frame(height: RecipeLayout.portRow)
     }
@@ -418,8 +418,8 @@ struct RecipeNodeView: View {
             RecipeSocket(type: i.type, connected: conn != nil)
                 .offset(x: -5)
                 .gesture(socketDrag(port: i.name, isOutput: false))
-                .help(i.type.displayName)
-            Text(i.name).font(Theme.fontSmall).foregroundStyle(conn == nil ? Theme.textFaint : Theme.text)
+                .help(tr(i.type.displayName))
+            Text(tr(i.name)).font(Theme.fontSmall).foregroundStyle(conn == nil ? Theme.textFaint : Theme.text)
             Spacer()
         }
         .frame(height: RecipeLayout.portRow)
@@ -454,7 +454,7 @@ struct RecipeNodeView: View {
                 RecipeSocket(type: t, connected: conn != nil)
                     .offset(x: -5)
                     .gesture(socketDrag(port: p.portName, isOutput: false))
-                    .help("\(t.displayName) input — drives “\(p.label)”")
+                    .help("\(tr(t.displayName)) input — drives “\(tr(p.label))”")
             } else {
                 Color.clear.frame(width: 10, height: 10).offset(x: -5)
             }
@@ -481,7 +481,7 @@ struct RecipeNodeView: View {
             Button { model.setNumber(id, p.key, num > 0.5 ? 0 : 1); model.commit(p.label) } label: {
                 HStack(spacing: 4) {
                     Image(systemName: num > 0.5 ? "checkmark.square.fill" : "square").foregroundStyle(num > 0.5 ? Theme.accent : Theme.textDim)
-                    Text(p.label).lineLimit(1)
+                    Text(tr(p.label)).lineLimit(1)
                     Spacer()
                 }.font(Theme.fontSmall).contentShape(Rectangle())
             }.buttonStyle(.plain)
@@ -489,14 +489,14 @@ struct RecipeNodeView: View {
             Menu {
                 ForEach(Array(opts.enumerated()), id: \.offset) { i, o in
                     Button { model.setNumber(id, p.key, Double(i)); model.commit(p.label) } label: {
-                        if i == Int(num) { Label(o, systemImage: "checkmark") } else { Text(o) }
+                        if i == Int(num) { Label(tr(o), systemImage: "checkmark") } else { Text(tr(o)) }
                     }
                 }
             } label: {
                 HStack(spacing: 3) {
-                    Text(p.label).foregroundStyle(Theme.textDim).lineLimit(1)
+                    Text(tr(p.label)).foregroundStyle(Theme.textDim).lineLimit(1)
                     Spacer(minLength: 2)
-                    Text(opts.indices.contains(Int(num)) ? opts[Int(num)] : "—").lineLimit(1)
+                    Text(tr(opts.indices.contains(Int(num)) ? opts[Int(num)] : "—")).lineLimit(1)
                     Image(systemName: "chevron.up.chevron.down").font(.system(size: 7)).foregroundStyle(Theme.textFaint)
                 }
                 .font(Theme.fontSmall)
@@ -507,7 +507,7 @@ struct RecipeNodeView: View {
             .menuStyle(.button).buttonStyle(.plain)
         case .color:
             HStack(spacing: 4) {
-                Text(p.label).font(Theme.fontSmall).foregroundStyle(driven ? Theme.textFaint : Theme.text).lineLimit(1)
+                Text(tr(p.label)).font(Theme.fontSmall).foregroundStyle(driven ? Theme.textFaint : Theme.text).lineLimit(1)
                 Spacer()
                 if driven { Text("linked").font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
                 else { ColorWell(color: Binding(get: { node.colors[p.key] ?? p.defColor }, set: { model.setColor(id, p.key, $0) }), size: 14, showAlpha: true, onCommit: { model.commit(p.label) }) }
@@ -515,26 +515,26 @@ struct RecipeNodeView: View {
         case .point:
             let v = node.vectors[p.key] ?? p.defPoint
             HStack(spacing: 4) {
-                Text(p.label).font(Theme.fontSmall).foregroundStyle(driven ? Theme.textFaint : Theme.text).lineLimit(1)
+                Text(tr(p.label)).font(Theme.fontSmall).foregroundStyle(driven ? Theme.textFaint : Theme.text).lineLimit(1)
                 Spacer()
-                Text(driven ? "linked" : String(format: "%.0f%%, %.0f%%", v.x * 100, v.y * 100)).font(Theme.mono).foregroundStyle(Theme.textDim)
+                Text(tr(driven ? "linked" : String(format: "%.0f%%, %.0f%%", v.x * 100, v.y * 100))).font(Theme.mono).foregroundStyle(Theme.textDim)
             }
         case .gradient:
             HStack(spacing: 4) {
-                Text(p.label).font(Theme.fontSmall).foregroundStyle(driven ? Theme.textFaint : Theme.text).lineLimit(1)
+                Text(tr(p.label)).font(Theme.fontSmall).foregroundStyle(driven ? Theme.textFaint : Theme.text).lineLimit(1)
                 if driven { Spacer(); Text("linked").font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
                 else { GradientSwatch(gradient: node.gradients[p.key] ?? p.defGradient ?? .twoColor(.black, .white)).frame(height: 12) }
             }
         case .curve:
-            HStack { Text(p.label).font(Theme.fontSmall); Spacer(); Image(systemName: "point.topleft.down.to.point.bottomright.curvepath").foregroundStyle(Theme.textDim) }
+            HStack { Text(tr(p.label)).font(Theme.fontSmall); Spacer(); Image(systemName: "point.topleft.down.to.point.bottomright.curvepath").foregroundStyle(Theme.textDim) }
         case .text, .file:
             let s = node.strings[p.key] ?? ""
-            HStack { Text(p.label).font(Theme.fontSmall).foregroundStyle(Theme.textDim); Spacer(); Text(s.isEmpty ? "None" : (s as NSString).lastPathComponent).font(Theme.fontSmall).lineLimit(1).truncationMode(.middle) }
+            HStack { Text(tr(p.label)).font(Theme.fontSmall).foregroundStyle(Theme.textDim); Spacer(); Text(tr(s.isEmpty ? "None" : (s as NSString).lastPathComponent)).font(Theme.fontSmall).lineLimit(1).truncationMode(.middle) }
         case .layer:
             let s = node.strings[p.key] ?? ""
             let name = model.document?.state.layer(UUID(uuidString: s))?.name
             HStack { Text("Layer").font(Theme.fontSmall).foregroundStyle(Theme.textDim); Spacer()
-                Text(name ?? (s.isEmpty ? (p.label.contains("empty") ? "This Layer" : "Choose…") : "Missing")).font(Theme.fontSmall).foregroundStyle(name == nil && !s.isEmpty ? .orange : Theme.text).lineLimit(1) }
+                Text(tr(name ?? (s.isEmpty ? (p.label.contains("empty") ? "This Layer" : "Choose…") : "Missing"))).font(Theme.fontSmall).foregroundStyle(name == nil && !s.isEmpty ? .orange : Theme.text).lineLimit(1) }
         }
     }
 }
@@ -575,9 +575,9 @@ struct RecipeSearchPopup: View {
                         ForEach(Array(list.enumerated()), id: \.element.type) { i, s in
                             HStack(spacing: 6) {
                                 Image(systemName: s.category.symbol).font(.system(size: 9)).foregroundStyle(Color(nsColor: s.category.rgba.nsColor)).frame(width: 14)
-                                Text(s.name).lineLimit(1)
+                                Text(tr(s.name)).lineLimit(1)
                                 Spacer()
-                                Text(s.group.isEmpty ? s.category.rawValue : s.group).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
+                                Text(tr(s.group.isEmpty ? s.category.rawValue : s.group)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
                             }
                             .padding(.horizontal, 8).frame(height: 21)
                             .background(i == idx ? Theme.selection : Color.clear)

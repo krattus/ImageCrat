@@ -75,10 +75,10 @@ struct ToolGroupButton: View {
         .onLongPressGesture(minimumDuration: 0.35) { if hasMore { flyout = true } }
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
-        .accessibilityLabel(shown.displayName)
+        .accessibilityLabel(tr(shown.displayName))
         .accessibilityAction { app.tool = shown }
         .accessibilityAction(named: "Show More Tools") { if hasMore { flyout = true } }
-        .help("\(shown.displayName) (\(shown.shortcut))" + (hasMore ? " — click the corner or hold for more tools" : ""))
+        .help("\(tr(shown.displayName)) (\(shown.shortcut))" + (hasMore ? tr(" — click the corner or hold for more tools") : ""))
         .onHover { hover = $0 }
         .popover(isPresented: $flyout, arrowEdge: .trailing) {
             VStack(alignment: .leading, spacing: 1) {
@@ -96,7 +96,7 @@ struct ToolGroupButton: View {
         .contextMenu {
             ForEach(group) { t in
                 Button { app.tool = t; app.groupSelection[index] = t } label: {
-                    Label("\(t.displayName)   \(t.shortcut)", systemImage: t.symbol)
+                    Label("\(tr(t.displayName))   \(t.shortcut)", systemImage: t.symbol)
                 }
             }
         }
@@ -116,9 +116,9 @@ struct ToolFlyoutRow: View {
             HStack(spacing: 8) {
                 Rectangle().fill(selected ? Theme.text : .clear).frame(width: 3, height: 14)
                 Image(systemName: tool.symbol).frame(width: 18)
-                Text(tool.displayName)
+                Text(tr(tool.displayName))
                 Spacer(minLength: 16)
-                Text(tool.shortcut).foregroundStyle(Theme.textDim)
+                Text(tr(tool.shortcut)).foregroundStyle(Theme.textDim)
             }
             .font(Theme.font)
             .foregroundStyle(hover ? Color.white : Theme.text)
@@ -128,7 +128,7 @@ struct ToolFlyoutRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(tool.displayName)
+        .accessibilityLabel(tr(tool.displayName))
         .onHover { hover = $0 }
     }
 }
@@ -182,7 +182,7 @@ struct ColorPickerView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(Theme.fontBold).foregroundStyle(Theme.text)
+            Text(tr(title)).font(Theme.fontBold).foregroundStyle(Theme.text)
             if panelWidth < 360 {
                 // in a panel (Properties of a fill layer): the square sized to the column, the values under it
                 let side = max(110, min(200, panelWidth - 20 - 10 - 18))
@@ -278,9 +278,9 @@ struct ColorPickerView: View {
 
     private func channelField(_ l: String, _ b: Binding<Double>, _ unit: String) -> some View {
         HStack(spacing: 3) {
-            Text(l).font(Theme.font).foregroundStyle(Theme.textDim).frame(width: 12)
+            Text(tr(l)).font(Theme.font).foregroundStyle(Theme.textDim).frame(width: 12)
             NumberField(label: "", value: b, width: 38)
-            Text(unit).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).frame(width: 12, alignment: .leading)
+            Text(tr(unit)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).frame(width: 12, alignment: .leading)
         }
     }
 

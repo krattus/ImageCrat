@@ -135,7 +135,7 @@ enum ArtboardExport {
             p.nameFieldStringValue = safeName(l.name) + ".png"
             p.allowedContentTypes = [.png, .jpeg, .tiff, .pdf] + [UTType(filenameExtension: "psd")].compactMap { $0 }
             p.allowsOtherFileTypes = true
-            p.message = "Export artboard “\(l.name)” (\(Int(l.artboard!.rect.width)) × \(Int(l.artboard!.rect.height)) px)"
+            p.message = tr("Export artboard “\(l.name)” (\(Int(l.artboard!.rect.width)) × \(Int(l.artboard!.rect.height)) px)")
             guard UIBlock.run(p) == .OK, let u = p.url else { return }
             var o = Options()
             o.format = Format.from(ext: u.pathExtension) ?? .png
@@ -170,7 +170,7 @@ struct ArtboardsExportDialog: View {
         DialogFrame(title: pdf ? "Artboards to PDF" : "Artboards to Files", width: 420, okTitle: "Export", onOK: run) {
             HStack {
                 Text("Destination:").foregroundStyle(Theme.textDim)
-                Text(dir?.path ?? "Choose a folder…").lineLimit(1).truncationMode(.middle).foregroundStyle(dir == nil ? Theme.textFaint : Theme.text)
+                Text(tr(dir?.path ?? "Choose a folder…")).lineLimit(1).truncationMode(.middle).foregroundStyle(dir == nil ? Theme.textFaint : Theme.text)
                 Spacer()
                 Button("Choose…") { choose() }.buttonStyle(PanelButtonStyle())
             }
@@ -185,7 +185,7 @@ struct ArtboardsExportDialog: View {
                 Picker("", selection: $o.multiPage) { Text("Multi-Page Document").tag(true); Text("Document per Artboard").tag(false) }.pickerStyle(.radioGroup).labelsHidden()
             } else {
                 HStack {
-                    Picker("File Type", selection: $o.format) { ForEach(ArtboardExport.Format.allCases) { Text($0.rawValue).tag($0) } }.frame(width: 180)
+                    Picker("File Type", selection: $o.format) { ForEach(ArtboardExport.Format.allCases) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 180)
                     if o.format == .jpeg { NumberField(label: "Quality", value: Binding(get: { o.quality * 100 }, set: { o.quality = min(max($0, 1), 100) / 100 }), width: 40) }
                     if o.format != .psd && o.format != .pdf {
                         Picker("Scale", selection: $o.scale) { Text("1×").tag(1.0); Text("2×").tag(2.0); Text("3×").tag(3.0); Text("0.5×").tag(0.5) }.frame(width: 110)
@@ -219,7 +219,7 @@ struct ArtboardsExportDialog: View {
         p.canChooseDirectories = true
         p.canChooseFiles = false
         p.canCreateDirectories = true
-        p.prompt = "Choose"
+        p.prompt = tr("Choose")
         if UIBlock.run(p) == .OK, let u = p.url { dir = u }
     }
 

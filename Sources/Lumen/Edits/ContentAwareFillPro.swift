@@ -533,7 +533,7 @@ struct ContentAwareFillWorkspace: View {
         VStack(alignment: .leading, spacing: 8) {
             Caption("Sampling Area Options")
             Picker("", selection: Binding(get: { m.settings.sampling }, set: { m.settings.sampling = $0; m.updateSampling() })) {
-                ForEach(CAFSampling.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(CAFSampling.allCases) { Text(tr($0.rawValue)).tag($0) }
             }.pickerStyle(.segmented).labelsHidden()
             Toggle2(label: "Show Sampling Area", on: $m.showSampling)
             ValueSlider(label: "Opacity", value: $m.overlayOpacity, range: 0...100, unit: "%", labelWidth: 60)
@@ -542,16 +542,16 @@ struct ContentAwareFillWorkspace: View {
             Divider()
             Caption("Fill Settings")
             Picker("Color Adaptation", selection: Binding(get: { m.settings.colorAdaptation }, set: { m.settings.colorAdaptation = $0; m.recompute() })) {
-                ForEach(CAFColorAdaptation.allCases) { Text($0.name).tag($0) }
+                ForEach(CAFColorAdaptation.allCases) { Text(tr($0.name)).tag($0) }
             }
             Picker("Rotation Adaptation", selection: Binding(get: { m.settings.rotation }, set: { m.settings.rotation = $0; m.recompute() })) {
-                ForEach(CAFRotation.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(CAFRotation.allCases) { Text(tr($0.rawValue)).tag($0) }
             }
             Toggle2(label: "Scale", on: Binding(get: { m.settings.scale }, set: { m.settings.scale = $0; m.recompute() }))
             Toggle2(label: "Mirror", on: Binding(get: { m.settings.mirror }, set: { m.settings.mirror = $0; m.recompute() }))
             Divider()
             Caption("Output Settings")
-            Picker("Output To", selection: $m.settings.output) { ForEach(CAFOutput.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Output To", selection: $m.settings.output) { ForEach(CAFOutput.allCases) { Text(tr($0.rawValue)).tag($0) } }
             Spacer()
         }
     }

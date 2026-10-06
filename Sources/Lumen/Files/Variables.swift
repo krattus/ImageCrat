@@ -207,10 +207,10 @@ struct VariablesDefineDialog: View {
                     VStack(alignment: .leading, spacing: 2) {
                         ForEach(vars) { v in
                             HStack {
-                                Text(v.name).frame(width: 150, alignment: .leading).lineLimit(1)
-                                Text(v.kind.rawValue).foregroundStyle(Theme.textDim)
+                                Text(tr(v.name)).frame(width: 150, alignment: .leading).lineLimit(1)
+                                Text(tr(v.kind.rawValue)).foregroundStyle(Theme.textDim)
                                 Spacer()
-                                Text(doc.state.layer(v.layerID)?.name ?? "—").foregroundStyle(Theme.textFaint).lineLimit(1)
+                                Text(tr(doc.state.layer(v.layerID)?.name ?? "—")).foregroundStyle(Theme.textFaint).lineLimit(1)
                             }
                         }
                         if vars.isEmpty { Text("None").foregroundStyle(Theme.textFaint) }
@@ -223,7 +223,7 @@ struct VariablesDefineDialog: View {
     @ViewBuilder func kindRow(_ kind: VariableKind, _ l: Layer) -> some View {
         let idx = vars.firstIndex { $0.layerID == l.id && $0.kind == kind }
         VStack(alignment: .leading, spacing: 4) {
-            Toggle(kind.rawValue, isOn: Binding(get: { idx != nil }, set: { on in
+            Toggle(tr(kind.rawValue), isOn: Binding(get: { idx != nil }, set: { on in
                 if on {
                     var v = LayerVariable(name: Variables.defaultName(l, kind: kind, existing: vars), kind: kind, layerID: l.id)
                     if kind == .pixel { v.box = Compositor.shared.contentBounds(l, state: doc.state) }
@@ -236,7 +236,7 @@ struct VariablesDefineDialog: View {
                     TextField("", text: Binding(get: { vars[i].name }, set: { vars[i].name = $0.replacingOccurrences(of: " ", with: "_") })).frame(width: 180)
                     if kind == .pixel {
                         Picker("", selection: Binding(get: { vars[i].fit }, set: { vars[i].fit = $0 })) {
-                            ForEach(PixelFit.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                            ForEach(PixelFit.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) }
                         }.labelsHidden().frame(width: 90)
                     }
                 }
@@ -298,16 +298,16 @@ struct VariablesDataSetsDialog: View {
                         VStack(alignment: .leading, spacing: 4) {
                             ForEach(model.variables) { v in
                                 HStack {
-                                    Text(v.name).frame(width: 150, alignment: .leading).lineLimit(1)
+                                    Text(tr(v.name)).frame(width: 150, alignment: .leading).lineLimit(1)
                                     TextField("", text: Binding(get: { model.dataSets[index].values[v.name] ?? "" },
                                                                 set: { model.dataSets[index].values[v.name] = $0; refresh() }))
-                                    Text(v.kind == .visibility ? "true/false" : (v.kind == .pixel ? "file" : "text")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                                    Text(tr(v.kind == .visibility ? "true/false" : (v.kind == .pixel ? "file" : "text"))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                                 }
                             }
                         }
                     }.frame(height: 150)
                 }
-                if !message.isEmpty { Text(message).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
+                if !message.isEmpty { Text(tr(message)).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
             }
         }
         .onChange(of: preview) { _, _ in refresh() }
@@ -377,7 +377,7 @@ struct ExportDataSetsDialog: View {
                     TextField("", text: $prefix).frame(width: 160)
                     Text("+ data set name").foregroundStyle(Theme.textFaint)
                 }
-                Picker("Format", selection: $format) { ForEach(Variables.OutputFormat.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.frame(width: 200)
+                Picker("Format", selection: $format) { ForEach(Variables.OutputFormat.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 200)
             }
         }
     }

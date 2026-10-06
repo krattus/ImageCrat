@@ -267,7 +267,7 @@ extension GenerativeProvider {
 
     /// submit → poll loop with backoff; cancels the remote job if the Swift task is cancelled.
     func run(_ req: GenRequest, model: GenModel, key: String, timeout: Double = 600, progress: @escaping (GenProgress) -> Void) async throws -> [GenImage] {
-        progress(GenProgress(fraction: nil, message: "Sending to \(id.displayName)…"))
+        progress(GenProgress(fraction: nil, message: "Sending to \(tr(id.displayName))…"))
         let h = try await submit(req, model: model, key: key)
         guard case .pending(let job) = h else {
             if case .done(let imgs) = h { return imgs }

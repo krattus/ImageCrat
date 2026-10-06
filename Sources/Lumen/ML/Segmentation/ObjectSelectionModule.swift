@@ -89,7 +89,7 @@ enum ObjectSelectionModule {
             guard let d = AppActions.doc else { return }
             guard let people, !people.isEmpty else { AppActions.alert("No people were found."); return }
             if let i = index {
-                guard i < people.count else { AppActions.alert("Person \(i + 1) was not found.", "\(people.count) \(people.count == 1 ? "person was" : "people were") detected (numbered left to right)."); return }
+                guard i < people.count else { AppActions.alert("Person \(i + 1) was not found.", people.count == 1 ? "1 person was detected." : "\(people.count) people were detected (numbered left to right)."); return }
                 d.setSelection(people[i], commitName: "Select Person \(i + 1)")
             } else if let u = SegMask.union(people) {
                 d.setSelection(u, commitName: "Select People")

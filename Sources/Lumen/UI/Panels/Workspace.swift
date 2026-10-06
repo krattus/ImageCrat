@@ -1019,7 +1019,7 @@ final class WorkspaceManager {
         if let h = hosts[id] { return h }
         let h = NSHostingView(rootView: PanelContentRoot(id: id))
         h.sizingOptions = []
-        h.setAccessibilityLabel(PanelRegistry.def(id)?.title ?? id)
+        h.setAccessibilityLabel(tr(PanelRegistry.def(id)?.title ?? id))
         hosts[id] = h
         return h
     }
@@ -1120,6 +1120,14 @@ final class WorkspaceManager {
         }
         track({ AppModel.shared.showPanels }) { [weak self] in self?.syncWindows() }
         track({ AppModel.shared.prefs.theme }) { [weak self] in self?.refreshChrome() }
+        // interface language: tab titles, tool tips and floating-panel titles in the new language
+        nc.addObserver(forName: L10n.didChange, object: nil, queue: .main) { [weak self] _ in self?.refreshLanguage() }
+    }
+
+    /// The language changed: chrome is drawn / labelled again (panel content is SwiftUI and follows by itself).
+    func refreshLanguage() {
+        for d in docks.allObjects { d.reload(); d.refreshTheme(); d.layoutSubtreeIfNeeded() }
+        for w in windows.values { w.refreshTitle(); w.refreshTheme() }
     }
 
     private func track<T>(_ read: @escaping () -> T, _ changed: @escaping () -> Void) {
@@ -1149,6 +1157,7 @@ struct PanelContentRoot: View {
         .background(Theme.panelBG)
         .environment(\.colorScheme, scheme)
         .font(Theme.font)
+        .l10nRoot()   // literal Texts follow a language switch
     }
 
     /// Every panel sits in a `PanelScroller` (the self tests look for it).
@@ -1183,24 +1192,24 @@ struct WorkspaceMenu: View {
         Button("Reset \(ws.current.name)") { ws.reset() }
         Button("New Workspace…") { WorkspaceMenu.newWorkspace() }
         Menu("Delete Workspace") {
-            ForEach(ws.saved, id: \.name) { w in Button(w.name) { ws.deleteSaved(w.name) } }
+            ForEach(ws.saved, id: \.name) { w in Button(tr(w.name)) { ws.deleteSaved(w.name) } }
         }.disabled(ws.saved.isEmpty)
         Divider()
         Button("Bring Panels Back On Screen") { ws.recoverLostPanels(); ws.syncWindows() }
     }
 
     private func row(_ name: String) -> some View {
-        Toggle(name, isOn: Binding(get: { ws.current.name == name }, set: { _ in ws.switchTo(name) }))
+        Toggle(tr(name), isOn: Binding(get: { ws.current.name == name }, set: { _ in ws.switchTo(name) }))
     }
 
     static func newWorkspace() {
         let a = NSAlert()
-        a.messageText = "New Workspace"
-        a.informativeText = "Saves the current arrangement of panels, columns and floating windows."
+        a.messageText = tr("New Workspace")
+        a.informativeText = tr("Saves the current arrangement of panels, columns and floating windows.")
         let f = NSTextField(frame: NSRect(x: 0, y: 0, width: 220, height: 24))
         f.stringValue = "My Workspace"
         a.accessoryView = f
-        a.addButton(withTitle: "Save"); a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("Save")); a.addButton(withTitle: tr("Cancel"))
         if UIBlock.run(a) == .alertFirstButtonReturn, !f.stringValue.isEmpty { WorkspaceManager.shared.saveCurrent(as: f.stringValue) }
     }
 }

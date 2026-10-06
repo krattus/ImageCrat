@@ -53,7 +53,7 @@ struct HueSatControls: View {
             HStack {
                 Picker("", selection: $sel) {
                     Text("Master").tag(0)
-                    ForEach(1...6, id: \.self) { i in Text(HueRange.names[i - 1]).tag(i) }
+                    ForEach(1...6, id: \.self) { i in Text(tr(HueRange.names[i - 1])).tag(i) }
                 }
                 .labelsHidden().frame(width: 120).disabled(s.colorize)
                 Spacer()
@@ -77,7 +77,7 @@ struct HueSatControls: View {
                     return Color(hue: HueRange.wrap(s.colorize ? s.hue : shifted) / 360, saturation: 1, brightness: 1)
                 }, startPoint: .leading, endPoint: .trailing).frame(height: 8)
                 if s.hsRanges.contains(where: { !$0.isIdentity }) && !s.colorize {
-                    Text("Edited ranges: " + s.hsRanges.enumerated().filter { !$0.element.isIdentity }.map { HueRange.names[$0.offset] }.joined(separator: ", "))
+                    Text(tr("Edited ranges: " + s.hsRanges.enumerated().filter { !$0.element.isIdentity }.map { HueRange.names[$0.offset] }.joined(separator: ", ")))
                         .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 }
             }
@@ -100,7 +100,7 @@ struct HueSatControls: View {
                 } label: {
                     HStack(spacing: 0) {
                         Image(systemName: "eyedropper").font(.system(size: 11))
-                        if m > 0 { Text(m == 1 ? "+" : "−").font(.system(size: 10, weight: .bold)) }
+                        if m > 0 { Text(tr(m == 1 ? "+" : "−")).font(.system(size: 10, weight: .bold)) }
                     }
                     .foregroundStyle(Theme.text)
                     .frame(width: 26, height: 20)
@@ -109,7 +109,7 @@ struct HueSatControls: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(s.colorize || (m > 0 && sel == 0))
-                .help(m == 0 ? "Pick a color range from the image" : m == 1 ? "Add to the range" : "Subtract from the range")
+                .help(tr(m == 0 ? "Pick a color range from the image" : m == 1 ? "Add to the range" : "Subtract from the range"))
             }
         }
     }
@@ -249,7 +249,7 @@ struct ReplaceColorControls: View {
                     Button { mode = m; arm() } label: {
                         HStack(spacing: 0) {
                             Image(systemName: "eyedropper").font(.system(size: 11))
-                            if m > 0 { Text(m == 1 ? "+" : "−").font(.system(size: 10, weight: .bold)) }
+                            if m > 0 { Text(tr(m == 1 ? "+" : "−")).font(.system(size: 10, weight: .bold)) }
                         }
                         .foregroundStyle(Theme.text)
                         .frame(width: 28, height: 20)
@@ -257,7 +257,7 @@ struct ReplaceColorControls: View {
                         .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
-                    .help(m == 0 ? "Sample color (click in image)" : m == 1 ? "Add to sample (Shift-click)" : "Subtract from sample (Option-click)")
+                    .help(tr(m == 0 ? "Sample color (click in image)" : m == 1 ? "Add to sample (Shift-click)" : "Subtract from sample (Option-click)"))
                 }
                 Spacer()
                 Text("Color:").foregroundStyle(Theme.textDim)
@@ -388,7 +388,7 @@ struct MatchColorControls: View {
 
     func statSwatch(_ label: String, _ st: LabStats?) -> some View {
         HStack(spacing: 4) {
-            Text(label).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+            Text(tr(label)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             if let st {
                 let c = MatchColorControls.labToRGB(st.mean)
                 Rectangle().fill(Color(nsColor: c.nsColor)).frame(width: 26, height: 14)
@@ -438,7 +438,7 @@ struct HDRToningControls: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
             Picker("Method", selection: Binding(get: { s.hdr.method }, set: { s.hdr.method = $0; onCommit() })) {
-                ForEach(HDRMethod.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(HDRMethod.allCases) { Text(tr($0.rawValue)).tag($0) }
             }
             switch s.hdr.method {
             case .localAdaptation:

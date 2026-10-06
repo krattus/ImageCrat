@@ -266,7 +266,7 @@ final class ZoomTextField: NSTextField, NSTextFieldDelegate {
         lineBreakMode = .byClipping
         delegate = self
         toolTip = "Zoom — type a value (150, 33.3, 1:2, fit, fill) and press Return; drag sideways to scrub (⇧ faster)"
-        setAccessibilityLabel("Zoom")
+        setAccessibilityLabel(tr("Zoom"))
         stringValue = ZoomMath.format(zoom)
     }
     required init?(coder: NSCoder) { fatalError() }
@@ -418,8 +418,8 @@ struct ZoomStepButton: View {
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
-        .help(help)
-        .accessibilityLabel(symbol == "minus" ? "Zoom Out" : "Zoom In")
+        .help(tr(help))
+        .accessibilityLabel(tr(symbol == "minus" ? "Zoom Out" : "Zoom In"))
         .onHover { hover = $0 }
     }
 }

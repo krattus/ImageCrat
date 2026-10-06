@@ -594,11 +594,11 @@ enum GenBudget {
             lastWarning = msg
             if GenJobs.shared.headless || suppressWarningsThisSession { return }
             let a = NSAlert()
-            a.messageText = "Generate anyway?"
-            a.informativeText = msg
-            a.addButton(withTitle: "Generate"); a.addButton(withTitle: "Cancel")
+            a.messageText = tr("Generate anyway?")
+            a.informativeText = tr(msg)
+            a.addButton(withTitle: tr("Generate")); a.addButton(withTitle: tr("Cancel"))
             a.showsSuppressionButton = true
-            a.suppressionButton?.title = "Don't ask again this session"
+            a.suppressionButton?.title = tr("Don't ask again this session")
             let r = a.runModal()
             if a.suppressionButton?.state == .on { suppressWarningsThisSession = true }
             guard r == .alertFirstButtonReturn else { throw GenError.cancelled }

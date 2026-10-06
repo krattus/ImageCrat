@@ -282,11 +282,11 @@ struct HistoryTreePanel: View {
                 TextField("", text: $renameText).textFieldStyle(.plain).font(Theme.fontBold).frame(width: 90)
                     .onSubmit { tree.renameCurrentLine(d, to: renameText); renaming = nil }
             } else {
-                Text(tree.currentLineName(d)).font(Theme.fontBold).lineLimit(1)
+                Text(tr(tree.currentLineName(d))).font(Theme.fontBold).lineLimit(1)
                     .onTapGesture(count: 2) { renaming = d.id; renameText = tree.currentLineName(d) }
                     .help("The line of history you are on. Double-click to rename.")
             }
-            Text(verbatim: "\(d.history.count) steps · \(n) branch\(n == 1 ? "" : "es")" + (mem > 1_000_000 ? " · \(Workflow2Util.byteString(mem))" : ""))
+            Text(tr("\(d.history.count) steps · \(n) branch\(n == 1 ? "" : "es")") + (mem > 1_000_000 ? " · \(Workflow2Util.byteString(mem))" : ""))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
                 .help("Memory held by branches beyond the history itself")
             Spacer()
@@ -305,7 +305,7 @@ struct HistoryTreePanel: View {
                     .overlay(Circle().stroke(Theme.accent, lineWidth: current ? 2 : 0))
             }
             .frame(width: 14, height: 22)
-            Text(h.name).foregroundStyle(i > d.historyIndex ? Theme.textFaint : Theme.text).lineLimit(1)
+            Text(tr(h.name)).foregroundStyle(i > d.historyIndex ? Theme.textFaint : Theme.text).lineLimit(1)
             Spacer()
             if CommandLog.shared.stepsByEntry[h.id] != nil {
                 Image(systemName: "record.circle").font(.system(size: 8)).foregroundStyle(Theme.textFaint).help("Recordable as an action step")
@@ -338,7 +338,7 @@ struct HistoryTreePanel: View {
                     TextField("", text: $renameText).textFieldStyle(.plain)
                         .onSubmit { tree.rename(b.id, in: d, to: renameText); renaming = nil }
                 } else {
-                    Text(b.name).font(Theme.fontBold).foregroundStyle(color).lineLimit(1)
+                    Text(tr(b.name)).font(Theme.fontBold).foregroundStyle(color).lineLimit(1)
                 }
                 Text("\(b.entries.count) step\(b.entries.count == 1 ? "" : "s") · \(Workflow2Util.relativeTime(b.date))")
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
@@ -366,7 +366,7 @@ struct HistoryTreePanel: View {
                             Circle().fill(color).frame(width: 6, height: 6)
                         }
                         .frame(width: 14, height: 20)
-                        Text(h.name).foregroundStyle(Theme.textDim).lineLimit(1)
+                        Text(tr(h.name)).foregroundStyle(Theme.textDim).lineLimit(1)
                         Spacer()
                     }
                     .padding(.trailing, 8).frame(height: 20)

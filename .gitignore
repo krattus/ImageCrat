@@ -10,6 +10,7 @@ dist/*.dmg
 dist/*.zip
 dist/*.json
 dist/notary-log*
+dist/windows/
 
 # Local test files (third-party PSDs and Photoshop re-saves; not ours to publish)
 PSD export check*/

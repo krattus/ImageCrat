@@ -7,15 +7,15 @@ extension AppActions {
         let p = NSOpenPanel()
         p.allowedContentTypes = openTypes + DocumentIO.extraOpenTypes
         p.allowsMultipleSelection = true
-        p.prompt = "Place"
-        let check = NSButton(checkboxWithTitle: "Link to file (updates when the file changes)", target: nil, action: nil)
+        p.prompt = tr("Place")
+        let check = NSButton(checkboxWithTitle: tr("Link to file (updates when the file changes)"), target: nil, action: nil)
         check.state = linked ? .on : .off
         let box = NSView(frame: NSRect(x: 0, y: 0, width: 360, height: 34))
         check.frame = NSRect(x: 12, y: 8, width: 340, height: 18)
         box.addSubview(check)
         p.accessoryView = box
         p.isAccessoryViewDisclosed = true
-        p.message = linked ? "Place Linked: the smart object references the file on disk" : "Place Embedded: the file is copied into the document"
+        p.message = tr(linked ? "Place Linked: the smart object references the file on disk" : "Place Embedded: the file is copied into the document")
         guard UIBlock.run(p) == .OK, !p.urls.isEmpty else { return }
         place(p.urls, linked: check.state == .on)
     }

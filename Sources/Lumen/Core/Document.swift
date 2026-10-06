@@ -207,6 +207,26 @@ final class Document: Identifiable {
         historyIndex = history.count - 1
     }
 
+    /// Id of the current history step (MCP tool calls note it before they run, see `foldSteps(after:name:)`).
+    var currentHistoryEntryID: UUID? { history.indices.contains(historyIndex) ? history[historyIndex].id : nil }
+
+    /// Folds every step recorded after the step `base` into one step called `name` (an MCP tool call is one undo
+    /// step, however many commands it ran). Steps that were undone during the call are dropped. Returns how many steps
+    /// were folded (0 when nothing was recorded after `base`).
+    @discardableResult
+    func foldSteps(after base: UUID, name: String) -> Int {
+        guard let i = history.firstIndex(where: { $0.id == base }), historyIndex > i else { return 0 }
+        let n = historyIndex - i
+        let last = history[historyIndex]
+        let wasSaved = savedEntryID == last.id
+        history.removeSubrange((i + 1)...)
+        let folded = HistoryEntry(name: name, state: last.state, activeLayerID: last.activeLayerID, selectedLayerIDs: last.selectedLayerIDs)
+        history.append(folded)
+        historyIndex = history.count - 1
+        if wasSaved { savedEntryID = folded.id }
+        return n
+    }
+
     var canUndo: Bool { historyIndex > 0 }
     var canRedo: Bool { historyIndex < history.count - 1 }
 

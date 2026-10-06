@@ -334,7 +334,7 @@ struct PackDialog: View {
             if ready && session.ids.count < 2 {
                 Text("Select two or more layers to pack.").foregroundStyle(Theme.textFaint)
             } else {
-                Picker("Shape", selection: $s.shape) { ForEach(PackSettings.Shape.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("Shape", selection: $s.shape) { ForEach(PackSettings.Shape.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 if s.shape == .custom { HStack { Text("Custom shape").foregroundStyle(Theme.textDim); ShapeLibraryPicker(id: $s.customID) } }
                 if [.circle, .rectangle, .custom].contains(s.shape) {
                     ValueSlider(label: "Width", value: $s.width, range: 20...4000, unit: "px", labelWidth: 70)
@@ -345,7 +345,7 @@ struct PackDialog: View {
                         Button("Canvas centre") { if let b = session.base { s.centerX = Double(b.width) / 2; s.centerY = Double(b.height) / 2 } }.buttonStyle(PanelButtonStyle())
                     }
                 }
-                Picker("Treat layers as", selection: $s.mode) { ForEach(PackSettings.Mode.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
+                Picker("Treat layers as", selection: $s.mode) { ForEach(PackSettings.Mode.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented)
                 ValueSlider(label: "Padding", value: $s.padding, range: 0...100, unit: "px", labelWidth: 70)
                 Toggle2(label: "Scale layers to fill the shape", on: $s.scaleToFit)
                 HStack {
@@ -354,7 +354,7 @@ struct PackDialog: View {
                     Spacer()
                     Toggle2(label: "Show guide", on: $showGuide)
                 }
-                if !info.isEmpty { Text(info).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+                if !info.isEmpty { Text(tr(info)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
             }
         }
         .onAppear {

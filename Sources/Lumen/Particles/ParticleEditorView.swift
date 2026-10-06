@@ -58,7 +58,7 @@ private struct PSlider: View {
     var body: some View {
         let _ = draft == nil ? () : FieldEdits.refresh(fieldID, commit: commit, discard: { draft = nil })
         HStack(spacing: 6) {
-            Text(label).font(Theme.font).foregroundStyle(Theme.textDim).frame(width: pLabelWidth, alignment: .leading).lineLimit(1)
+            Text(tr(label)).font(Theme.font).foregroundStyle(Theme.textDim).frame(width: pLabelWidth, alignment: .leading).lineLimit(1)
             Slider(value: Binding(get: { position(value) }, set: { value = valueAt($0) }), in: 0...1).controlSize(.mini)
             HStack(spacing: 1) {
                 TextField("", text: Binding(get: { draft ?? String(format: format, value) }, set: { t in
@@ -70,7 +70,7 @@ private struct PSlider: View {
                     .textFieldStyle(.plain).font(Theme.mono).multilineTextAlignment(.trailing)
                     .focused($focused)
                     .onSubmit { commit() }
-                if !unit.isEmpty { Text(unit).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+                if !unit.isEmpty { Text(tr(unit)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
             }
             .padding(.horizontal, 4).padding(.vertical, 2)
             .frame(width: 62)
@@ -96,7 +96,7 @@ private struct PRow<Content: View>: View {
     @ViewBuilder var content: Content
     var body: some View {
         HStack(spacing: 6) {
-            Text(label).font(Theme.font).foregroundStyle(Theme.textDim).frame(width: pLabelWidth, alignment: .leading).lineLimit(1)
+            Text(tr(label)).font(Theme.font).foregroundStyle(Theme.textDim).frame(width: pLabelWidth, alignment: .leading).lineLimit(1)
             content
             Spacer(minLength: 0)
         }
@@ -126,7 +126,7 @@ private struct PEnumPicker<T: PTolerantEnum & Identifiable & Hashable>: View {
     var body: some View {
         PRow(label: label) {
             Picker("", selection: $value) {
-                ForEach(Array(T.allCases), id: \.self) { Text(name($0)).tag($0) }
+                ForEach(Array(T.allCases), id: \.self) { Text(tr(name($0))).tag($0) }
             }.labelsHidden().frame(maxWidth: 210)
         }
     }
@@ -216,13 +216,13 @@ struct ParticleEditorPanel: View {
                 Text("\(st.particles.formatted()) particles · \(st.instances.formatted()) sprites · \(String(format: "%.0f", ms)) ms")
                     .font(Theme.mono).foregroundStyle(Theme.textDim)
                 Spacer()
-                if !st.status.isEmpty { Text(st.status).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1) }
+                if !st.status.isEmpty { Text(tr(st.status)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1) }
             }
             HStack {
                 Button("Save Preset…") { ParticleActions.savePreset(st.effect) }.buttonStyle(PanelButtonStyle())
                 Spacer()
                 Button("Cancel") { editor.cancel() }.buttonStyle(PanelButtonStyle()).keyboardShortcut(.cancelAction)
-                Button(st.isReedit ? "Update" : "OK") { FieldEdits.commit(); editor.apply() }.buttonStyle(PanelButtonStyle(prominent: true)).keyboardShortcut(.defaultAction)
+                Button(tr(st.isReedit ? "Update" : "OK")) { FieldEdits.commit(); editor.apply() }.buttonStyle(PanelButtonStyle(prominent: true)).keyboardShortcut(.defaultAction)
             }
         }
     }
@@ -262,9 +262,9 @@ struct ParticleSystemsList: View {
                 Toggle("", isOn: Binding(get: { st.effect.systems[safe: i]?.enabled ?? true }, set: { v in if st.effect.systems.indices.contains(i) { st.effect.systems[i].enabled = v } }))
                     .toggleStyle(.checkbox).labelsHidden()
             }
-            Text(s.name + (sub ? " (on death)" : "")).font(Theme.font).foregroundStyle(selected ? Color.white : Theme.text).lineLimit(1)
+            Text(tr(s.name + (sub ? " (on death)" : ""))).font(Theme.font).foregroundStyle(selected ? Color.white : Theme.text).lineLimit(1)
             Spacer()
-            if !sub { Text(s.blend == .additive ? "Add" : s.blend == .multiply ? "Mul" : "Normal").font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+            if !sub { Text(tr(s.blend == .additive ? "Add" : s.blend == .multiply ? "Mul" : "Normal")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
         }
         .padding(.horizontal, 4).padding(.vertical, 2)
         .background(RoundedRectangle(cornerRadius: 3).fill(selected ? Theme.accent.opacity(0.7) : Color.clear))
@@ -373,10 +373,10 @@ private struct PEmitterSection: View {
                 Text("\(s.pathPoints.count) points").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
         case .selectionArea, .selectionOutline:
-            Text(ParticleEditor.current?.ctx.selection == nil ? "No selection — the emitter falls back to its rectangle." : "Emits from the current selection.")
+            Text(tr(ParticleEditor.current?.ctx.selection == nil ? "No selection — the emitter falls back to its rectangle." : "Emits from the current selection."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         case .layerAlpha, .layerEdges:
-            Text(ParticleEditor.current?.ctx.layerAlpha == nil ? "The source layer is empty — the emitter falls back to its rectangle." : "Emits from the layer that was active when the editor opened (pixels, text or shape).")
+            Text(tr(ParticleEditor.current?.ctx.layerAlpha == nil ? "The source layer is empty — the emitter falls back to its rectangle." : "Emits from the layer that was active when the editor opened (pixels, text or shape)."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         case .brightness:
             PRow(label: "") { Toggle2(label: "Edges only", on: $s.outlineOnly) }
@@ -515,7 +515,7 @@ private struct PSpriteSection: View {
             case .shape:
                 PRow(label: "Shape") {
                     Picker("", selection: $s.spriteShape) {
-                        ForEach(ShapeLibrary.all) { Text($0.name).tag($0.id) }
+                        ForEach(ShapeLibrary.all) { Text(tr($0.name)).tag($0.id) }
                     }.labelsHidden().frame(maxWidth: 210)
                 }
             case .image:
@@ -548,7 +548,7 @@ private struct PCurveRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
-                Text(label).font(Theme.font).foregroundStyle(Theme.textDim)
+                Text(tr(label)).font(Theme.font).foregroundStyle(Theme.textDim)
                 Spacer()
                 Menu("Shape") {
                     Button("Constant") { curve = .flat }
@@ -648,7 +648,7 @@ private struct POutputSection: View {
             PRow(label: "Layer blend") {
                 Picker("", selection: $st.effect.layerBlend) {
                     Text("Automatic").tag(BlendMode?.none)
-                    ForEach([BlendMode.normal, .screen, .linearDodge, .lighten, .overlay, .softLight], id: \.self) { Text($0.displayName).tag(BlendMode?.some($0)) }
+                    ForEach([BlendMode.normal, .screen, .linearDodge, .lighten, .overlay, .softLight], id: \.self) { Text(tr($0.displayName)).tag(BlendMode?.some($0)) }
                 }.labelsHidden().frame(maxWidth: 210)
             }
             PEnumPicker(label: "Quality", value: $st.effect.quality) { $0.displayName }
@@ -665,7 +665,7 @@ private struct POutputSection: View {
                 NumberField(label: "From", value: $st.effect.animStart, width: 38, format: "%.1f")
                 Toggle2(label: "Loop", on: $st.effect.loop)
             }
-            Text(st.effect.loop ? "Seamless loop: the last frame leads back into the first (lifetimes wrap around)." : "Frames start at “From” seconds and advance by 1 / fps.")
+            Text(tr(st.effect.loop ? "Seamless loop: the last frame leads back into the first (lifetimes wrap around)." : "Frames start at “From” seconds and advance by 1 / fps."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 6) {
                 Button("To Frame Animation") { editor.animate(.frames) }.buttonStyle(PanelButtonStyle())
@@ -720,7 +720,7 @@ struct ParticlePresetPicker: View {
                 .frame(width: 96, height: 60)
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .overlay(RoundedRectangle(cornerRadius: 4).stroke(selected ? Theme.accent : Color(white: 0.3), lineWidth: selected ? 2 : 0.5))
-                Text(name).font(Theme.fontSmall).foregroundStyle(Theme.text).lineLimit(2).multilineTextAlignment(.center).frame(width: 98, height: 24, alignment: .top)
+                Text(tr(name)).font(Theme.fontSmall).foregroundStyle(Theme.text).lineLimit(2).multilineTextAlignment(.center).frame(width: 98, height: 24, alignment: .top)
             }
         }.buttonStyle(.plain)
     }
@@ -742,7 +742,7 @@ struct ParticlePresetManager: View {
                     }
                     ForEach(user.presets) { e in
                         HStack {
-                            Text(e.name).font(Theme.font).foregroundStyle(selected == e.id ? Color.white : Theme.text)
+                            Text(tr(e.name)).font(Theme.font).foregroundStyle(selected == e.id ? Color.white : Theme.text)
                             Spacer()
                         }
                         .padding(.horizontal, 6).padding(.vertical, 3)

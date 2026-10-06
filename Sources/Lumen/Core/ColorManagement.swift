@@ -343,19 +343,19 @@ struct ColorProfileDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(convert ? "Convert to Profile" : "Assign Profile").font(.system(size: 13, weight: .semibold))
-            Text("Current: " + (ColorProfiles.isSRGB(AppActions.doc?.state.profileName) ? ColorProfiles.sRGBName : AppActions.doc!.state.profileName)).foregroundStyle(Theme.textDim)
+            Text(tr(convert ? "Convert to Profile" : "Assign Profile")).font(.system(size: 13, weight: .semibold))
+            Text(tr("Current: " + (ColorProfiles.isSRGB(AppActions.doc?.state.profileName) ? ColorProfiles.sRGBName : AppActions.doc!.state.profileName))).foregroundStyle(Theme.textDim)
             if !convert {
                 Toggle2(label: "Don't Color Manage This Document (sRGB)", on: $dontManage)
             }
             Picker("Profile", selection: $profile) {
-                ForEach(convert ? ColorProfiles.all : ColorProfiles.rgbProfiles) { e in Text(e.name).tag(e.name) }
+                ForEach(convert ? ColorProfiles.all : ColorProfiles.rgbProfiles) { e in Text(tr(e.name)).tag(e.name) }
             }
             .disabled(dontManage)
             if convert {
-                Picker("Intent", selection: $intent) { ForEach(RenderingIntent.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("Intent", selection: $intent) { ForEach(RenderingIntent.allCases) { Text(tr($0.rawValue)).tag($0) } }
             }
-            Text(convert ? "Pixel values are converted so colours look the same in the new profile." : "Pixel values are kept; their colour appearance changes.")
+            Text(tr(convert ? "Pixel values are converted so colours look the same in the new profile." : "Pixel values are kept; their colour appearance changes."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             HStack {
                 Spacer()
@@ -377,9 +377,9 @@ struct ProofSetupDialog: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Customize Proof Condition").font(.system(size: 13, weight: .semibold))
             Picker("Device to Simulate", selection: $app.proof.profileName) {
-                ForEach(ColorProfiles.all) { e in Text(e.name).tag(e.name) }
+                ForEach(ColorProfiles.all) { e in Text(tr(e.name)).tag(e.name) }
             }
-            Picker("Rendering Intent", selection: $app.proof.intent) { ForEach(RenderingIntent.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Rendering Intent", selection: $app.proof.intent) { ForEach(RenderingIntent.allCases) { Text(tr($0.rawValue)).tag($0) } }
             HStack {
                 Text("Gamut Warning Color").foregroundStyle(Theme.textDim)
                 ColorWell(color: $app.proof.gamutColor)

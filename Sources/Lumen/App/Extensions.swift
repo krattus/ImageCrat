@@ -36,18 +36,18 @@ struct ExtensionMenuItems: View {
         ForEach(loose) { item in row(item) }
         let subs = list.compactMap(\.submenu).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
         ForEach(subs, id: \.self) { s in
-            Menu(s) { ForEach(list.filter { $0.submenu == s }) { item in row(item) } }
+            Menu(tr(s)) { ForEach(list.filter { $0.submenu == s }) { item in row(item) } }
         }
     }
 
     @ViewBuilder func row(_ item: MenuItemSpec) -> some View {
         if item.dividerBefore { Divider() }
         if let c = item.checked {
-            Toggle(item.title, isOn: Binding(get: c, set: { _ in item.action() })).disabled(!item.enabled() || blockedByDialog(item))
+            Toggle(tr(item.title), isOn: Binding(get: c, set: { _ in item.action() })).disabled(!item.enabled() || blockedByDialog(item))
         } else if let k = item.key {
-            Button(item.title, action: item.action).keyboardShortcut(k, modifiers: item.modifiers).disabled(!item.enabled() || blockedByDialog(item))
+            Button(tr(item.title), action: item.action).keyboardShortcut(k, modifiers: item.modifiers).disabled(!item.enabled() || blockedByDialog(item))
         } else {
-            Button(item.title, action: item.action).disabled(!item.enabled() || blockedByDialog(item))
+            Button(tr(item.title), action: item.action).disabled(!item.enabled() || blockedByDialog(item))
         }
     }
 
@@ -134,5 +134,7 @@ enum FeatureModules {
         TabletSelfTest.register()    // drawing tablets: pressure / tilt / rotation / wheel, pen eraser, curve, smoothing, ⌃⌥-drag HUD, keys, quick picker (selftest: tablet)
         FilterCenterSelfTest.register()   // Center option of Twirl / Pinch / Spherize / radial blurs …: Object, Selection, Canvas, Custom (selftest: filtercenter)
         BrushLibraryModule.register()   // brush library: import (.abr .tpl .brush(set) .gbr .gih .kpp .icbrushes), folders, export, Define Brush (selftest: brushlib)
+        MCPModule.register()         // local MCP server so Claude Code can drive the app (Preferences ▸ Integrations, docs/MCP.md; selftest: mcp)
+        L10nSelfTest.register()   // interface languages: English for automated runs, Estonian table, live switching, stable ids, Estonian layouts, pseudo-localization (selftest: l10n)
     }
 }

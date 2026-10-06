@@ -18,7 +18,7 @@ struct RepeaterControls: View {
     static let shapes: [ArrangeSettings.Shape] = ArrangeSettings.Shape.allCases.filter { $0 != .grid }
 
     var body: some View {
-        Picker("", selection: pick(\.mode)) { ForEach(RepeaterSettings.Mode.allCases) { Text($0.rawValue).tag($0) } }
+        Picker("", selection: pick(\.mode)) { ForEach(RepeaterSettings.Mode.allCases) { Text(tr($0.rawValue)).tag($0) } }
             .pickerStyle(.segmented).labelsHidden()
         switch s.mode {
         case .grid:
@@ -33,12 +33,12 @@ struct RepeaterControls: View {
             ValueSlider(label: "Arc", value: $s.arc, range: 10...360, unit: "°", labelWidth: labelWidth, onCommit: onCommit)
             Toggle2(label: "Rotate instances", on: pick(\.rotateInstances))
         case .path:
-            Picker("Shape", selection: pick(\.shape)) { ForEach(RepeaterControls.shapes) { Text($0.rawValue).tag($0.rawValue) } }
+            Picker("Shape", selection: pick(\.shape)) { ForEach(RepeaterControls.shapes) { Text(tr($0.rawValue)).tag($0.rawValue) } }
             if s.shape == ArrangeSettings.Shape.custom.rawValue {
                 HStack { Text("Custom shape").foregroundStyle(Theme.textDim); ShapeLibraryPicker(id: pick(\.customID)) }
             }
             if s.shape == ArrangeSettings.Shape.path.rawValue {
-                Text(s.captured == nil ? "Select a path in the Paths panel before choosing Repeat…" : "Uses the path that was active when the repeater was made.")
+                Text(tr(s.captured == nil ? "Select a path in the Paths panel before choosing Repeat…" : "Uses the path that was active when the repeater was made."))
                     .font(Theme.fontSmall).foregroundStyle(s.captured == nil ? .orange : Theme.textFaint)
             } else {
                 ValueSlider(label: "Width", value: $s.shapeWidth, range: 10...4000, unit: "px", labelWidth: labelWidth, onCommit: onCommit)
@@ -56,17 +56,17 @@ struct RepeaterControls: View {
             ValueSlider(label: "Count", value: int(\.count), range: 1...120, step: 1, labelWidth: labelWidth, onCommit: onCommit)
             Toggle2(label: "Follow the path", on: pick(\.followPath))
         case .mirror:
-            Picker("Mirror", selection: pick(\.mirror)) { ForEach(RepeaterSettings.Mirror.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Mirror", selection: pick(\.mirror)) { ForEach(RepeaterSettings.Mirror.allCases) { Text(tr($0.rawValue)).tag($0) } }
             ValueSlider(label: "Distance", value: $s.mirrorGap, range: -400...800, unit: "px", labelWidth: labelWidth, onCommit: onCommit)
             if s.mirror == .kaleidoscope {
                 ValueSlider(label: "Segments", value: int(\.segments), range: 2...24, step: 1, labelWidth: labelWidth, onCommit: onCommit)
             }
         case .scatter:
             ValueSlider(label: "Count", value: int(\.count), range: 1...200, step: 1, labelWidth: labelWidth, onCommit: onCommit)
-            Picker("Inside", selection: pick(\.region)) { ForEach(RepeaterSettings.Region.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Inside", selection: pick(\.region)) { ForEach(RepeaterSettings.Region.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if s.region == .custom { HStack { Text("Custom shape").foregroundStyle(Theme.textDim); ShapeLibraryPicker(id: pick(\.customID)) } }
             if s.region == .captured {
-                Text(s.captured == nil ? "Make a selection (or select a path) before choosing Repeat…" : "Uses the selection / path from when the repeater was made.")
+                Text(tr(s.captured == nil ? "Make a selection (or select a path) before choosing Repeat…" : "Uses the selection / path from when the repeater was made."))
                     .font(Theme.fontSmall).foregroundStyle(s.captured == nil ? .orange : Theme.textFaint)
             } else {
                 ValueSlider(label: "Width", value: $s.regionWidth, range: 10...4000, unit: "px", labelWidth: labelWidth, onCommit: onCommit)
@@ -171,6 +171,6 @@ struct RepeaterProperties: View {
             Button("Release") { RepeaterActions.release(doc, layerID) }.buttonStyle(PanelButtonStyle())
                 .help("Remove the repeater and keep only the source layers")
         }
-        Text(settings.summary).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+        Text(tr(settings.summary)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
     }
 }

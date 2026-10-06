@@ -68,7 +68,7 @@ final class BugReportModel {
 
     func save() {
         let p = NSSavePanel()
-        p.title = "Save Bug Report"
+        p.title = tr("Save Bug Report")
         p.nameFieldStringValue = BugReport.defaultFileName()
         p.directoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
         p.allowedContentTypes = [.zip]
@@ -99,7 +99,7 @@ final class BugReportModel {
             service.recipients = []   // the tester chooses who gets it
             service.perform(withItems: [BugReport.summaryText(self.text, self.options, self.sources), url])
             self.sent = true
-            self.message = "Opened a new email with the report attached."
+            self.message = tr("Opened a new email with the report attached.")
         }
     }
 
@@ -112,8 +112,8 @@ final class BugReportModel {
             DispatchQueue.main.async {
                 self.busy = false
                 switch r {
-                case .success: self.message = ""; done(true)
-                case .failure(let e): self.message = "Couldn't write the report: \(e.localizedDescription)"; done(false)
+                case .success: self.message = tr(""); done(true)
+                case .failure(let e): self.message = tr("Couldn't write the report: \(e.localizedDescription)"); done(false)
                 }
             }
         }
@@ -152,7 +152,7 @@ struct BugReportDialog: View {
             Label("Only what's ticked goes into the report. Nothing is sent anywhere automatically — you choose where it goes. API keys and prompts are never included.",
                   systemImage: "lock.fill")
                 .font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
-            if !m.message.isEmpty { Text(m.message).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
+            if !m.message.isEmpty { Text(tr(m.message)).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
             HStack {
                 Button("Copy Summary") { m.copySummary() }.buttonStyle(PanelButtonStyle())
                 Button("Email…") { m.email() }.buttonStyle(PanelButtonStyle()).disabled(m.busy)
@@ -168,11 +168,11 @@ struct BugReportDialog: View {
 
     func field(_ title: String, _ text: Binding<String>, placeholder: String, height: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title).foregroundStyle(Theme.textDim)
+            Text(tr(title)).foregroundStyle(Theme.textDim)
             ZStack(alignment: .topLeading) {
                 TextEditor(text: text).font(Theme.font).scrollContentBackground(.hidden).padding(2)
                 if text.wrappedValue.isEmpty {
-                    Text(placeholder).font(Theme.font).foregroundStyle(Theme.textFaint).padding(.horizontal, 7).padding(.vertical, 2).allowsHitTesting(false)
+                    Text(tr(placeholder)).font(Theme.font).foregroundStyle(Theme.textFaint).padding(.horizontal, 7).padding(.vertical, 2).allowsHitTesting(false)
                 }
             }
             .frame(height: height)
@@ -183,7 +183,7 @@ struct BugReportDialog: View {
 
     func option(_ on: Binding<Bool>, _ title: String, _ detail: String) -> some View {
         Toggle(isOn: on) {
-            (Text(title) + Text(" — " + detail).foregroundStyle(Theme.textFaint)).font(Theme.font).fixedSize(horizontal: false, vertical: true)
+            (Text(tr(title)) + Text(tr(" — " + detail)).foregroundStyle(Theme.textFaint)).font(Theme.font).fixedSize(horizontal: false, vertical: true)
         }
         .toggleStyle(.checkbox)
     }

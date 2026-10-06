@@ -220,7 +220,7 @@ struct FillLayerDialog: View {
                     HStack {
                         Text("Contents").foregroundStyle(Theme.textDim)
                         Picker("", selection: Binding(get: { kind }, set: { k in Self.change(to: k) })) {
-                            ForEach(FillKind.allCases) { Text($0.rawValue).tag($0) }
+                            ForEach(FillKind.allCases) { Text(tr($0.rawValue)).tag($0) }
                         }
                         .pickerStyle(.segmented).labelsHidden().frame(width: 260)
                         .help("Layer ▸ Change Layer Content")
@@ -295,7 +295,7 @@ struct GradientFillControls: View {
             HStack(spacing: 8) {
                 Text("Style").foregroundStyle(Theme.textDim).frame(width: 52, alignment: .leading)
                 Picker("", selection: Binding(get: { g.type }, set: { v in set { $0.type = v } })) {
-                    ForEach(GradientType.allCases) { Text($0.displayName).tag($0) }
+                    ForEach(GradientType.allCases) { Text(tr($0.displayName)).tag($0) }
                 }.labelsHidden().frame(width: 120)
                 Spacer()
                 Text("Angle").foregroundStyle(Theme.textDim)
@@ -307,7 +307,7 @@ struct GradientFillControls: View {
             HStack(spacing: 8) {
                 Text("Method").foregroundStyle(Theme.textDim).frame(width: 52, alignment: .leading)
                 Picker("", selection: Binding(get: { g.method ?? .classic }, set: { v in set { $0.method = v == .classic ? nil : v } })) {
-                    ForEach(GradientMethod.allCases) { Text($0.displayName).tag($0) }
+                    ForEach(GradientMethod.allCases) { Text(tr($0.displayName)).tag($0) }
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(width: 240)
                 .help("Perceptual: even-looking steps · Linear: light-accurate blending · Classic: sRGB blending (Photoshop before 2023)")
@@ -358,7 +358,7 @@ struct PatternFillControls: View {
             HStack(alignment: .top, spacing: 10) {
                 PatternThumb(pattern: PatternLibrary.pattern(id: id, custom: app.customPatterns)).frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(PatternLibrary.pattern(id: id, custom: app.customPatterns)?.name ?? "Missing pattern").font(Theme.fontBold)
+                    Text(tr(PatternLibrary.pattern(id: id, custom: app.customPatterns)?.name ?? "Missing pattern")).font(Theme.fontBold)
                     if let p = PatternLibrary.pattern(id: id, custom: app.customPatterns) {
                         Text("\(p.image.width) × \(p.image.height) px tile").foregroundStyle(Theme.textDim)
                     }
@@ -406,7 +406,7 @@ struct PatternFillControls: View {
                 PatternThumb(pattern: p).frame(width: 40, height: 40)
                     .overlay(RoundedRectangle(cornerRadius: 2).stroke(p.id == id ? Theme.accent : .clear, lineWidth: 2))
                     .onTapGesture { setPattern(p.id, scale) }
-                    .help(p.name)
+                    .help(tr(p.name))
             }
         }
     }

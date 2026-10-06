@@ -250,7 +250,7 @@ struct ContentCredentialsPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(url?.lastPathComponent ?? "No file").font(Theme.fontBold).lineLimit(1)
+                Text(tr(url?.lastPathComponent ?? "No file")).font(Theme.fontBold).lineLimit(1)
                 Spacer()
                 Button("Verify File…") { pick() }.buttonStyle(PanelButtonStyle())
             }
@@ -258,22 +258,22 @@ struct ContentCredentialsPanel: View {
                 HStack(spacing: 6) {
                     Image(systemName: s.state == "Invalid" ? "xmark.seal" : (s.untrusted ? "checkmark.seal" : "checkmark.seal.fill"))
                         .foregroundStyle(s.state == "Invalid" ? .red : (s.untrusted ? .orange : .green))
-                    Text(s.state == "Invalid" ? "Invalid credentials" : (s.untrusted ? "Valid – signer not on a trust list" : "Valid (\(s.state))"))
+                    Text(tr(s.state == "Invalid" ? "Invalid credentials" : (s.untrusted ? "Valid – signer not on a trust list" : "Valid (\(s.state))")))
                 }
                 row("Title", s.title); row("App", s.generator); row("Signed by", s.issuer)
                 if !s.time.isEmpty { row("Signed", s.time) }
                 if s.aiGenerated { Label("Contains AI-generated / AI-edited content", systemImage: "sparkles").font(Theme.fontSmall).foregroundStyle(.purple) }
                 Caption("Actions")
-                ForEach(Array(s.actions.enumerated()), id: \.offset) { _, a in Text("• " + a).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
-                if !s.ingredients.isEmpty { Caption("Ingredients"); ForEach(s.ingredients, id: \.self) { Text("• " + $0).font(Theme.fontSmall) } }
+                ForEach(Array(s.actions.enumerated()), id: \.offset) { _, a in Text(tr("• " + a)).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
+                if !s.ingredients.isEmpty { Caption("Ingredients"); ForEach(s.ingredients, id: \.self) { Text(tr("• " + $0)).font(Theme.fontSmall) } }
                 DisclosureGroup("Validation (\(s.statusCodes.count))") {
-                    ForEach(s.statusCodes, id: \.self) { Text($0).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+                    ForEach(s.statusCodes, id: \.self) { Text(tr($0)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
                 }.font(Theme.fontSmall)
                 DisclosureGroup("Manifest JSON", isExpanded: $showJSON) {
                     ScrollView { Text(s.json).font(.system(size: 9, design: .monospaced)).textSelection(.enabled) }.frame(height: 160)
                 }.font(Theme.fontSmall)
             } else if let e = error {
-                Text(e).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                Text(tr(e)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
             } else {
                 Text("Open a file to see its Content Credentials.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
@@ -288,7 +288,7 @@ struct ContentCredentialsPanel: View {
     }
 
     func row(_ k: String, _ v: String) -> some View {
-        HStack(alignment: .top) { Text(k).foregroundStyle(Theme.textFaint).frame(width: 64, alignment: .leading); Text(v).lineLimit(2) }.font(Theme.fontSmall)
+        HStack(alignment: .top) { Text(tr(k)).foregroundStyle(Theme.textFaint).frame(width: 64, alignment: .leading); Text(tr(v)).lineLimit(2) }.font(Theme.fontSmall)
     }
 
     func load(_ u: URL?) {

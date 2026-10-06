@@ -52,7 +52,7 @@ struct TimelinePanel: View {
                     Button("Convert to Video Timeline") { VideoTimelineController.shared.createTimeline(d) }
                     Menu("Set Delay for All Frames") {
                         ForEach(Animation.delayPresets, id: \.self) { v in
-                            Button(Animation.delayLabel(v)) { tl.setDelayForAll(d, v) }
+                            Button(tr(Animation.delayLabel(v))) { tl.setDelayForAll(d, v) }
                         }
                     }.disabled(d.state.frames.isEmpty)
                     Divider()
@@ -113,11 +113,11 @@ struct TimelinePanel: View {
             Menu {
                 ForEach(AnimationLoop.allCases, id: \.self) { l in
                     Button { tl.setLoop(d, l) } label: {
-                        if l == d.state.animationLoop { Label(l.rawValue, systemImage: "checkmark") } else { Text(l.rawValue) }
+                        if l == d.state.animationLoop { Label(tr(l.rawValue), systemImage: "checkmark") } else { Text(tr(l.rawValue)) }
                     }
                 }
             } label: {
-                Text(d.state.animationLoop.rawValue).font(Theme.font).foregroundStyle(Theme.text)
+                Text(tr(d.state.animationLoop.rawValue)).font(Theme.font).foregroundStyle(Theme.text)
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
@@ -182,14 +182,14 @@ struct TimelineFrameCell: View {
     private var delayMenu: some View {
         Menu {
             ForEach(Animation.delayPresets, id: \.self) { v in
-                Button(Animation.delayLabel(v)) { tl.setDelay(doc, index: index, v) }
+                Button(tr(Animation.delayLabel(v))) { tl.setDelay(doc, index: index, v) }
             }
             Divider()
             Button("Other…") {
                 if let v = TimelineController.askDelay(current: frame.delay) { tl.setDelay(doc, index: index, v) }
             }
         } label: {
-            Text(Animation.delayLabel(frame.delay)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+            Text(tr(Animation.delayLabel(frame.delay))).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
         }
         .menuStyle(.borderlessButton)
         .fixedSize()

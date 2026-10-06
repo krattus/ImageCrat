@@ -47,7 +47,7 @@ enum StatusChips {
                               full: "\(st.width) × \(st.height) px · \(Int(st.resolution)) ppi",
                               compact: "\(st.width) × \(st.height) px",
                               tiny: "\(st.width)×\(st.height)",
-                              help: "Document size: \(st.width) × \(st.height) pixels at \(Int(st.resolution)) ppi (\(inches), \(st.colorMode.short) \(st.bitDepth.rawValue)-bit). Click to open Image Size…",
+                              help: "Document size: \(st.width) × \(st.height) pixels at \(Int(st.resolution)) ppi (\(inches), \(tr(st.colorMode.short)) \(st.bitDepth.rawValue)-bit). Click to open Image Size…",
                               capsule: false)
     }
 
@@ -150,6 +150,8 @@ enum StatusChips {
         case "memory":
             guard app.dialog == nil else { return }
             Workflow2PrefsState.open("Performance")
+        case "mcp":
+            MCPModule.openPreferences()
         default:
             break
         }
@@ -186,7 +188,7 @@ struct StatusChip: View {
                 HStack(spacing: 4) {
                     icon
                     Menu {
-                        ForEach(menu.indices, id: \.self) { i in Button(menu[i].0, action: menu[i].1) }
+                        ForEach(menu.indices, id: \.self) { i in Button(tr(menu[i].0), action: menu[i].1) }
                     } label: {
                         text
                     }
@@ -202,9 +204,9 @@ struct StatusChip: View {
                 .buttonStyle(.plain)
             }
         }
-        .help(spec.help)
+        .help(tr(spec.help))
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(spec.full)
+        .accessibilityLabel(tr(spec.full))
         .accessibilityHint(spec.help)
         .accessibilityAddTraits(.isButton)
         .onHover { hover = $0 }
@@ -218,7 +220,7 @@ struct StatusChip: View {
     }
 
     private var text: some View {
-        Text(spec.label(tier))
+        Text(tr(spec.label(tier)))
             .font(spec.capsule ? Theme.fontSmall : Theme.font).monospacedDigit()
             .foregroundStyle(spec.tint == .warning || spec.tint == .critical ? (tintColor ?? Theme.text) : (spec.capsule ? Theme.text : Theme.textDim))
             .lineLimit(1).truncationMode(.tail)
@@ -268,6 +270,7 @@ struct StatusBarChips: View {
                     StatusChip(spec: StatusChips.timelapse(frames: n), tier: tier, menu: StatusChips.timelapseMenu(d)).layoutPriority(2)
                 }
             }
+            MCPStatusChip(tier: tier)   // only while the Claude Code / MCP server runs
             if tier != .narrow { MemoryStatusChip(tier: tier, bytesOverride: preview?.memoryBytes) }
             AIUsageStatusChip(tier: tier, keyedOverride: preview?.aiKeyed).layoutPriority(2)
         }

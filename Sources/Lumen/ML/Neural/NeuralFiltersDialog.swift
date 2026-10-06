@@ -239,7 +239,7 @@ struct NeuralFiltersDialog: View {
                 Text("Neural Filters").font(.system(size: 13, weight: .semibold))
                 Spacer()
                 if m.busy || m.applying { ProgressView().controlSize(.small) }
-                Text(m.status).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                Text(tr(m.status)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
             }
             HStack(alignment: .top, spacing: 12) {
                 filterList.frame(width: 210, height: 520)
@@ -248,10 +248,10 @@ struct NeuralFiltersDialog: View {
             }
             HStack {
                 Text("Output").foregroundStyle(Theme.textDim)
-                Picker("", selection: $m.output) { ForEach(NeuralOutput.allCases) { Text($0.rawValue).tag($0) } }.labelsHidden().frame(width: 150)
+                Picker("", selection: $m.output) { ForEach(NeuralOutput.allCases) { Text(tr($0.rawValue)).tag($0) } }.labelsHidden().frame(width: 150)
                     .disabled(m.enabled.contains(where: \.resizes))
                 if m.enabled.contains(where: \.resizes) { Text("Super Zoom opens a new document").font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
-                if let e = m.error { Text(e).font(Theme.fontSmall).foregroundStyle(.orange).lineLimit(2) }
+                if let e = m.error { Text(tr(e)).font(Theme.fontSmall).foregroundStyle(.orange).lineLimit(2) }
                 Spacer()
                 if m.applying { ProgressView(value: m.progress).frame(width: 100) }
                 Button("Cancel") { m.task?.cancel(); AppModel.shared.dialog = nil }.buttonStyle(PanelButtonStyle()).keyboardShortcut(.cancelAction)
@@ -280,7 +280,7 @@ struct NeuralFiltersDialog: View {
     func row(_ k: NeuralFilterKind) -> some View {
         HStack(spacing: 6) {
             Image(systemName: k.symbol).frame(width: 18).foregroundStyle(Theme.textDim)
-            Text(k.title).lineLimit(1)
+            Text(tr(k.title)).lineLimit(1)
             Spacer()
             if k.isCloud { Image(systemName: "cloud").foregroundStyle(Theme.textFaint).help("Requires a Generative AI provider") }
             if let id = k.models.first(where: { mm.progress[$0] != nil }), let p = mm.progress[id] {
@@ -302,8 +302,8 @@ struct NeuralFiltersDialog: View {
         let k = m.selected
         return ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                Text(k.title).font(Theme.fontBold)
-                Text(k.note).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
+                Text(tr(k.title)).font(Theme.fontBold)
+                Text(tr(k.note)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
                 ForEach(k.models + k.optionalModels, id: \.self) { id in modelRow(id, optional: !k.models.contains(id)) }
                 if k == .styleTransfer {
                     let p = StyleTransfer.preset(Int(m.values[k]?["style"] ?? 0))
@@ -341,7 +341,7 @@ struct NeuralFiltersDialog: View {
         let spec = mm.spec(id)
         return HStack(spacing: 6) {
             Image(systemName: mm.isInstalled(id) ? "checkmark.circle.fill" : "arrow.down.circle").foregroundStyle(mm.isInstalled(id) ? .green : Theme.textFaint)
-            Text((spec?.name ?? id) + (optional ? " (optional)" : "")).font(Theme.fontSmall).lineLimit(1)
+            Text(tr((spec?.name ?? id) + (optional ? " (optional)" : ""))).font(Theme.fontSmall).lineLimit(1)
             Spacer()
             if let p = mm.progress[id] { ProgressView(value: p).frame(width: 60) }
             else if !mm.isInstalled(id) {
@@ -357,7 +357,7 @@ struct NeuralFiltersDialog: View {
                 }
             }
         }
-        .help(mm.isInstalled(id) ? (spec.map { "\($0.purpose) · \($0.license)" } ?? "") : mm.missingMessage(id))
+        .help(tr(mm.isInstalled(id) ? (spec.map { "\($0.purpose) · \($0.license)" } ?? "") : mm.missingMessage(id)))
     }
 
     @ViewBuilder func paramControl(_ k: NeuralFilterKind, _ p: FilterParam) -> some View {
@@ -368,11 +368,11 @@ struct NeuralFiltersDialog: View {
         case .toggle:
             Toggle2(label: p.label, on: Binding(get: { b.wrappedValue > 0.5 }, set: { b.wrappedValue = $0 ? 1 : 0 }))
         case .choice(let opts):
-            Picker(p.label, selection: Binding(get: { Int(b.wrappedValue) }, set: { v in
+            Picker(tr(p.label), selection: Binding(get: { Int(b.wrappedValue) }, set: { v in
                 if k == .colorTransfer && v == opts.count - 1 { pickReference() }
                 b.wrappedValue = Double(v)
             })) {
-                ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(o).tag(i) }
+                ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(tr(o)).tag(i) }
             }
         default:
             EmptyView()
@@ -437,7 +437,7 @@ struct NeuralFiltersDialog: View {
             HStack {
                 Picker("", selection: $m.compare) { Text("After").tag(0); Text("Before").tag(1); Text("Split").tag(2) }.pickerStyle(.segmented).labelsHidden().frame(width: 200)
                 Spacer()
-                Text(m.selected == .depthBlur ? "Click to set the focal point" : (m.selected == .colorize ? "Click to add a colour hint" : ""))
+                Text(tr(m.selected == .depthBlur ? "Click to set the focal point" : (m.selected == .colorize ? "Click to add a colour hint" : "")))
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
         }

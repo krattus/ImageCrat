@@ -93,15 +93,15 @@ enum DefineBrush {
     static func askNameAndFolder(title: String, initial: String, tip: PixelBuffer?) -> (String, String)? {
         let lib = BrushLibrary.shared
         let a = NSAlert()
-        a.messageText = title
-        a.informativeText = "The brush is added to the Brushes panel."
+        a.messageText = tr(title)
+        a.informativeText = tr("The brush is added to the Brushes panel.")
         let box = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 60))
         let field = NSTextField(frame: NSRect(x: 0, y: 34, width: 300, height: 24))
         field.stringValue = initial
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 300, height: 26))
         let folders = lib.index.allFolders
         let def = lib.defaultFolderForNewBrushes()
-        popup.addItem(withTitle: "Top Level")
+        popup.addItem(withTitle: tr("Top Level"))
         popup.lastItem?.representedObject = BrushLibraryIndex.rootID
         for f in lib.index.allFolders {
             popup.addItem(withTitle: f.path.joined(separator: " ▸ "))
@@ -113,8 +113,8 @@ enum DefineBrush {
         box.addSubview(popup)
         a.accessoryView = box
         if let t = tip { a.icon = NSImage(cgImage: t.makeCGImage(), size: NSSize(width: 48, height: 48)) }
-        a.addButton(withTitle: "OK")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK"))
+        a.addButton(withTitle: tr("Cancel"))
         a.window.initialFirstResponder = field
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return nil }
         let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -129,27 +129,27 @@ enum DefineBrush {
         let lib = BrushLibrary.shared
         let s = app.activeBrushSettings
         let a = NSAlert()
-        a.messageText = "New Brush"
-        a.informativeText = "Saves the current brush settings as a preset."
+        a.messageText = tr("New Brush")
+        a.informativeText = tr("Saves the current brush settings as a preset.")
         let box = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 136))
         let field = NSTextField(frame: NSRect(x: 0, y: 110, width: 300, height: 24))
         field.stringValue = (lib.activePreset?.name).map { "\($0) copy" } ?? "Brush \(lib.orderedBrushes.count + 1)"
         let popup = NSPopUpButton(frame: NSRect(x: 0, y: 78, width: 300, height: 26))
-        popup.addItem(withTitle: "Top Level"); popup.lastItem?.representedObject = BrushLibraryIndex.rootID
+        popup.addItem(withTitle: tr("Top Level")); popup.lastItem?.representedObject = BrushLibraryIndex.rootID
         let def = lib.defaultFolderForNewBrushes()
         for f in lib.index.allFolders {
             popup.addItem(withTitle: f.path.joined(separator: " ▸ ")); popup.lastItem?.representedObject = f.id
             if f.id == def { popup.select(popup.lastItem) }
         }
-        let size = NSButton(checkboxWithTitle: "Capture Brush Size in Preset", target: nil, action: nil); size.state = .on
+        let size = NSButton(checkboxWithTitle: tr("Capture Brush Size in Preset"), target: nil, action: nil); size.state = .on
         size.frame = NSRect(x: 0, y: 52, width: 300, height: 20)
-        let tool = NSButton(checkboxWithTitle: "Include Tool Settings (opacity, flow, mode)", target: nil, action: nil); tool.state = .off
+        let tool = NSButton(checkboxWithTitle: tr("Include Tool Settings (opacity, flow, mode)"), target: nil, action: nil); tool.state = .off
         tool.frame = NSRect(x: 0, y: 28, width: 300, height: 20)
-        let color = NSButton(checkboxWithTitle: "Include Color", target: nil, action: nil); color.state = .off
+        let color = NSButton(checkboxWithTitle: tr("Include Color"), target: nil, action: nil); color.state = .off
         color.frame = NSRect(x: 0, y: 4, width: 300, height: 20)
         for v in [field, popup, size, tool, color] as [NSView] { box.addSubview(v) }
         a.accessoryView = box
-        a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK")); a.addButton(withTitle: tr("Cancel"))
         a.window.initialFirstResponder = field
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return }
         let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)

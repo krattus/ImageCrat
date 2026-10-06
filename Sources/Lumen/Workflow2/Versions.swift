@@ -281,7 +281,7 @@ struct VersionsPanel: View {
                     TextField("", text: $nameText).textFieldStyle(.plain).font(Theme.fontBold)
                         .onSubmit { store.update(v.id, in: d, name: nameText); renaming = nil }
                 } else {
-                    Text(v.name).font(Theme.fontBold).foregroundStyle(Theme.text).lineLimit(1)
+                    Text(tr(v.name)).font(Theme.fontBold).foregroundStyle(Theme.text).lineLimit(1)
                 }
                 Text(verbatim: "\(Workflow2Util.relativeTime(v.date)) · \(v.width)×\(v.height)")
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
@@ -290,7 +290,7 @@ struct VersionsPanel: View {
                     TextField("Note", text: $noteText).textFieldStyle(.plain).font(Theme.fontSmall)
                         .onSubmit { store.update(v.id, in: d, note: noteText); editingNote = nil }
                 } else if !v.note.isEmpty {
-                    Text(v.note).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(3).fixedSize(horizontal: false, vertical: true)
+                    Text(tr(v.note)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(3).fixedSize(horizontal: false, vertical: true)
                 }
             }
             Spacer(minLength: 0)
@@ -325,7 +325,7 @@ struct SaveVersionDialog: View {
         }) {
             HStack {
                 Text("Name").foregroundStyle(Theme.textDim).frame(width: 50, alignment: .leading)
-                TextField(AppActions.doc.map { VersionStore.shared.defaultName($0) } ?? "Version", text: $name).w2Field()
+                TextField(tr(AppActions.doc.map { VersionStore.shared.defaultName($0) } ?? "Version"), text: $name).w2Field()
             }
             HStack(alignment: .top) {
                 Text("Note").foregroundStyle(Theme.textDim).frame(width: 50, alignment: .leading)

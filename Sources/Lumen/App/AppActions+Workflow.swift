@@ -222,7 +222,7 @@ extension AppActions {
         guard let d = doc, !d.state.layerComps.isEmpty else { alert("This document has no layer comps."); return }
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true; panel.canChooseFiles = false; panel.canCreateDirectories = true
-        panel.prompt = "Export"
+        panel.prompt = tr("Export")
         guard UIBlock.run(panel) == .OK, let dir = panel.url else { return }
         for c in d.state.layerComps {
             var st = d.state
@@ -284,7 +284,7 @@ struct LayerCompsPanel: View {
                     renaming = nil
                 }
             } else {
-                Text(c?.name ?? "Last Document State").foregroundStyle(c == nil ? Theme.textDim : Theme.text).lineLimit(1)
+                Text(tr(c?.name ?? "Last Document State")).foregroundStyle(c == nil ? Theme.textDim : Theme.text).lineLimit(1)
             }
             Spacer()
             if let c {
@@ -310,7 +310,7 @@ struct LayerCompsPanel: View {
         return Image(systemName: symbol).font(.system(size: 9))
             .foregroundStyle(on ? Theme.text : Theme.textFaint.opacity(0.5))
             .frame(width: 16, height: 16)
-            .help(help + (on ? " (captured)" : " (ignored)"))
+            .help(tr(help + (on ? " (captured)" : " (ignored)")))
             .onTapGesture {
                 if let i = d.state.layerComps.firstIndex(where: { $0.id == c.id }) { d.state.layerComps[i][keyPath: kp].toggle(); d.commit("Layer Comp Options") }
             }

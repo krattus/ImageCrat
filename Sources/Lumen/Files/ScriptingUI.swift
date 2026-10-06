@@ -42,7 +42,7 @@ struct ScriptConsolePanel: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 1) {
                         ForEach(Array(console.lines.enumerated()), id: \.offset) { i, l in
-                            Text(l).font(Theme.mono).foregroundStyle(l.hasPrefix("⚠︎") ? Color.orange : (l.hasPrefix("›") ? Theme.textDim : Theme.text))
+                            Text(tr(l)).font(Theme.mono).foregroundStyle(l.hasPrefix("⚠︎") ? Color.orange : (l.hasPrefix("›") ? Theme.textDim : Theme.text))
                                 .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading).id(i)
                         }
                     }.padding(6)

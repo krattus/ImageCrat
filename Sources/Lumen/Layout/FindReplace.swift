@@ -298,13 +298,13 @@ struct FindReplaceDialog: View {
 
     var body: some View {
         DialogFrame(title: "Find and Replace in Document", width: 430, okTitle: "Done", onOK: {}) {
-            Picker("", selection: $tab) { ForEach(Tab.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented).labelsHidden()
+            Picker("", selection: $tab) { ForEach(Tab.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented).labelsHidden()
             switch tab {
             case .text: textTab
             case .colors: colorTab
             case .fonts: fontTab
             }
-            if !message.isEmpty { Text(message).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
+            if !message.isEmpty { Text(tr(message)).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
         }
         .onAppear { refresh() }
         .onChange(of: tab) { _, _ in message = ""; refresh() }
@@ -344,8 +344,8 @@ struct FindReplaceDialog: View {
             VStack(alignment: .leading, spacing: 1) {
                 ForEach(matches.prefix(300)) { m in
                     HStack(spacing: 6) {
-                        Text(m.layerName).foregroundStyle(Theme.textDim).lineLimit(1).frame(width: 110, alignment: .leading)
-                        (Text(m.before).foregroundStyle(Theme.textDim) + Text(m.match).bold().foregroundStyle(Theme.accent) + Text(m.after).foregroundStyle(Theme.textDim))
+                        Text(tr(m.layerName)).foregroundStyle(Theme.textDim).lineLimit(1).frame(width: 110, alignment: .leading)
+                        (Text(tr(m.before)).foregroundStyle(Theme.textDim) + Text(tr(m.match)).bold().foregroundStyle(Theme.accent) + Text(tr(m.after)).foregroundStyle(Theme.textDim))
                             .lineLimit(1).frame(maxWidth: .infinity, alignment: .leading)
                         Button("Replace") { replace(only: [m.id]) }.buttonStyle(.plain).foregroundStyle(Theme.accent).font(Theme.fontSmall)
                     }
@@ -359,8 +359,8 @@ struct FindReplaceDialog: View {
         .background(RoundedRectangle(cornerRadius: 4).fill(Theme.fieldBG))
         HStack {
             let layers = Set(matches.map(\.layerID)).count
-            Text(q.find.isEmpty ? "Type what to look for. Click a result to jump to its layer."
-                 : "\(matches.count) match\(matches.count == 1 ? "" : "es") in \(layers) layer\(layers == 1 ? "" : "s")")
+            Text(tr(q.find.isEmpty ? "Type what to look for. Click a result to jump to its layer."
+                 : "\(matches.count) match\(matches.count == 1 ? "" : "es") in \(layers) layer\(layers == 1 ? "" : "s")"))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             Spacer()
             Button("Replace All") { replace(only: nil) }.buttonStyle(PanelButtonStyle()).disabled(matches.isEmpty)
@@ -388,7 +388,7 @@ struct FindReplaceDialog: View {
                         RoundedRectangle(cornerRadius: 3).fill(Color(nsColor: c.color.nsColor)).frame(width: 26, height: 16)
                             .overlay(RoundedRectangle(cornerRadius: 3).stroke(Color(white: 0.45), lineWidth: 0.5))
                         Text("#" + c.hex).font(Theme.mono)
-                        Text(c.kinds.joined(separator: ", ")).foregroundStyle(Theme.textDim).lineLimit(1)
+                        Text(tr(c.kinds.joined(separator: ", "))).foregroundStyle(Theme.textDim).lineLimit(1)
                         Spacer()
                         Text("\(c.count)×").foregroundStyle(Theme.textDim)
                     }
@@ -441,7 +441,7 @@ struct FindReplaceDialog: View {
             VStack(alignment: .leading, spacing: 1) {
                 ForEach(fonts) { f in
                     HStack(spacing: 8) {
-                        Text(f.display).lineLimit(1)
+                        Text(tr(f.display)).lineLimit(1)
                         if f.missing { Text("Missing").font(Theme.fontSmall).padding(.horizontal, 5).background(Capsule().fill(Color.orange.opacity(0.8))) }
                         Spacer()
                         Text("\(f.count) layer\(f.count == 1 ? "" : "s")").foregroundStyle(Theme.textDim)
@@ -458,15 +458,15 @@ struct FindReplaceDialog: View {
         .background(RoundedRectangle(cornerRadius: 4).fill(Theme.fieldBG))
         let missing = fonts.filter(\.missing).count
         if missing > 0 {
-            Text("\(missing) font\(missing == 1 ? " is" : "s are") not installed on this Mac and \(missing == 1 ? "is" : "are") shown with a fallback.")
+            Text(missing == 1 ? "1 font is not installed on this Mac and is shown with a fallback." : "\(missing) fonts are not installed on this Mac and are shown with a fallback.")
                 .font(Theme.fontSmall).foregroundStyle(.orange)
         }
         HStack {
             Picker("Replace with", selection: $toFamily) {
-                ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { Text($0).tag($0) }
+                ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { Text(tr($0)).tag($0) }
             }.frame(width: 250)
             Picker("", selection: $toFont) {
-                ForEach(members(toFamily), id: \.0) { m in Text(m.1).tag(m.0) }
+                ForEach(members(toFamily), id: \.0) { m in Text(tr(m.1)).tag(m.0) }
             }.labelsHidden().frame(width: 120)
         }
         .onChange(of: toFamily) { _, fam in

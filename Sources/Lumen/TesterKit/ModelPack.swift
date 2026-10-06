@@ -425,7 +425,7 @@ final class ModelPackController {
     private func makeJob() -> ModelPack.Job {
         let j = ModelPack.Job()
         j.onProgress = { [weak self] f, m in
-            DispatchQueue.main.async { guard let self, self.job === j else { return }; self.fraction = f; if !m.isEmpty { self.message = m } }
+            DispatchQueue.main.async { guard let self, self.job === j else { return }; self.fraction = f; if !m.isEmpty { self.message = tr(m) } }
         }
         job = j
         return j
@@ -443,8 +443,8 @@ final class ModelPackController {
         // automated runs (menu fuzzing answers panels with a scratch folder) must not copy gigabytes of real models
         if GenAIKeyOverrides.realKeysBlocked { result = "Export is not available in automated runs."; return }
         let p = NSSavePanel()
-        p.title = "Export Models"
-        p.message = "ImageCrat writes a folder with the models and a manifest of their checksums."
+        p.title = tr("Export Models")
+        p.message = tr("ImageCrat writes a folder with the models and a manifest of their checksums.")
         p.nameFieldStringValue = ModelPackController.defaultPackName
         p.canCreateDirectories = true
         p.directoryURL = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask).first
@@ -475,8 +475,8 @@ final class ModelPackController {
     func chooseAndImport() {
         if GenAIKeyOverrides.realKeysBlocked { result = "Import is not available in automated runs."; return }   // never writes the real Models folder
         let p = NSOpenPanel()
-        p.title = "Import Models"
-        p.message = "Choose an ImageCrat models pack (folder, zip or manifest.json) or a single model folder."
+        p.title = tr("Import Models")
+        p.message = tr("Choose an ImageCrat models pack (folder, zip or manifest.json) or a single model folder.")
         p.canChooseDirectories = true
         p.canChooseFiles = true
         p.allowsMultipleSelection = false

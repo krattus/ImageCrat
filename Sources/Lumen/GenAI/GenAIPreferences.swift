@@ -48,10 +48,10 @@ struct GenAIPreferencesSection: View {
             let avail = ProviderRouter.shared.available(for: f)
             let auto = (try? ProviderRouter.shared.resolve(f))?.1
             VStack(alignment: .leading, spacing: 2) {
-                Text(f.displayName).font(Theme.fontBold)
+                Text(tr(f.displayName)).font(Theme.fontBold)
                 Picker("", selection: Binding(get: { s.data.routing[f.rawValue] ?? "" }, set: { s.data.routing[f.rawValue] = $0.isEmpty ? nil : $0 })) {
-                    Text("Automatic" + (auto.map { " (\($0.provider.displayName): \($0.name))" } ?? " — no keyed provider")).tag("")
-                    ForEach(avail) { m in Text("\(m.provider.displayName): \(m.name)").tag(m.id) }
+                    Text(tr("Automatic" + (auto.map { " (\($0.provider.displayName): \($0.name))" } ?? " — no keyed provider"))).tag("")
+                    ForEach(avail) { m in Text("\(tr(m.provider.displayName)): \(m.name)").tag(m.id) }
                 }
                 .labelsHidden()
             }
@@ -65,7 +65,7 @@ struct GenAIPreferencesSection: View {
         Text("Only the selection area plus ~25% context is uploaded, flattened, without metadata. Replicate uploads are deleted after each job.")
             .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         Divider()
-        Picker("Output", selection: $s.data.quality) { ForEach(OutputQuality.allCases) { Text($0.rawValue).tag($0) } }
+        Picker("Output", selection: $s.data.quality) { ForEach(OutputQuality.allCases) { Text(tr($0.rawValue)).tag($0) } }
         ValueSlider(label: "Variations", value: Binding(get: { Double(s.data.variations) }, set: { s.data.variations = Int($0) }), range: 1...4, step: 1, labelWidth: 90)
         Divider()
         GenBudgetPreferences()
@@ -86,25 +86,25 @@ struct ProviderKeyRow: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Circle().fill(has ? Color.green : Color.gray.opacity(0.5)).frame(width: 7, height: 7)
-                Text(provider.displayName).font(Theme.fontBold)
+                Text(tr(provider.displayName)).font(Theme.fontBold)
                 Spacer()
                 if let u = URL(string: provider.keyURL) { Link("Get a key", destination: u).font(Theme.fontSmall) }
             }
             HStack(spacing: 4) {
                 Group {
-                    if reveal { TextField(has ? "•••••• stored in Keychain — paste to replace" : "Paste API key", text: $entry) }
-                    else { SecureField(has ? "•••••• stored in Keychain — paste to replace" : "Paste API key", text: $entry) }
+                    if reveal { TextField(tr(has ? "•••••• stored in Keychain — paste to replace" : "Paste API key"), text: $entry) }
+                    else { SecureField(tr(has ? "•••••• stored in Keychain — paste to replace" : "Paste API key"), text: $entry) }
                 }
                 .genField().font(Theme.mono)
-                Button { reveal.toggle() } label: { Image(systemName: reveal ? "eye.slash" : "eye") }.buttonStyle(.plain).help(reveal ? "Hide" : "Show")
+                Button { reveal.toggle() } label: { Image(systemName: reveal ? "eye.slash" : "eye") }.buttonStyle(.plain).help(tr(reveal ? "Hide" : "Show"))
             }
             HStack {
                 Button("Save") { save() }.buttonStyle(PanelButtonStyle()).disabled(entry.trimmingCharacters(in: .whitespaces).isEmpty)
-                Button(testing ? "Testing…" : "Test key") { test() }.buttonStyle(PanelButtonStyle()).disabled(testing || (!has && entry.isEmpty))
+                Button(tr(testing ? "Testing…" : "Test key")) { test() }.buttonStyle(PanelButtonStyle()).disabled(testing || (!has && entry.isEmpty))
                 if has { Button("Remove") { GenAIKeychain.shared.delete(provider.rawValue); s.keysRevision += 1; status = "Key removed." }.buttonStyle(PanelButtonStyle()) }
             }
-            if !status.isEmpty { Text(status).font(Theme.fontSmall).foregroundStyle(status.hasPrefix("Key OK") || status.hasPrefix("Saved") ? .green : .orange).lineLimit(3) }
-            Text(provider.privacyNote).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
+            if !status.isEmpty { Text(tr(status)).font(Theme.fontSmall).foregroundStyle(status.hasPrefix("Key OK") || status.hasPrefix("Saved") ? .green : .orange).lineLimit(3) }
+            Text(tr(provider.privacyNote)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         }
         .padding(8)
         .background(RoundedRectangle(cornerRadius: 5).fill(Theme.fieldBG.opacity(0.6)))

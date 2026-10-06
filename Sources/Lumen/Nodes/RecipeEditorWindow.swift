@@ -72,7 +72,7 @@ final class RecipeEditorWindow: NSObject, NSWindowDelegate {
         }
         p.model = m
         p.title = m.title
-        p.contentView = NSHostingView(rootView: RecipeEditorView(model: m))
+        p.contentView = NSHostingView(rootView: RecipeEditorView(model: m).l10nRoot())
         p.makeKeyAndOrderFront(nil)
         return m
     }

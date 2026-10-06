@@ -145,12 +145,12 @@ final class NeuralRemove {
                 shared.busy = false
                 guard let m, m.data.contains(where: { $0 > 0.5 }) else {
                     AppModel.shared.setStatus("No \(kind.rawValue.lowercased()) found.")
-                    shared.message = "No \(kind.rawValue.lowercased()) found."
+                    shared.message = tr("No \(kind.rawValue.lowercased()) found.")
                     return
                 }
                 let buf = PixelBuffer(cgImage: m.cgImage(), format: .gray)
                 d.setSelection(buf, commitName: "Find Distractions: \(kind.rawValue)")
-                shared.message = "\(kind.rawValue) selected."
+                shared.message = tr("\(tr(kind.rawValue)) selected.")
                 if remove { removeSelection() } else { AppModel.shared.setStatus("\(kind.rawValue) selected — click Remove to fill.") }
                 _ = id
             }
@@ -179,7 +179,7 @@ struct NeuralRemoveOptions: View {
     @Bindable var mm = ModelManager.shared
     var body: some View {
         Picker("", selection: Binding(get: { nr.mode }, set: { nr.modeOverride = $0 })) {
-            ForEach(NeuralRemove.Mode.allCases) { Text($0.rawValue).tag($0) }
+            ForEach(NeuralRemove.Mode.allCases) { Text(tr($0.rawValue)).tag($0) }
         }.labelsHidden().frame(width: 230)
         if nr.mode == .generative && !LamaInpainter.isAvailable {
             if let p = mm.progress[NeuralModelID.lama] { ProgressView(value: p).frame(width: 60) } else {
@@ -193,8 +193,8 @@ struct NeuralRemoveOptions: View {
         }
         Menu("Find Distractions") {
             ForEach(NeuralRemove.Distraction.allCases, id: \.self) { k in
-                Button("Select \(k.rawValue)") { NeuralRemove.findDistractions(k, remove: false) }
-                Button("Remove \(k.rawValue)") { NeuralRemove.findDistractions(k, remove: true) }
+                Button("Select \(tr(k.rawValue))") { NeuralRemove.findDistractions(k, remove: false) }
+                Button("Remove \(tr(k.rawValue))") { NeuralRemove.findDistractions(k, remove: true) }
             }
             Divider()
             Button("Remove Selection") { NeuralRemove.removeSelection() }

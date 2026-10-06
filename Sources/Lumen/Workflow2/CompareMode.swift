@@ -417,7 +417,7 @@ struct Workflow2CanvasOverlay: View {
 struct CompareTag: View {
     let text: String
     var body: some View {
-        Text(text).font(.system(size: 9, weight: .bold)).tracking(0.6).foregroundStyle(.white)
+        Text(tr(text)).font(.system(size: 9, weight: .bold)).tracking(0.6).foregroundStyle(.white)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(Capsule().fill(Color.black.opacity(0.55)))
     }
@@ -461,7 +461,7 @@ struct ComparePill: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "rectangle.split.2x1").font(.system(size: 10)).foregroundStyle(Theme.accent)
-            Text(compare.label).font(Theme.fontBold).foregroundStyle(.white).lineLimit(1).frame(maxWidth: 220)
+            Text(tr(compare.label)).font(Theme.fontBold).foregroundStyle(.white).lineLimit(1).frame(maxWidth: 220)
             HStack(spacing: 1) {
                 ForEach(CompareLayout.allCases) { l in
                     Button { compare.layout = l } label: {
@@ -469,7 +469,7 @@ struct ComparePill: View {
                             .foregroundStyle(compare.layout == l ? Color.white : Color(white: 0.7))
                             .background(RoundedRectangle(cornerRadius: 4).fill(compare.layout == l ? Theme.accent : Color.clear))
                             .contentShape(Rectangle())
-                    }.buttonStyle(.plain).help(l.rawValue)
+                    }.buttonStyle(.plain).help(tr(l.rawValue))
                 }
             }
             if compare.layout == .onion {
@@ -500,7 +500,7 @@ struct IsolatePill: View {
             HStack(spacing: 1) {
                 ForEach([false, true], id: \.self) { dim in
                     Button { isolate.dim = dim } label: {
-                        Text(dim ? "Dim others" : "Hide others").font(Theme.fontSmall).padding(.horizontal, 7).frame(height: 18)
+                        Text(tr(dim ? "Dim others" : "Hide others")).font(Theme.fontSmall).padding(.horizontal, 7).frame(height: 18)
                             .foregroundStyle(isolate.dim == dim ? Color.white : Color(white: 0.7))
                             .background(RoundedRectangle(cornerRadius: 4).fill(isolate.dim == dim ? Theme.accent : Color.clear))
                             .contentShape(Rectangle())
@@ -548,7 +548,7 @@ struct CompareSourceDialog: View {
                 HStack(spacing: 2) {
                     ForEach(CompareLayout.allCases) { l in
                         Button { layout = l } label: {
-                            HStack(spacing: 4) { Image(systemName: l.symbol).font(.system(size: 9)); Text(l.rawValue).font(Theme.fontSmall) }
+                            HStack(spacing: 4) { Image(systemName: l.symbol).font(.system(size: 9)); Text(tr(l.rawValue)).font(Theme.fontSmall) }
                                 .padding(.horizontal, 7).frame(height: 22)
                                 .foregroundStyle(layout == l ? Color.white : Theme.textDim)
                                 .background(RoundedRectangle(cornerRadius: 4).fill(layout == l ? Theme.accent : Theme.fieldBG))
@@ -599,9 +599,9 @@ struct CompareSourceDialog: View {
         Button(action: action) {
             HStack(spacing: 7) {
                 Image(systemName: symbol).font(.system(size: 9)).foregroundStyle(Theme.textDim).frame(width: 14)
-                Text(title).lineLimit(1)
+                Text(tr(title)).lineLimit(1)
                 Spacer()
-                Text(detail).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                Text(tr(detail)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
             .padding(.horizontal, 8).frame(height: 22).contentShape(Rectangle())
         }.buttonStyle(.plain)

@@ -112,7 +112,7 @@ struct RulerOptions: View {
     var body: some View {
         let _ = app.sessionTick
         if let d = app.activeDocument {
-            Text(RulerTool.line(d) != nil ? RulerTool.info(d) : "Drag to measure distance and angle.").font(Theme.mono).foregroundStyle(Theme.textDim)
+            Text(tr(RulerTool.line(d) != nil ? RulerTool.info(d) : "Drag to measure distance and angle.")).font(Theme.mono).foregroundStyle(Theme.textDim)
             Button("Straighten Layer") { RulerTool.straightenLayer(d) }.buttonStyle(PanelButtonStyle()).disabled(RulerTool.line(d) == nil)
             Button("Clear") { ToolsSettings.shared.rulerLines[d.id] = nil; app.sessionTick += 1; ToolsModule.refreshCanvas() }.buttonStyle(PanelButtonStyle())
             Button("Record") { MeasurementActions.record() }.buttonStyle(PanelButtonStyle())
@@ -157,7 +157,7 @@ struct ArtHistoryOptions: View {
         BlendModePicker(mode: $ts.artHistoryBrush.blendMode, width: 100)
         CompactSlider(label: "Opacity", value: $ts.artHistoryBrush.opacity, range: 0...1, unit: "%", scale: 100)
         Picker("Style", selection: $ts.artStyle) {
-            ForEach(ArtHistoryStyle.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            ForEach(ArtHistoryStyle.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) }
         }.frame(width: 170)
         CompactSlider(label: "Area", value: $ts.artArea, range: 1...500, unit: " px")
         CompactSlider(label: "Tolerance", value: $ts.artTolerance, range: 0...100, unit: "%")
@@ -180,7 +180,7 @@ struct BackgroundEraserOptions: View {
             IconButton(symbol: "square.fill.on.square", help: "Sampling: Background Swatch", active: ts.bgSampling == .backgroundSwatch) { ts.bgSampling = .backgroundSwatch }
         }
         Picker("Limits", selection: $ts.bgLimits) {
-            ForEach(EraserLimits.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            ForEach(EraserLimits.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) }
         }.frame(width: 170)
         CompactSlider(label: "Tolerance", value: $ts.bgTolerance, range: 0...100, unit: "%")
         Toggle2(label: "Protect Foreground Color", on: $ts.bgProtectForeground)

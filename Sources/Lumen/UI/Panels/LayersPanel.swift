@@ -142,14 +142,14 @@ struct LayersPanelContent: View {
 
     var filterBar: some View {
         HStack(spacing: narrow ? 3 : 4) {
-            Picker("", selection: $filterKind) { ForEach(LayerFilterKind.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $filterKind) { ForEach(LayerFilterKind.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 .labelsHidden().frame(width: narrow ? 66 : 84)
             switch filterKind {
             case .kind where narrow:
                 kindMenu
             case .kind:
                 ForEach(LayerKindFilter.allCases, id: \.self) { k in
-                    IconButton(symbol: k.symbol, help: "Filter for \(k.rawValue) layers", active: kinds.contains(k), size: 20) {
+                    IconButton(symbol: k.symbol, help: "Filter for \(tr(k.rawValue)) layers", active: kinds.contains(k), size: 20) {
                         if kinds.contains(k) { kinds.remove(k) } else { kinds.insert(k) }
                         filterOn = true
                     }
@@ -162,10 +162,10 @@ struct LayersPanelContent: View {
                 BlendModePicker(mode: $filterMode, includePassThrough: true, width: narrow ? 64 : 110, onChange: {})
             case .attribute:
                 Picker("", selection: $filterAttr) {
-                    ForEach(Array(["Visible", "Invisible", "Locked", "Layer Mask", "Vector Mask", "Clipped", "Linked", "Smart Filters"].enumerated()), id: \.offset) { i, n in Text(n).tag(i) }
+                    ForEach(Array(["Visible", "Invisible", "Locked", "Layer Mask", "Vector Mask", "Clipped", "Linked", "Smart Filters"].enumerated()), id: \.offset) { i, n in Text(tr(n)).tag(i) }
                 }.labelsHidden().frame(width: narrow ? 64 : 110)
             case .color:
-                Picker("", selection: $filterColor) { ForEach(LayerColorLabel.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) } }.labelsHidden().frame(width: narrow ? 64 : 90)
+                Picker("", selection: $filterColor) { ForEach(LayerColorLabel.allCases, id: \.self) { Text(tr($0.rawValue.capitalized)).tag($0) } }.labelsHidden().frame(width: narrow ? 64 : 90)
             case .effect, .artboard:
                 EmptyView()
             }
@@ -183,7 +183,7 @@ struct LayersPanelContent: View {
     var kindMenu: some View {
         Menu {
             ForEach(LayerKindFilter.allCases, id: \.self) { k in
-                Toggle(k.rawValue, isOn: Binding(get: { kinds.contains(k) }, set: { on in
+                Toggle(tr(k.rawValue), isOn: Binding(get: { kinds.contains(k) }, set: { on in
                     if on { kinds.insert(k) } else { kinds.remove(k) }
                     filterOn = true
                 }))
@@ -271,7 +271,7 @@ struct LayersPanelContent: View {
                 Button("Blending Options / Layer Style…") { if let id = doc.activeLayerID { AppModel.shared.dialog = .layerStyle(id) } }
                 Divider()
                 ForEach(StyleSection.allCases.filter { $0 != .blending }) { s in
-                    Button(s.rawValue + "…") { if let id = doc.activeLayerID { LayerStyleDialog.open(s, layer: id, doc: doc) } }
+                    Button(tr(s.rawValue + "…")) { if let id = doc.activeLayerID { LayerStyleDialog.open(s, layer: id, doc: doc) } }
                 }
             } label: { Text("fx").font(.system(size: 12, weight: .bold, design: .serif)).italic() }
                 .menuStyle(.borderlessButton).menuIndicator(compactFooter ? .hidden : .visible).frame(width: menu).help("Add a layer style")
@@ -283,7 +283,7 @@ struct LayersPanelContent: View {
                 Button("Gradient…") { FillLayerDialog.newLayer(.gradient) }
                 Button("Pattern…") { FillLayerDialog.newLayer(.pattern) }
                 Divider()
-                ForEach(AdjustmentKind.layerKinds) { k in Button(k.displayName + "…") { AppActions.newAdjustmentLayer(k) } }
+                ForEach(AdjustmentKind.layerKinds) { k in Button(tr(k.displayName + "…")) { AppActions.newAdjustmentLayer(k) } }
             } label: { Image(systemName: "circle.lefthalf.filled") }
                 .menuStyle(.borderlessButton).menuIndicator(compactFooter ? .hidden : .visible).frame(width: menu).help("Create new fill or adjustment layer")
             Menu {
@@ -355,7 +355,7 @@ struct LayerRow: View {
                     .foregroundStyle(layer.isVisible ? Theme.text : Theme.textFaint)
                     .frame(width: 22, height: 36)
             }.buttonStyle(.plain)
-            .accessibilityLabel((layer.isVisible ? "Hide " : "Show ") + layer.name)
+            .accessibilityLabel(tr((layer.isVisible ? "Hide " : "Show ") + layer.name))
             Rectangle().fill(Theme.border).frame(width: 1)
             Spacer().frame(width: CGFloat(depth) * 14)
             if layer.isGroup {
@@ -367,7 +367,7 @@ struct LayerRow: View {
                     Image(systemName: layer.isExpanded ? "chevron.down" : "chevron.right").font(.system(size: 8, weight: .bold)).foregroundStyle(Theme.textDim)
                         .frame(width: LayerRow.disclosureWidth, height: 38).contentShape(Rectangle())
                 }.buttonStyle(.plain)
-                .accessibilityLabel(layer.isExpanded ? "Collapse Group" : "Expand Group")
+                .accessibilityLabel(tr(layer.isExpanded ? "Collapse Group" : "Expand Group"))
                 .help("Expand / collapse the group (⌥-click: nested groups too)")
             }
             if layer.isClipped {
@@ -510,7 +510,7 @@ struct LayerRow: View {
 
     @ViewBuilder var badges: some View {
         if case .text(let t) = layer.content, let note = t.missingFontNote {
-            Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 9)).foregroundStyle(Color.yellow).help(note)
+            Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 9)).foregroundStyle(Color.yellow).help(tr(note))
         }
         GenLayerBadge(doc: doc, layerID: layer.id)
         ComponentLayerBadge(layer: layer)
@@ -536,8 +536,8 @@ struct LayerRow: View {
                     Image(systemName: open ? "chevron.down" : "chevron.right").font(.system(size: 7, weight: .bold)).foregroundStyle(Theme.textDim)
                         .frame(width: 12, height: 20).contentShape(Rectangle())
                 }.buttonStyle(.plain)
-                .accessibilityLabel(open ? "Collapse Effects" : "Expand Effects")
-                .help(open ? "Hide the list of effects" : "Show the list of effects")
+                .accessibilityLabel(tr(open ? "Collapse Effects" : "Expand Effects"))
+                .help(tr(open ? "Hide the list of effects" : "Show the list of effects"))
             }
         }
         if case .smartObject(let so) = layer.content, !so.filters.isEmpty {
@@ -590,7 +590,7 @@ struct LayerRow: View {
         Divider()
         Button("Group from Layers") { AppActions.groupLayers() }.disabled(AppActions.selectionHasArtboard(doc))   // (artboards can't be grouped)
         ArtboardLayerMenuItems(doc: doc, layer: layer)
-        Button(layer.linkID != nil && doc.orderedSelection.count <= 1 ? "Unlink Layers" : "Link Layers") { AppActions.toggleLinkLayers() }
+        Button(tr(layer.linkID != nil && doc.orderedSelection.count <= 1 ? "Unlink Layers" : "Link Layers")) { AppActions.toggleLinkLayers() }
         if layer.linkID != nil { Button("Select Linked Layers") { doc.selectLayer(layer.id); AppActions.selectLinkedLayers() } }
         if layer.isGroup { Button("Ungroup") { doc.selectLayer(layer.id); AppActions.ungroupLayers() } }
         Divider()
@@ -622,11 +622,11 @@ struct LayerRow: View {
         if layer.mask == nil {
             Button("Add Layer Mask") { doc.selectLayer(layer.id); AppActions.addMask(.revealAll) }
         } else {
-            Button(layer.mask!.isEnabled ? "Disable Layer Mask" : "Enable Layer Mask") { doc.selectLayer(layer.id); AppActions.toggleMaskEnabled() }
+            Button(tr(layer.mask!.isEnabled ? "Disable Layer Mask" : "Enable Layer Mask")) { doc.selectLayer(layer.id); AppActions.toggleMaskEnabled() }
             Button("Apply Layer Mask") { doc.selectLayer(layer.id); AppActions.applyMask() }
             Button("Delete Layer Mask") { doc.selectLayer(layer.id); AppActions.deleteMask() }
         }
-        Button(layer.isClipped ? "Release Clipping Mask" : "Create Clipping Mask") { doc.selectLayer(layer.id); AppActions.toggleClippingMask() }
+        Button(tr(layer.isClipped ? "Release Clipping Mask" : "Create Clipping Mask")) { doc.selectLayer(layer.id); AppActions.toggleClippingMask() }
         Divider()
         Button("Copy Layer Style") { doc.selectLayer(layer.id); AppActions.copyLayerStyle() }
         Button("Paste Layer Style") { doc.selectLayer(layer.id); AppActions.pasteLayerStyle() }
@@ -638,7 +638,7 @@ struct LayerRow: View {
         Divider()
         Menu("Color Label") {
             ForEach(LayerColorLabel.allCases, id: \.self) { c in
-                Button(c.rawValue.capitalized) { doc.updateLayer(layer.id) { $0.colorLabel = c }; doc.commit("Color Label") }
+                Button(tr(c.rawValue.capitalized)) { doc.updateLayer(layer.id) { $0.colorLabel = c }; doc.commit("Color Label") }
             }
         }
     }
@@ -703,6 +703,6 @@ struct LayerKindBadge: View {
             .background(RoundedRectangle(cornerRadius: 2.5).fill(Color.white))
             .overlay(RoundedRectangle(cornerRadius: 2.5).stroke(Color(white: 0.1), lineWidth: 0.75))
             .offset(x: 2, y: 2)
-            .help(help)
+            .help(tr(help))
     }
 }

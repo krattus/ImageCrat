@@ -176,7 +176,7 @@ final class ParticleEditor {
         while let s = m.supermenu, s !== NSApp.mainMenu { m = s }
         guard m.supermenu === NSApp.mainMenu else { return "" }
         if let main = NSApp.mainMenu, let i = main.items.firstIndex(where: { $0.submenu === m }), i == 0 { return PendingEdits.appMenu }
-        return m.title
+        return L10nMenus.english(of: m.title, item: nil)   // (the English name, whatever the interface language)
     }
 
     func menuWillAct(_ note: Notification) {

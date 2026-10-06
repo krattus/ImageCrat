@@ -14,7 +14,7 @@ struct ClipThumb: View {
             case .color:
                 RoundedRectangle(cornerRadius: 4).fill(Color(nsColor: (item.color ?? .black).nsColor)).padding(5)
             case .text:
-                Text(item.text ?? "").font(.system(size: 7)).foregroundStyle(Theme.textDim).lineLimit(5)
+                Text(tr(item.text ?? "")).font(.system(size: 7)).foregroundStyle(Theme.textDim).lineLimit(5)
                     .multilineTextAlignment(.leading).padding(4).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             default:
                 if let cg = ClipboardHistory.shared.thumbnail(item) {
@@ -85,7 +85,7 @@ struct ClipboardPanel: View {
             if list.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "doc.on.clipboard").font(.system(size: 22)).foregroundStyle(Theme.textFaint)
-                    Text(ui.pinnedOnly ? "No pinned items" : "Nothing copied yet").font(Theme.fontBold)
+                    Text(tr(ui.pinnedOnly ? "No pinned items" : "Nothing copied yet")).font(Theme.fontBold)
                     Text("Layers, selections, text, colours, styles and shapes you copy appear here. ⌃⌘V pastes from the history at the cursor.")
                         .font(Theme.fontSmall).foregroundStyle(Theme.textDim).multilineTextAlignment(.center).fixedSize(horizontal: false, vertical: true)
                 }
@@ -138,16 +138,16 @@ struct ClipRow: View {
         HStack(spacing: 8) {
             ClipThumb(item: item)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.title).lineLimit(1).truncationMode(.tail)
-                Text(item.subtitle).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
+                Text(tr(item.title)).lineLimit(1).truncationMode(.tail)
+                Text(tr(item.subtitle)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
             }
             Spacer(minLength: 2)
             VStack(alignment: .trailing, spacing: 3) {
                 Button { history.togglePin(item.id) } label: {
                     Image(systemName: item.pinned ? "pin.fill" : "pin").font(.system(size: 10))
                         .foregroundStyle(item.pinned ? Color.orange : Theme.textFaint)
-                }.buttonStyle(.plain).opacity(item.pinned || hovering || selected ? 1 : 0).help(item.pinned ? "Unpin" : "Pin")
-                Text(clipTimeAgo(item.date)).font(.system(size: 9)).foregroundStyle(Theme.textFaint).monospacedDigit()
+                }.buttonStyle(.plain).opacity(item.pinned || hovering || selected ? 1 : 0).help(tr(item.pinned ? "Unpin" : "Pin"))
+                Text(tr(clipTimeAgo(item.date))).font(.system(size: 9)).foregroundStyle(Theme.textFaint).monospacedDigit()
             }
         }
         .padding(4)
@@ -163,7 +163,7 @@ struct ClipRow: View {
         .help("Double-click to paste · drag onto the canvas")
         .contextMenu {
             ForEach(ClipboardHistory.modes(for: item), id: \.self) { m in
-                Button(label(m)) { paste(m) }
+                Button(tr(label(m))) { paste(m) }
             }
             if item.kind == .path, let s = item.shape {
                 Button("Paste as Work Path") {
@@ -172,7 +172,7 @@ struct ClipRow: View {
             }
             Divider()
             Button("Copy Again") { history.copyAgain(item.id) }
-            Button(item.pinned ? "Unpin" : "Pin") { history.togglePin(item.id) }
+            Button(tr(item.pinned ? "Unpin" : "Pin")) { history.togglePin(item.id) }
             Button("Delete") { history.remove(item.id) }
         }
     }
@@ -220,11 +220,11 @@ struct ClipboardPopupView: View {
                         VStack(spacing: 1) {
                             ForEach(Array(state.items.enumerated()), id: \.element.id) { i, it in
                                 HStack(spacing: 8) {
-                                    Text(i < 9 ? "\(i + 1)" : "").font(.system(size: 9, weight: .semibold)).monospacedDigit().foregroundStyle(Theme.textFaint).frame(width: 10)
+                                    Text(tr(i < 9 ? "\(i + 1)" : "")).font(.system(size: 9, weight: .semibold)).monospacedDigit().foregroundStyle(Theme.textFaint).frame(width: 10)
                                     ClipThumb(item: it, size: 34)
                                     VStack(alignment: .leading, spacing: 1) {
-                                        Text(it.title).lineLimit(1)
-                                        Text(it.subtitle).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
+                                        Text(tr(it.title)).lineLimit(1)
+                                        Text(tr(it.subtitle)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
                                     }
                                     Spacer()
                                     if it.pinned { Image(systemName: "pin.fill").font(.system(size: 9)).foregroundStyle(.orange) }
@@ -308,7 +308,7 @@ enum ClipboardPopup {
             let at = (m == .inPlace || item.kind == .style || item.kind == .color) ? nil : docPoint
             if !history.paste(item.id, mode: m, into: d, at: at) { Beep.play() }
         }
-        let host = NSHostingView(rootView: ClipboardPopupView(state: p.state, choose: { p.onChoose?($0, $1) }))
+        let host = NSHostingView(rootView: ClipboardPopupView(state: p.state, choose: { p.onChoose?($0, $1) }).l10nRoot())
         p.contentView = host
         let size = host.fittingSize
         var origin = NSPoint(x: mouse.x - 20, y: mouse.y - size.height + 10)

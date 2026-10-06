@@ -452,10 +452,10 @@ final class AssistParallaxModel {
         let opts = o
         Task.detached(priority: .userInitiated) {
             do {
-                let r = try await AssistSubject.parallax(d, options: opts, animate: animate) { s in Task { @MainActor in self.message = s } }
+                let r = try await AssistSubject.parallax(d, options: opts, animate: animate) { s in Task { @MainActor in self.message = tr(s) } }
                 await MainActor.run {
                     self.running = false
-                    self.message = String(format: "%d layers with %@ in %.1f s%@.", r.layerIDs.count, r.engine, r.seconds, r.frames > 0 ? " · \(r.frames) animation frames (Window ▸ Timeline)" : "")
+                    self.message = tr(String(format: "%d layers with %@ in %.1f s%@.", r.layerIDs.count, r.engine, r.seconds, r.frames > 0 ? " · \(r.frames) animation frames (Window ▸ Timeline)" : ""))
                     AppModel.shared.setStatus("Depth Parallax: " + self.message)
                     then?(d, r.layerIDs)
                 }
@@ -477,7 +477,7 @@ final class AssistParallaxModel {
                 AppModel.shared.setStatus("Rendering parallax…")
                 do {
                     let n = try AssistSubject.exportParallax(d.state, ids: ids, to: url, options: opts)
-                    self.message = "Exported \(url.lastPathComponent) (\(n) frames)."
+                    self.message = tr("Exported \(url.lastPathComponent) (\(n) frames).")
                     AppModel.shared.setStatus(self.message)
                 } catch { AppActions.alert("Export failed.", error.localizedDescription) }
             }
@@ -505,7 +505,7 @@ struct AssistParallaxDialog: View {
                 Button("Export GIF…") { m.export(gif: true) }.buttonStyle(PanelButtonStyle()).disabled(m.running)
                 if m.running { ProgressView().controlSize(.small) }
             }
-            if !m.message.isEmpty { Text(m.message).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true) }
+            if !m.message.isEmpty { Text(tr(m.message)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true) }
             Text("Splits the picture into depth-ordered layers (\(DepthEstimator.isAvailable ? "Depth Anything V2" : "subject + ground plane — install Depth Anything for true depth")) and paints in what each layer hides (\(LamaInpainter.isAvailable ? "LaMa" : "PatchMatch")).")
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         }

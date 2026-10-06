@@ -130,7 +130,7 @@ struct PatternsPanel: View {
                         PatternThumb(pattern: p).frame(width: 40, height: 40)
                             .overlay(RoundedRectangle(cornerRadius: 2).stroke(app.bucket.patternID == p.id ? Theme.accent : .clear, lineWidth: 2))
                             .onTapGesture { app.bucket.patternID = p.id }
-                            .help(p.name)
+                            .help(tr(p.name))
                     }
                 }
                 Button("Define Pattern from Selection") { AppActions.definePattern() }.buttonStyle(PanelButtonStyle())
@@ -156,7 +156,7 @@ struct HistoryPanel: View {
                                         .font(.system(size: 9)).foregroundStyle((app.historyBrushSource ?? 0) == i ? Theme.text : Theme.textFaint)
                                 }.buttonStyle(.plain).help("Set the source for the History Brush")
                                 Image(systemName: icon(h.name)).font(.system(size: 10)).foregroundStyle(Theme.textDim).frame(width: 16)
-                                Text(h.name).font(Theme.font).foregroundStyle(i > d.historyIndex ? Theme.textFaint : Theme.text)
+                                Text(tr(h.name)).font(Theme.font).foregroundStyle(i > d.historyIndex ? Theme.textFaint : Theme.text)
                                 Spacer()
                             }
                             .padding(.horizontal, 8)
@@ -228,7 +228,7 @@ struct NavigatorPanel: View {
                     Button { AppActions.zoomOut() } label: { Image(systemName: "minus.magnifyingglass") }.buttonStyle(.plain)
                     Slider(value: Binding(get: { log2(d.zoom) }, set: { AppActions.canvas?.setZoom(pow(2, $0)) }), in: -6...6).controlSize(.mini)
                     Button { AppActions.zoomIn() } label: { Image(systemName: "plus.magnifyingglass") }.buttonStyle(.plain)
-                    Text(ZoomMath.format(d.zoom)).font(Theme.mono).frame(width: 44)
+                    Text(tr(ZoomMath.format(d.zoom))).font(Theme.mono).frame(width: 44)
                 }
                 .font(Theme.font)
             }
@@ -327,7 +327,7 @@ struct InfoPanel: View {
                 }
                 ColorSamplerInfo(doc: d)
                 Text("Doc: \(d.state.width) × \(d.state.height) px, \(d.state.allLayers.count) layers").foregroundStyle(Theme.textDim)
-                Text("\(d.state.colorMode.short)/\(d.state.bitDepth.rawValue) · \(ColorProfiles.isSRGB(d.state.profileName) ? ColorProfiles.sRGBName : d.state.profileName)").foregroundStyle(Theme.textDim).lineLimit(1)
+                Text("\(tr(d.state.colorMode.short))/\(d.state.bitDepth.rawValue) · \(ColorProfiles.isSRGB(d.state.profileName) ? ColorProfiles.sRGBName : d.state.profileName)").foregroundStyle(Theme.textDim).lineLimit(1)
                 Text("History: \(d.history.count) states").foregroundStyle(Theme.textDim)
             }
         }
@@ -414,9 +414,9 @@ struct ChannelsPanel: View {
                 Color.black
                 if let img { Image(decorative: img, scale: 2).resizable().aspectRatio(contentMode: .fit) }
             }.frame(width: 30, height: 30).clipShape(RoundedRectangle(cornerRadius: 2))
-            Text(name).font(Theme.font)
+            Text(tr(name)).font(Theme.font)
             Spacer()
-            Text(shortcut).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+            Text(tr(shortcut)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
         .padding(.horizontal, 8)
         .frame(height: 38)

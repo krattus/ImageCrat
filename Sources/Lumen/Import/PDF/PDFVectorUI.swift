@@ -19,8 +19,8 @@ struct PDFVectorReportDialog: View {
                     if entries.isEmpty { Text("No PDF or Illustrator file has been imported as editable layers in this session.").foregroundStyle(Theme.textFaint) }
                     ForEach(entries) { e in
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(e.report.file.isEmpty ? "Pasted artwork" : e.report.file).font(Theme.fontBold)
-                            Text(e.report.text).font(Theme.font).foregroundStyle(Theme.textDim).textSelection(.enabled)
+                            Text(tr(e.report.file.isEmpty ? "Pasted artwork" : e.report.file)).font(Theme.fontBold)
+                            Text(tr(e.report.text)).font(Theme.font).foregroundStyle(Theme.textDim).textSelection(.enabled)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }

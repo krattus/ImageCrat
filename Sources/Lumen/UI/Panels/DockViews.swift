@@ -40,7 +40,8 @@ extension PanelRegistry {
         return table[id] ?? (id.lowercased().contains("find") ? "magnifyingglass" : "square.on.square")
     }
 
-    static func title(_ id: String) -> String { def(id)?.title ?? id }
+    /// The panel's title in the interface language (`def.title` is the English name).
+    static func title(_ id: String) -> String { tr(def(id)?.title ?? id) }
 }
 
 /// An `NSMenuItem` that runs a closure.
@@ -73,8 +74,8 @@ final class DockChromeButton: NSButton, DockChrome {
 
     func setSymbol(_ s: String, label: String) {
         image = NSImage(systemSymbolName: s, accessibilityDescription: label)?.withSymbolConfiguration(.init(pointSize: 9, weight: .semibold))
-        toolTip = label
-        setAccessibilityLabel(label)
+        toolTip = tr(label)
+        setAccessibilityLabel(tr(label))
         contentTintColor = DockColors.textDim
     }
     @objc private func pressed() {
@@ -102,7 +103,7 @@ final class DockAreaView: NSView {
         wantsLayer = true
         clipsToBounds = true   // nothing in the dock may paint over the canvas, tools or options bar beside it
         setAccessibilityRole(.group)
-        setAccessibilityLabel("Panels")
+        setAccessibilityLabel(tr("Panels"))
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -265,7 +266,7 @@ final class DockColumnView: NSView {
         super.init(frame: .zero)
         addSubview(header)
         setAccessibilityRole(.group)
-        setAccessibilityLabel("Panel column")
+        setAccessibilityLabel(tr("Panel column"))
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -431,7 +432,7 @@ final class DockGroupView: NSView {
         tabBar.update(g)
         content.isHidden = g.collapsed
         if !g.collapsed, let sel = g.selected { content.show(WorkspaceManager.shared.host(sel)) } else { content.show(nil) }
-        setAccessibilityLabel("Panel group: " + g.panels.map(PanelRegistry.title).joined(separator: ", "))
+        setAccessibilityLabel(tr("Panel group: \(g.panels.map(PanelRegistry.title).joined(separator: ", "))"))
         needsLayout = true
     }
 
@@ -498,7 +499,7 @@ final class DockTabBar: NSView, DockChrome {
         overflowButton.onPress = { [weak self] in self?.popUpOverflow() }
         setAccessibilityElement(true)
         setAccessibilityRole(.tabGroup)
-        setAccessibilityLabel("Panel tabs")
+        setAccessibilityLabel(tr("Panel tabs"))
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -706,7 +707,7 @@ final class DockTabBar: NSView, DockChrome {
     private func rebuildToolTips() {
         removeAllToolTips()
         for (id, r) in tabRects {
-            addToolTip(r, owner: "\(PanelRegistry.title(id)) — drag to move, drag out to float, double-click to collapse" as NSString, userData: nil)
+            addToolTip(r, owner: tr("\(PanelRegistry.title(id)) — drag to move, drag out to float, double-click to collapse") as NSString, userData: nil)
         }
     }
 
@@ -740,6 +741,7 @@ final class DockTabElement: NSAccessibilityElement {
         setAccessibilityParent(bar)
         setAccessibilityLabel(PanelRegistry.title(panelID))
     }
+    override func accessibilityLabel() -> String? { PanelRegistry.title(panelID) }   // (in the current interface language)
     override func accessibilityValue() -> Any? { NSNumber(value: bar?.group?.selected == panelID) }
     override func accessibilityPerformPress() -> Bool {
         WorkspaceManager.shared.select(panelID)
@@ -766,7 +768,7 @@ final class DockDividerView: NSView, DockChrome {
         super.init(frame: .zero)
         setAccessibilityElement(true)
         setAccessibilityRole(.splitter)
-        if case .column = kind { setAccessibilityLabel("Resize panel column") } else { setAccessibilityLabel("Resize panel groups") }
+        if case .column = kind { setAccessibilityLabel(tr("Resize panel column")) } else { setAccessibilityLabel(tr("Resize panel groups")) }
     }
     required init?(coder: NSCoder) { fatalError() }
 
@@ -911,7 +913,7 @@ final class DockIconButton: NSView, DockChrome {
         setAccessibilityElement(true)
         setAccessibilityRole(.button)
         setAccessibilityLabel(PanelRegistry.title(panelID))
-        setAccessibilityHelp("Shows the \(PanelRegistry.title(panelID)) panel. Drag to move it.")
+        setAccessibilityHelp(tr("Shows the \(PanelRegistry.title(panelID)) panel. Drag to move it."))
     }
     required init?(coder: NSCoder) { fatalError() }
 

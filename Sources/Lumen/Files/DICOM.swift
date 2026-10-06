@@ -417,10 +417,10 @@ enum DICOM {
         var animate = true
         if img.frames > 1 && !FilesModule.headless {
             let a = NSAlert()
-            a.messageText = "Open Multi-Frame DICOM"
-            a.informativeText = "“\(url.lastPathComponent)” has \(img.frames) frames. Each frame becomes a layer."
-            a.addButton(withTitle: "Frame Animation")
-            a.addButton(withTitle: "Layers Only")
+            a.messageText = tr("Open Multi-Frame DICOM")
+            a.informativeText = tr("“\(url.lastPathComponent)” has \(img.frames) frames. Each frame becomes a layer.")
+            a.addButton(withTitle: tr("Frame Animation"))
+            a.addButton(withTitle: tr("Layers Only"))
             animate = UIBlock.run(a) == .alertFirstButtonReturn
         }
         let d = makeDocument(img, name: url.lastPathComponent, animate: animate)
@@ -666,7 +666,7 @@ struct DICOMWindowLevelDialog: View {
                             Button("\(p.0)  (\(Int(p.1)) / \(Int(p.2)))") { center = p.1; width = p.2 }
                         }
                     }.fixedSize()
-                    Text(String(format: "Level %.0f  ·  Window %.0f", center, width)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                    Text(tr(String(format: "Level %.0f  ·  Window %.0f", center, width))).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
                 }
                 Text("Values \(Int(lo)) … \(Int(hi))  ·  \(entry.image.frames) frame(s)  ·  \(entry.image.photometric)")
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)

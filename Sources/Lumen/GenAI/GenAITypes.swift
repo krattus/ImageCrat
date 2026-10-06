@@ -83,8 +83,8 @@ enum GenError: Error, LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .missingKey(let p): return "No API key for \(p.displayName). Add one in Preferences ▸ Generative AI."
-        case .noProvider(let f): return "No provider with a stored API key supports \(f.displayName). Add a key in Preferences ▸ Generative AI."
+        case .missingKey(let p): return "No API key for \(tr(p.displayName)). Add one in Preferences ▸ Generative AI."
+        case .noProvider(let f): return "No provider with a stored API key supports \(tr(f.displayName)). Add a key in Preferences ▸ Generative AI."
         case .unsupported(let s): return s
         case .moderated(let s): return "The request was blocked by the provider's content filter. \(s)".trimmingCharacters(in: .whitespaces)
         case .rateLimited(let r): return "Rate limited by the provider." + (r.map { " Try again in \(Int($0.rounded(.up))) s." } ?? " Try again shortly.")

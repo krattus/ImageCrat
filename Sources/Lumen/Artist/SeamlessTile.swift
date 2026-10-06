@@ -264,7 +264,7 @@ struct MakeSeamlessDialog: View {
         DialogFrame(title: "Make Seamless", width: 340, okTitle: "Make Seamless", onOK: {
             SeamlessTile.makeSeamlessAction(method: method, band: Int(band))
         }) {
-            Picker("Method", selection: $method) { ForEach(SeamlessMethod.allCases) { Text($0.title).tag($0) } }
+            Picker("Method", selection: $method) { ForEach(SeamlessMethod.allCases) { Text(tr($0.title)).tag($0) } }
             ValueSlider(label: "Seam Width", value: $band, range: 2...max(4, side / 5), step: 1, unit: "px")
             Text("The layer is offset by half its size, the broad colour step and the texture break on the seam are repaired, and the layer is shifted back, so the edges match when the canvas repeats. Works on the active pixel layer, or on a merged copy when another kind of layer is active. Content-aware healing can take a while on large canvases.")
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)

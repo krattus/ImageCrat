@@ -278,7 +278,7 @@ final class RecipeEditorModel {
         }
         mutate("Connect") { $0 = g }
         if let a = g.node(from), let b = g.node(to), let ot = RecipeLibrary.outputType(a, fromPort), let it = RecipeLibrary.inputType(b, toPort), ot != it {
-            status = "Connected (\(ot.displayName) → \(it.displayName) conversion)"
+            status = "Connected (\(tr(ot.displayName)) → \(tr(it.displayName)) conversion)"
         } else { status = "Connected" }
         return true
     }

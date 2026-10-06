@@ -398,7 +398,7 @@ struct AdaptiveWideAngleWorkspace: View {
     var side: some View {
         VStack(alignment: .leading, spacing: 8) {
             Picker("Correction", selection: Binding(get: { m.s.correction }, set: { m.s.correction = $0; m.update() })) {
-                ForEach(AWACorrection.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(AWACorrection.allCases) { Text(tr($0.rawValue)).tag($0) }
             }
             ValueSlider(label: "Scale", value: Binding(get: { m.s.scale }, set: { m.s.scale = $0 }), range: 50...150, unit: "%", labelWidth: 76, onCommit: m.update)
             ValueSlider(label: "Focal Length", value: Binding(get: { m.s.focalLength }, set: { m.s.focalLength = $0 }), range: 4...100, step: 0.1, unit: " mm", format: "%.1f", labelWidth: 76, onCommit: m.update)

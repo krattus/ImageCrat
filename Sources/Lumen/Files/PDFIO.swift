@@ -349,8 +349,8 @@ struct ImportPDFView: View {
                     Text("Flattened Image").tag(PDFImportMode.flattened)
                 }.labelsHidden().pickerStyle(.segmented).frame(width: 260)
             }
-            Text(m.mode == .editable ? "Shapes, text and images become layers in groups; anything without a layer equivalent is rasterized in place."
-                                     : "Each page becomes one pixel layer.")
+            Text(tr(m.mode == .editable ? "Shapes, text and images become layers in groups; anything without a layer equivalent is rasterized in place."
+                                     : "Each page becomes one pixel layer."))
                 .font(.system(size: 10)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 116), spacing: 8)], spacing: 8) {
@@ -378,7 +378,7 @@ struct ImportPDFView: View {
             HStack {
                 Text("Crop To:").frame(width: 80, alignment: .leading)
                 Picker("", selection: $m.boxIndex) {
-                    ForEach(Array(["Media Box", "Crop Box", "Bleed Box", "Trim Box", "Art Box"].enumerated()), id: \.offset) { Text($1).tag($0) }
+                    ForEach(Array(["Media Box", "Crop Box", "Bleed Box", "Trim Box", "Art Box"].enumerated()), id: \.offset) { Text(tr($1)).tag($0) }
                 }.labelsHidden().frame(width: 140)
             }
             HStack {
@@ -386,7 +386,7 @@ struct ImportPDFView: View {
                 TextField("", value: $m.resolution, format: .number).frame(width: 70)
                 Text("Pixels/Inch").font(.system(size: 11))
                 Spacer()
-                Text(m.pixelSize(m.selected.min() ?? 0)).font(.system(size: 11)).foregroundStyle(.secondary)
+                Text(tr(m.pixelSize(m.selected.min() ?? 0))).font(.system(size: 11)).foregroundStyle(.secondary)
             }
             Toggle("White background (otherwise transparent)", isOn: $m.white)
             Toggle("Keep text editable when its font is missing (substitutes a font)", isOn: $m.substituteFonts).disabled(m.mode != .editable)
@@ -401,14 +401,14 @@ enum ImportPDFDialog {
     static func run(pdf: PDFDocument, name: String, illustrator: Bool = false) -> PDFImport.Settings? {
         let m = ImportPDFModel(pdf: pdf, illustrator: illustrator)
         let a = NSAlert()
-        a.messageText = illustrator ? "Import Illustrator File" : "Import PDF"
+        a.messageText = tr(illustrator ? "Import Illustrator File" : "Import PDF")
         let unit = illustrator ? "artboard" : "page"
-        a.informativeText = "\(name) — \(pdf.pageCount) \(unit)\(pdf.pageCount == 1 ? "" : "s"). Each selected \(unit) opens as a document."
-        let host = NSHostingView(rootView: ImportPDFView(m: m))
+        a.informativeText = tr("\(name) — \(pdf.pageCount) \(unit)\(pdf.pageCount == 1 ? "" : "s"). Each selected \(unit) opens as a document.")
+        let host = NSHostingView(rootView: ImportPDFView(m: m).l10nRoot())
         host.frame = NSRect(x: 0, y: 0, width: 430, height: 492)
         a.accessoryView = host
-        a.addButton(withTitle: "OK")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK"))
+        a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return nil }
         PDFVectorImport.rememberedMode = m.mode
         PDFVectorImport.rememberedSubstitute = m.substituteFonts
@@ -429,19 +429,19 @@ enum PDFUI {
         o.title = (d.name as NSString).deletingPathExtension
         if FilesModule.headless { return o }
         let a = NSAlert()
-        a.messageText = "Save Adobe PDF"
-        a.informativeText = "Text and shape layers are kept as vector graphics; other layers are embedded as images."
+        a.messageText = tr("Save Adobe PDF")
+        a.informativeText = tr("Text and shape layers are kept as vector graphics; other layers are embedded as images.")
         let v = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 84))
-        let vec = NSButton(checkboxWithTitle: "Preserve vector data (text & shapes)", target: nil, action: nil)
+        let vec = NSButton(checkboxWithTitle: tr("Preserve vector data (text & shapes)"), target: nil, action: nil)
         vec.frame = NSRect(x: 0, y: 60, width: 300, height: 20); vec.state = .on
-        let ab = NSButton(checkboxWithTitle: "One page per artboard", target: nil, action: nil)
+        let ab = NSButton(checkboxWithTitle: tr("One page per artboard"), target: nil, action: nil)
         ab.frame = NSRect(x: 0, y: 36, width: 300, height: 20); ab.state = .on
         let comp = NSPopUpButton(frame: NSRect(x: 0, y: 4, width: 260, height: 24))
         comp.addItems(withTitles: ["Image Compression: ZIP (lossless)", "Image Compression: JPEG High", "Image Compression: JPEG Medium"])
         for s in [vec, ab, comp] as [NSView] { v.addSubview(s) }
         a.accessoryView = v
-        a.addButton(withTitle: "Save PDF")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("Save PDF"))
+        a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return nil }
         o.preserveVector = vec.state == .on
         o.artboardsAsPages = ab.state == .on

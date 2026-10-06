@@ -95,7 +95,7 @@ struct Pano360Dialog: View {
                 let (fw, fh) = Pano360.fullSize(d.state.width, d.state.height)
                 Text("Document \(d.state.width)×\(d.state.height) px → sphere \(fw)×\(fh) px (2:1)").foregroundStyle(Theme.textDim)
             }
-            Picker("Output", selection: $mode) { ForEach(Pano360.Mode.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Output", selection: $mode) { ForEach(Pano360.Mode.allCases) { Text(tr($0.rawValue)).tag($0) } }
             Text("Writes a JPEG with Photo Sphere (GPano) metadata so 360° viewers show it as a sphere. Use Photomerge ▸ Spherical with “360° equirectangular” for a full sphere.")
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
             Button("Make Canvas 2:1 (in place)") { AppModel.shared.dialog = nil; if let d { Pano360.makeCanvas2x1(d) } }.buttonStyle(PanelButtonStyle())

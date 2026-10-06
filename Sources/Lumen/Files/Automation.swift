@@ -273,7 +273,7 @@ struct CreateDropletDialog: View {
         DialogFrame(title: "Create Droplet", width: 440, okTitle: "Save Droplet…", onOK: create) {
             VStack(alignment: .leading, spacing: 8) {
                 Picker("Action", selection: $actionID) {
-                    ForEach(ActionRecorder.shared.sets.flatMap(\.actions)) { a in Text(a.name).tag(Optional(a.id)) }
+                    ForEach(ActionRecorder.shared.sets.flatMap(\.actions)) { a in Text(tr(a.name)).tag(Optional(a.id)) }
                 }
                 HStack {
                     Text("Destination").frame(width: 80, alignment: .leading)
@@ -283,7 +283,7 @@ struct CreateDropletDialog: View {
                 }
                 Picker("Save As", selection: $format) {
                     Text("Same as source").tag(OutputWriter.Format?.none)
-                    ForEach(OutputWriter.Format.allCases) { Text($0.rawValue).tag(Optional($0)) }
+                    ForEach(OutputWriter.Format.allCases) { Text(tr($0.rawValue)).tag(Optional($0)) }
                 }.frame(width: 260)
                 Text("Drop files or folders on the droplet in Finder to run the action; results are saved to the destination.")
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -381,14 +381,14 @@ struct ImageProcessorDialog: View {
                 HStack {
                     Button("Select Folder…") { if let f = FilesUI.chooseFolder() { s.sources = [f] } }.buttonStyle(PanelButtonStyle())
                     Button("Select Files…") { let f = FilesUI.chooseFiles([.image, .pdf]); if !f.isEmpty { s.sources = f } }.buttonStyle(PanelButtonStyle())
-                    Text(s.sources.isEmpty ? "—" : (s.sources.count == 1 ? s.sources[0].lastPathComponent : "\(s.sources.count) files"))
+                    Text(tr(s.sources.isEmpty ? "—" : (s.sources.count == 1 ? s.sources[0].lastPathComponent : "\(s.sources.count) files")))
                         .lineLimit(1).foregroundStyle(Theme.textDim)
                     Toggle2(label: "Include Subfolders", on: $s.includeSubfolders)
                 }
                 Text("2  Select location to save processed images").font(Theme.fontBold)
                 HStack {
                     Button("Select Folder…") { s.destination = FilesUI.chooseFolder() }.buttonStyle(PanelButtonStyle())
-                    Text(s.destination?.path ?? "Save in same location").lineLimit(1).truncationMode(.middle).foregroundStyle(Theme.textDim)
+                    Text(tr(s.destination?.path ?? "Save in same location")).lineLimit(1).truncationMode(.middle).foregroundStyle(Theme.textDim)
                     if s.destination != nil { Button("Same Location") { s.destination = nil }.buttonStyle(PanelButtonStyle()) }
                 }
                 Text("3  File Type").font(Theme.fontBold)
@@ -403,20 +403,20 @@ struct ImageProcessorDialog: View {
                         .toggleStyle(.checkbox)
                     if s.actionID != nil {
                         Picker("", selection: $s.actionID) {
-                            ForEach(ActionRecorder.shared.sets.flatMap(\.actions)) { a in Text(a.name).tag(Optional(a.id)) }
+                            ForEach(ActionRecorder.shared.sets.flatMap(\.actions)) { a in Text(tr(a.name)).tag(Optional(a.id)) }
                         }.labelsHidden().frame(width: 220)
                     }
                 }
                 HStack { Text("Copyright Info").frame(width: 90, alignment: .leading); TextField("", text: $s.copyright) }
                 Toggle2(label: "Include ICC Profile", on: $s.includeICC)
-                if !status.isEmpty { Text(status).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
+                if !status.isEmpty { Text(tr(status)).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
             }
         }
     }
 
     @ViewBuilder func formatRow(_ title: String, _ o: Binding<ImageProcessorSettings.FormatOption>, quality: Bool) -> some View {
         HStack(spacing: 8) {
-            Toggle(title, isOn: o.enabled).toggleStyle(.checkbox).frame(width: 110, alignment: .leading)
+            Toggle(tr(title), isOn: o.enabled).toggleStyle(.checkbox).frame(width: 110, alignment: .leading)
             if quality {
                 Text("Quality"); TextField("", value: Binding(get: { Int((o.wrappedValue.quality * 12).rounded()) }, set: { o.wrappedValue.quality = Double(max(0, min(12, $0))) / 12 }), format: .number).frame(width: 34)
             }

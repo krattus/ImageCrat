@@ -20,7 +20,7 @@ struct DrawingAssistPanel: View {
                 }
                 Divider()
                 Caption("Stroke stabiliser")
-                Picker("", selection: $settings.prefs.stabilizer) { ForEach(StabilizerMode.allCases) { Text($0.title).tag($0) } }
+                Picker("", selection: $settings.prefs.stabilizer) { ForEach(StabilizerMode.allCases) { Text(tr($0.title)).tag($0) } }
                     .labelsHidden().segmentedOrMenu()
                 if settings.prefs.stabilizer == .rope {
                     ValueSlider(label: "Rope Length", value: $settings.prefs.ropeLength, range: 4...200, step: 1, unit: "px")
@@ -32,12 +32,12 @@ struct DrawingAssistPanel: View {
                 if settings.prefs.stabilizer != .off { Toggle2(label: "Catch up to the pen when the stroke ends", on: $settings.prefs.catchUp) }
                 Divider()
                 Caption("Colour jitter from palette")
-                Picker("", selection: $settings.prefs.paletteJitter) { ForEach(PaletteJitterMode.allCases) { Text($0.title).tag($0) } }
+                Picker("", selection: $settings.prefs.paletteJitter) { ForEach(PaletteJitterMode.allCases) { Text(tr($0.title)).tag($0) } }
                     .labelsHidden().segmentedOrMenu()
                 if settings.prefs.paletteJitter != .off {
                     Picker("Palette", selection: $settings.prefs.paletteGroup) {
                         Text("Swatches panel").tag(UUID?.none)
-                        ForEach(groups.groups) { g in Text(g.name).tag(UUID?.some(g.id)) }
+                        ForEach(groups.groups) { g in Text(tr(g.name)).tag(UUID?.some(g.id)) }
                     }
                     WrappingHStack(spacing: 2, lineSpacing: 2) {
                         ForEach(Array(BrushAssist.palette.prefix(16).enumerated()), id: \.offset) { _, c in SwatchChip(color: c, size: 12) }
@@ -76,7 +76,7 @@ struct GuideControls: View {
         let g = doc.state.artist.guide
         Caption("Drawing guide")
         Picker("", selection: Binding(get: { g.kind }, set: { DrawingGuides.setKind($0) })) {
-            ForEach(DrawingGuideKind.allCases) { Text($0.title).tag($0) }
+            ForEach(DrawingGuideKind.allCases) { Text(tr($0.title)).tag($0) }
         }.labelsHidden()
         Toggle2(label: "Assisted drawing (strokes snap to the guide and rulers)", on: $settings.prefs.assist)
         WrappingHStack(spacing: 12) {
@@ -105,13 +105,13 @@ struct GuideControls: View {
         Caption("Rulers")
         WrappingHStack(spacing: 4) {
             ForEach(AssistRulerKind.allCases) { k in
-                Button(k == .straight ? "+ Straight" : k == .ellipse ? "+ Ellipse" : "+ Curve") { DrawingGuides.addRuler(k) }.buttonStyle(PanelButtonStyle()).help("Add a \(k.title.lowercased())")
+                Button(tr(k == .straight ? "+ Straight" : k == .ellipse ? "+ Ellipse" : "+ Curve")) { DrawingGuides.addRuler(k) }.buttonStyle(PanelButtonStyle()).help("Add a \(k.title.lowercased())")
             }
         }
         ForEach(doc.state.artist.rulers) { r in
             HStack {
                 Image(systemName: r.kind == .straight ? "ruler" : r.kind == .ellipse ? "oval" : "scribble").foregroundStyle(Theme.textDim)
-                Text(r.kind.title)
+                Text(tr(r.kind.title))
                 Spacer()
                 IconButton(symbol: "trash", help: "Remove ruler", size: 18) { DrawingGuides.removeRuler(r.id) }
             }
@@ -136,13 +136,13 @@ struct AssistMenu: View {
         Menu {
             Toggle("Assisted Drawing", isOn: $settings.prefs.assist)
             Menu("Drawing Guide") {
-                ForEach(DrawingGuideKind.allCases) { k in Button(k.title) { DrawingGuides.setKind(k) } }
+                ForEach(DrawingGuideKind.allCases) { k in Button(tr(k.title)) { DrawingGuides.setKind(k) } }
             }
             Divider()
-            Picker("Stabiliser", selection: $settings.prefs.stabilizer) { ForEach(StabilizerMode.allCases) { Text($0.title).tag($0) } }
+            Picker("Stabiliser", selection: $settings.prefs.stabilizer) { ForEach(StabilizerMode.allCases) { Text(tr($0.title)).tag($0) } }
             Toggle("Catch Up on Stroke End", isOn: $settings.prefs.catchUp)
             Divider()
-            Picker("Colour Jitter from Palette", selection: $settings.prefs.paletteJitter) { ForEach(PaletteJitterMode.allCases) { Text($0.title).tag($0) } }
+            Picker("Colour Jitter from Palette", selection: $settings.prefs.paletteJitter) { ForEach(PaletteJitterMode.allCases) { Text(tr($0.title)).tag($0) } }
             Toggle("Wrap Painting (Seamless Tiles)", isOn: $settings.prefs.wrapPainting)
             Divider()
             Button("Drawing Assist Panel…") { WorkspaceManager.shared.reveal("drawingAssist") }

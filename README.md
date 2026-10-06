@@ -183,6 +183,23 @@ documents are edited in RGB and converted for display, channels and export.
 Keyboard shortcuts follow Photoshop (V, M, L, W, C, I, J, B, S, Y, E, G, R, O, P, T, A, U, H, Z,
 [ ], D, X, Q, ⌘T, ⌘J, ⌘G, ⌥⌘G, ⌘L, ⌘M, ⌘U …). See Help ▸ Keyboard Shortcuts.
 
+## Languages
+
+ImageCrat speaks **English** and **Estonian (Eesti)**. Switch live in **Preferences ▸ General ▸ Language** or
+**ImageCrat ▸ Language**; *System default* follows the macOS language list. Translations live in
+`Resources/*.lproj/Localizable.strings`; `scripts/check_l10n.sh` fails on untranslated UI text, and
+[Localization/README.md](Localization/README.md) explains how reviewers edit the strings as a spreadsheet
+(`scripts/l10n_export.sh` / `scripts/l10n_import.sh`).
+
+## Claude Code / MCP
+
+ImageCrat has a built-in local **MCP server**, so Claude Code (or any other MCP client) can drive the running app:
+open and create documents, add text, shapes and layers, run filters and adjustments, set layer styles, paint, run
+scripts, look at a rendered preview and save or export the result — every call is one undo step you can take back.
+It is off by default and only answers on `127.0.0.1` with a secret token. Turn it on in **Preferences ▸ Integrations**,
+click **Copy Claude Code setup command**, paste it into Terminal and type `/mcp` in Claude Code to check. See
+[docs/MCP.md](docs/MCP.md) for the setup, the tool list and the security notes.
+
 ## Code map
 
 ```
@@ -198,6 +215,7 @@ Sources/Lumen/
   App/         app entry, menus, command layer (AppActions), self tests, module registry
   ToolsModule/ Edits/ Imaging/ Files/   feature modules (extra tools, editing, modes/merging, formats/automation)
   GenAI/       generative-AI providers, routing, Keychain, features
+  MCP/         local MCP server for Claude Code (listener, tools, Preferences ▸ Integrations, self test)
   ML/          on-device models: Segmentation (SAM, BiRefNet, Florence-2), Neural filters
 ```
 

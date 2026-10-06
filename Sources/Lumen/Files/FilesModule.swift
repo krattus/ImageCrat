@@ -146,10 +146,10 @@ enum PSBSupport {
                 big = true
             } else {
                 let a = NSAlert()
-                a.messageText = "This document is too large for the PSD format."
-                a.informativeText = "PSD files are limited to 30,000 × 30,000 pixels and 2 GB. Save it in Large Document Format (PSB) instead?"
-                a.addButton(withTitle: "Save as PSB")
-                a.addButton(withTitle: "Cancel")
+                a.messageText = tr("This document is too large for the PSD format.")
+                a.informativeText = tr("PSD files are limited to 30,000 × 30,000 pixels and 2 GB. Save it in Large Document Format (PSB) instead?")
+                a.addButton(withTitle: tr("Save as PSB"))
+                a.addButton(withTitle: tr("Cancel"))
                 guard UIBlock.run(a) == .alertFirstButtonReturn else { return }
                 big = true
             }
@@ -166,7 +166,7 @@ enum FilesUI {
     static func chooseFolder(message: String? = nil) -> URL? {
         let p = NSOpenPanel()
         p.canChooseDirectories = true; p.canChooseFiles = false; p.canCreateDirectories = true
-        if let m = message { p.message = m }
+        if let m = message { p.message = tr(m) }
         return UIBlock.run(p) == .OK ? p.url : nil
     }
 

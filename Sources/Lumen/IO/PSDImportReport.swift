@@ -213,13 +213,13 @@ struct PSDImportReportDialog: View {
                                 VStack(alignment: .leading, spacing: 3) {
                                     HStack(spacing: 5) {
                                         Image(systemName: s.symbol).foregroundStyle(color(s))
-                                        Text("\(s.title) (\(list.count))").font(Theme.fontBold)
+                                        Text("\(tr(s.title)) (\(list.count))").font(Theme.fontBold)
                                     }
                                     ForEach(list) { i in
                                         HStack(alignment: .top, spacing: 6) {
-                                            Text(i.layer.isEmpty ? "Document" : i.layer).lineLimit(1).frame(width: 150, alignment: .leading)
-                                            Text(i.feature).foregroundStyle(Theme.textDim).frame(width: 92, alignment: .leading)
-                                            Text(i.detail).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
+                                            Text(tr(i.layer.isEmpty ? "Document" : i.layer)).lineLimit(1).frame(width: 150, alignment: .leading)
+                                            Text(tr(i.feature)).foregroundStyle(Theme.textDim).frame(width: 92, alignment: .leading)
+                                            Text(tr(i.detail)).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
                                             Spacer(minLength: 0)
                                         }
                                         .font(Theme.font)

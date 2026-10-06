@@ -128,7 +128,7 @@ struct NeuralQuickDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(m.kind.title + (m.kind == .sharpen ? " / Deblur" : "")).font(.system(size: 13, weight: .semibold))
+            Text(tr(m.kind.title + (m.kind == .sharpen ? " / Deblur" : ""))).font(.system(size: 13, weight: .semibold))
             HStack(spacing: 8) {
                 previewBox(m.before, "Before")
                 previewBox(m.after, "After")
@@ -147,7 +147,7 @@ struct NeuralQuickDialog: View {
                 Picker("Scale", selection: $m.factor) { Text("×2").tag(0); Text("×4").tag(1) }.pickerStyle(.segmented)
                 Text("Real-ESRGAN (on-device). The result opens as a new document.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
-            if let e = m.error { Text(e).font(Theme.fontSmall).foregroundStyle(.orange) }
+            if let e = m.error { Text(tr(e)).font(Theme.fontSmall).foregroundStyle(.orange) }
             HStack {
                 if m.busy { ProgressView(value: m.progress).frame(width: 120) }
                 Spacer()
@@ -167,7 +167,7 @@ struct NeuralQuickDialog: View {
                 if let img { Image(decorative: img, scale: 1).resizable().interpolation(.none).aspectRatio(contentMode: .fit) }
                 if img == nil || (label == "After" && m.busy) { ProgressView().controlSize(.small) }
             }.frame(width: 260, height: 260).clipped()
-            Text(label).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+            Text(tr(label)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
     }
 }

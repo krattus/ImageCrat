@@ -172,7 +172,7 @@ struct GenVariationStepper: View {
             let n = inf.variations.count
             HStack(spacing: 2) {
                 arrow("chevron.left", "Previous Variation (⌥←)", -1, n)
-                Text(spelledOut ? "Variation \(inf.selected + 1) of \(n)" : "\(inf.selected + 1)/\(n)")
+                Text(tr(spelledOut ? "Variation \(inf.selected + 1) of \(n)" : "\(inf.selected + 1)/\(n)"))
                     .font(Theme.mono).foregroundStyle(Theme.text)
                     .frame(minWidth: spelledOut ? 96 : 30)
                     .help("Variation \(inf.selected + 1) of \(n)")
@@ -191,7 +191,7 @@ struct GenVariationStepper: View {
         .buttonStyle(.plain)
         .foregroundStyle(n > 1 ? Theme.text : Theme.textFaint)
         .disabled(n < 2)
-        .help(help)
+        .help(tr(help))
     }
 }
 
@@ -233,7 +233,7 @@ struct GenVariationGrid: View {
                         Button("Show Variation \(i + 1)") { GenVariations.select(doc, layerID: layerID, index: i) }
                         Button("Delete Variation \(i + 1)") { GenVariations.delete(doc, layerID: layerID, index: i) }.disabled(inf.variations.count < 2)
                     }
-                    .help(on ? "Variation \(i + 1) (shown)" : "Show variation \(i + 1)")
+                    .help(tr(on ? "Variation \(i + 1) (shown)" : "Show variation \(i + 1)"))
                     .accessibilityLabel("Variation \(i + 1)\(on ? ", selected" : "")")
                 }
             }
@@ -253,8 +253,8 @@ struct GenTaskBarControls: View {
     var body: some View {
         if let id = doc.activeLayerID, let inf = doc.state.generative[id] {
             let busy = !jobs.active.isEmpty
-            Image(systemName: "sparkles").foregroundStyle(Theme.accent).help("\(inf.featureKind.displayName) layer")
-            TextField(inf.featureKind == .remove ? "Remove (no prompt)" : "Describe what to generate", text: Binding(get: { draft ?? inf.prompt }, set: { draft = $0 }))
+            Image(systemName: "sparkles").foregroundStyle(Theme.accent).help("\(tr(inf.featureKind.displayName)) layer")
+            TextField(tr(inf.featureKind == .remove ? "Remove (no prompt)" : "Describe what to generate"), text: Binding(get: { draft ?? inf.prompt }, set: { draft = $0 }))
                 .textFieldStyle(.plain).font(Theme.font)
                 .padding(.horizontal, 6).padding(.vertical, 4)
                 .frame(width: 170)
@@ -275,14 +275,14 @@ struct GenTaskBarControls: View {
             Button { generate(id) } label: {
                 HStack(spacing: 4) {
                     if busy { ProgressView().controlSize(.mini) } else { Image(systemName: "sparkles").font(.system(size: 10)) }
-                    Text(busy ? "Generating…" : "Generate").lineLimit(1)
+                    Text(tr(busy ? "Generating…" : "Generate")).lineLimit(1)
                 }
                 .padding(.horizontal, 9).padding(.vertical, 4)
                 .background(RoundedRectangle(cornerRadius: 5).fill(busy ? Color.white.opacity(0.08) : Theme.accent))
             }
             .buttonStyle(.plain)
             .disabled(busy)
-            .help("Generate more variations" + (GenVariations.estimateText(inf).map { " (\($0))" } ?? ""))
+            .help(tr("Generate more variations" + (GenVariations.estimateText(inf).map { " (\($0))" } ?? "")))
             if doc.state.selection != nil {
                 Rectangle().fill(Theme.border).frame(width: 1, height: 18)
                 chip("Fill Selection…", "sparkles.rectangle.stack") { NotificationCenter.default.post(name: Notification.Name("LumenGenerativeFill"), object: nil) }
@@ -296,7 +296,7 @@ struct GenTaskBarControls: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Image(systemName: symbol).font(.system(size: 10))
-                Text(title).lineLimit(1)
+                Text(tr(title)).lineLimit(1)
             }
             .padding(.horizontal, 7).padding(.vertical, 4)
             .background(RoundedRectangle(cornerRadius: 5).fill(Color.white.opacity(0.06)))
@@ -376,7 +376,7 @@ struct GenerativeLayerProperties: View {
                 Spacer()
                 Text(GenMoney.string(inf.cost)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).help("Spent on this layer so far")
             }
-            Text("\(inf.featureKind.displayName) · \(ProviderID(rawValue: inf.providerID)?.displayName ?? inf.providerID) · \(inf.modelID)")
+            Text("\(tr(inf.featureKind.displayName)) · \(ProviderID(rawValue: inf.providerID)?.displayName ?? inf.providerID) · \(inf.modelID)")
                 .font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(2)
             TextField("Prompt", text: Binding(get: { draft ?? inf.prompt }, set: { draft = $0 }), axis: .vertical).lineLimit(1...4).genField()
                 .onChange(of: layerID) { _, _ in draft = nil }
@@ -389,7 +389,7 @@ struct GenerativeLayerProperties: View {
             WrappingHStack {
                 Button("Generate") { GenVariations.generateMore(doc, layerID: layerID, prompt: prompt); draft = nil }
                     .buttonStyle(PanelButtonStyle(prominent: true))
-                    .help("Add more variations" + (GenVariations.estimateText(inf).map { " (\($0))" } ?? ""))
+                    .help(tr("Add more variations" + (GenVariations.estimateText(inf).map { " (\($0))" } ?? "")))
                 Button("Similar") { GenPipeline.regenerate(doc, layerID: layerID, prompt: prompt, similar: true) }.buttonStyle(PanelButtonStyle())
                     .help("Generate variations similar to the selected one")
                 if inf.featureKind != .upscale && inf.featureKind != .denoise && inf.featureKind != .sharpen {
@@ -401,7 +401,7 @@ struct GenerativeLayerProperties: View {
             if !jobs.active.isEmpty {
                 Text("Generating…").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             } else if let est = GenVariations.estimateText(inf) {
-                Text(est).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                Text(tr(est)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
             WrappingHStack {
                 Button("Delete Variation") { GenVariations.deleteCurrent(doc, layerID: layerID) }.buttonStyle(PanelButtonStyle())

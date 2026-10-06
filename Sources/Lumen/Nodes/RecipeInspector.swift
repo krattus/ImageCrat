@@ -39,9 +39,9 @@ struct RecipeInspectorView: View {
         let g = model.graph ?? RecipeGraph()
         HStack(spacing: 6) {
             Image(systemName: spec?.category.symbol ?? "questionmark").foregroundStyle(Color(nsColor: (spec?.category.rgba ?? RGBA(gray: 0.5)).nsColor))
-            Text(spec?.name ?? n.type).font(Theme.fontBold)
+            Text(tr(spec?.name ?? n.type)).font(Theme.fontBold)
             Spacer()
-            Text(spec.map { $0.group.isEmpty ? $0.category.rawValue : $0.category.rawValue + " · " + $0.group } ?? "").font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
+            Text(spec.map { $0.group.isEmpty ? tr($0.category.rawValue) : tr($0.category.rawValue) + " · " + tr($0.group) } ?? "").font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
         }
         TextField("Label", text: Binding(get: { n.title ?? "" }, set: { v in model.mutate(nil) { $0.update(n.id) { $0.title = v.isEmpty ? nil : v } } }))
             .textFieldStyle(.roundedBorder)
@@ -54,7 +54,7 @@ struct RecipeInspectorView: View {
             Spacer()
         }
         if let e = model.errors[n.id] {
-            Label(e, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(Theme.fontSmall)
+            Label(tr(e), systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange).font(Theme.fontSmall)
         }
         if let spec {
             if !spec.params.isEmpty {
@@ -70,7 +70,7 @@ struct RecipeInspectorView: View {
                     }.buttonStyle(.plain).help("Expose in the Properties panel")
                     if let c = conn, let src = g.node(c.from) {
                         HStack {
-                            Text(p.label).foregroundStyle(Theme.textDim)
+                            Text(tr(p.label)).foregroundStyle(Theme.textDim)
                             Spacer()
                             Text("← \(src.title ?? RecipeLibrary.spec(src.type)?.name ?? "node")").foregroundStyle(Color(nsColor: (p.portType ?? .number).rgba.nsColor)).lineLimit(1)
                             Button { model.disconnect(c.id) } label: { Image(systemName: "xmark.circle") }.buttonStyle(.plain).help("Disconnect")
@@ -83,7 +83,7 @@ struct RecipeInspectorView: View {
             }
             if let kind = spec.adjustmentKind {
                 Divider()
-                SectionHeader(title: "All \(kind.displayName) Settings", expanded: $showAllSettings)
+                SectionHeader(title: "All \(tr(kind.displayName)) Settings", expanded: $showAllSettings)
                 if showAllSettings || RecipeAdjustKey.keys(kind).isEmpty {
                     AdjustmentControls(s: Binding(get: { RecipeAdjustKey.settings(n, kind: kind) }, set: { v in
                         model.mutate(nil) { $0.update(n.id) { RecipeAdjustKey.store(v, in: &$0) } }
@@ -98,7 +98,7 @@ struct RecipeInspectorView: View {
                     Circle().fill(Color(nsColor: o.type.rgba.nsColor)).frame(width: 7, height: 7)
                     Text("out · \(o.name)").foregroundStyle(Theme.textDim)
                     Spacer()
-                    Text(o.type.displayName).foregroundStyle(Theme.textFaint)
+                    Text(tr(o.type.displayName)).foregroundStyle(Theme.textFaint)
                 }.font(Theme.fontSmall)
             }
         }
@@ -110,7 +110,7 @@ struct RecipeInspectorView: View {
             Text("in · \(name)").foregroundStyle(Theme.textDim)
             Spacer()
             if let c = conn, let src = g.node(c.from) {
-                Text(src.title ?? RecipeLibrary.spec(src.type)?.name ?? "node").lineLimit(1)
+                Text(tr(src.title ?? RecipeLibrary.spec(src.type)?.name ?? "node")).lineLimit(1)
                 Button { model.disconnect(c.id) } label: { Image(systemName: "xmark.circle") }.buttonStyle(.plain).help("Disconnect")
             } else {
                 Text("not connected").foregroundStyle(Theme.textFaint)
@@ -164,7 +164,7 @@ struct RecipeInspectorView: View {
                     .textFieldStyle(.plain).padding(.horizontal, 4).padding(.vertical, 2)
                     .background(RoundedRectangle(cornerRadius: 3).fill(Theme.fieldBG))
                     .onSubmit { model.commit("Rename Parameter") }
-                Text(g.node(e.node).map { $0.title ?? RecipeLibrary.spec($0.type)?.name ?? "" } ?? "missing").font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1).frame(maxWidth: 70, alignment: .trailing)
+                Text(tr(g.node(e.node).map { $0.title ?? RecipeLibrary.spec($0.type)?.name ?? "" } ?? "missing")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1).frame(maxWidth: 70, alignment: .trailing)
                 Button { model.mutate("Reorder Parameters") { if i > 0 { $0.exposed.swapAt(i, i - 1) } } } label: { Image(systemName: "chevron.up") }.buttonStyle(.plain).disabled(i == 0)
                 Button { model.mutate("Reorder Parameters") { if i < $0.exposed.count - 1 { $0.exposed.swapAt(i, i + 1) } } } label: { Image(systemName: "chevron.down") }.buttonStyle(.plain).disabled(i == g.exposed.count - 1)
                 Button { model.mutate("Hide Parameter") { $0.exposed.remove(at: i) } } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
@@ -176,7 +176,7 @@ struct RecipeInspectorView: View {
         VStack(alignment: .leading, spacing: 2) {
             ForEach(["Tab / ⇧A — search & add a node", "Right-click — add menu", "Drag a socket — wire (drop on empty space to add a node)",
                      "Drag background — box select · ⌥drag — pan", "M mute · V view node · H collapse · P preview", "⌘C ⌘V ⌘D ⌘G — copy, paste, duplicate, frame",
-                     "⌘Z / ⇧⌘Z — undo / redo (document history)"], id: \.self) { Text($0) }
+                     "⌘Z / ⇧⌘Z — undo / redo (document history)"], id: \.self) { Text(tr($0)) }
         }.font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
     }
 }

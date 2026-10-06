@@ -165,10 +165,10 @@ struct CloneSourcePanel: View {
                                 .background(RoundedRectangle(cornerRadius: 4).fill(cs.active == i ? Theme.accent.opacity(0.35) : Theme.fieldBG))
                         }
                         .buttonStyle(.plain)
-                        .help(cs.slots[i].point.map { p in "Clone Source \(i + 1): \(cs.slots[i].docName) (\(Int(p.x)), \(Int(p.y)))" } ?? "Clone Source \(i + 1): Option-click with the Clone Stamp or Healing Brush to set")
+                        .help(tr(cs.slots[i].point.map { p in "Clone Source \(i + 1): \(cs.slots[i].docName) (\(Int(p.x)), \(Int(p.y)))" } ?? "Clone Source \(i + 1): Option-click with the Clone Stamp or Healing Brush to set"))
                     }
                 }
-                Text(cs.slot.point.map { "Source: \(cs.slot.docName.isEmpty ? "Untitled" : cs.slot.docName) @ \(Int($0.x)), \(Int($0.y))" } ?? "Option-click in an image to set the source.")
+                Text(tr(cs.slot.point.map { "Source: \(cs.slot.docName.isEmpty ? "Untitled" : cs.slot.docName) @ \(Int($0.x)), \(Int($0.y))" } ?? "Option-click in an image to set the source."))
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 Caption("Offset")
                 HStack {
@@ -201,7 +201,7 @@ struct CloneSourcePanel: View {
                 }
                 Divider()
                 Toggle2(label: "Show Overlay", on: $cs.showOverlay)
-                ValueSlider(label: "Opacity", value: $cs.overlayOpacity, range: 0...100, unit: "%", labelWidth: 60)
+                ValueSlider(label: "Opacity", value: $cs.overlayOpacity, range: 0...100, unit: "%", labelWidth: 84)
                 WrappingHStack {
                     Toggle2(label: "Clipped", on: $cs.clipped)
                     Toggle2(label: "Auto Hide", on: $cs.autoHide)

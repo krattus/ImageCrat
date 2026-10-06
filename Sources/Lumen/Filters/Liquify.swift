@@ -513,7 +513,7 @@ struct LiquifyDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(smartLayer != nil ? "Liquify (Smart Filter)" : "Liquify").font(.system(size: 13, weight: .semibold))
+            Text(tr(smartLayer != nil ? "Liquify (Smart Filter)" : "Liquify")).font(.system(size: 13, weight: .semibold))
             HStack(alignment: .top, spacing: 12) {
                 VStack(spacing: 4) {
                     ForEach(LiquifyMode.allCases) { m in
@@ -527,7 +527,7 @@ struct LiquifyDialog: View {
                     .clipShape(RoundedRectangle(cornerRadius: 4))
                 VStack(alignment: .leading, spacing: 10) {
                     Caption("Brush Tool Options")
-                    Text(mode.rawValue).font(Theme.fontBold)
+                    Text(tr(mode.rawValue)).font(Theme.fontBold)
                     ValueSlider(label: "Size", value: $size, range: 5...2000, unit: " px", labelWidth: 54)
                     ValueSlider(label: "Pressure", value: Binding(get: { pressure * 100 }, set: { pressure = $0 / 100 }), range: 1...100, unit: "%", labelWidth: 54)
                     Toggle2(label: "Stylus Pressure", on: $stylusPressure)

@@ -189,7 +189,7 @@ struct SVGImportDialogView: View {
                     Image(systemName: m.lock ? "lock.fill" : "lock.open")
                 }.buttonStyle(.borderless).help("Keep the proportions of the artwork")
                 Spacer()
-                Text(m.scaleLabel).foregroundStyle(.secondary).font(.system(size: 11))
+                Text(tr(m.scaleLabel)).foregroundStyle(.secondary).font(.system(size: 11))
             }
             HStack(spacing: 6) {
                 Text("Height:").frame(width: 56, alignment: .leading)
@@ -201,16 +201,16 @@ struct SVGImportDialogView: View {
                 }
             }
             Picker("Import as:", selection: $m.mode) {
-                ForEach(SVGImportSettings.Mode.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(SVGImportSettings.Mode.allCases) { Text(tr($0.rawValue)).tag($0) }
             }.pickerStyle(.radioGroup)
             Picker("Background:", selection: $m.white) {
                 Text("Transparent").tag(false)
                 Text("White").tag(true)
             }.pickerStyle(.radioGroup).horizontalRadioGroupLayout()
             Toggle("Import hidden elements as hidden layers", isOn: $m.hidden).disabled(m.mode == .flattened)
-            Text(m.mode == .editable
+            Text(tr(m.mode == .editable
                  ? "Shapes, text and groups stay editable. Anything ImageCrat cannot represent is rasterized at this size and listed in File ▸ Import ▸ SVG Import Report."
-                 : "The whole image is rendered into one pixel layer at this size.")
+                 : "The whole image is rendered into one pixel layer at this size."))
                 .font(.system(size: 11)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .frame(width: 360)
@@ -222,14 +222,14 @@ enum SVGImportDialog {
     static func run(natural: CGSize, name: String, initial: SVGImportSettings) -> SVGImportSettings? {
         let m = SVGImportDialogModel(natural: natural, initial: initial)
         let a = NSAlert()
-        a.messageText = "Import SVG"
+        a.messageText = tr("Import SVG")
         let w = (Double(natural.width) * 100).rounded() / 100, h = (Double(natural.height) * 100).rounded() / 100
-        a.informativeText = "\(name) — \(w == w.rounded() ? String(Int(w)) : String(w)) × \(h == h.rounded() ? String(Int(h)) : String(h)) px at 1×. SVG has no fixed pixel size: choose the size of the document."
-        let host = NSHostingView(rootView: SVGImportDialogView(m: m))
+        a.informativeText = tr("\(name) — \(w == w.rounded() ? String(Int(w)) : String(w)) × \(h == h.rounded() ? String(Int(h)) : String(h)) px at 1×. SVG has no fixed pixel size: choose the size of the document.")
+        let host = NSHostingView(rootView: SVGImportDialogView(m: m).l10nRoot())
         host.frame = NSRect(x: 0, y: 0, width: 372, height: 236)
         a.accessoryView = host
-        a.addButton(withTitle: "OK")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK"))
+        a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return nil }
         return m.settings
     }
@@ -246,7 +246,7 @@ struct SVGImportReportDialog: View {
                         AppActions.pasteboard.setString(text, forType: .string)
                     }.buttonStyle(PanelButtonStyle()))) {
             ScrollView {
-                Text(text).font(.system(size: 11, design: .monospaced)).textSelection(.enabled)
+                Text(tr(text)).font(.system(size: 11, design: .monospaced)).textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(6)
             }
             .frame(height: 320)

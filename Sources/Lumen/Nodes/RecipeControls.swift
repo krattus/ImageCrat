@@ -29,9 +29,9 @@ struct RecipeScrubber: View {
                 RoundedRectangle(cornerRadius: 3).fill(Theme.fieldBG)
                 if !driven { RoundedRectangle(cornerRadius: 3).fill(Theme.accent.opacity(0.4)).frame(width: max(0, geo.size.width * frac)) }
                 HStack(spacing: 4) {
-                    Text(label).lineLimit(1).foregroundStyle(driven ? Theme.textFaint : Theme.text)
+                    Text(tr(label)).lineLimit(1).foregroundStyle(driven ? Theme.textFaint : Theme.text)
                     Spacer(minLength: 2)
-                    Text(driven ? "linked" : Self.format(value, range: range, integer: integer) + unit).font(Theme.mono).foregroundStyle(driven ? Theme.textFaint : Theme.textDim).lineLimit(1)
+                    Text(tr(driven ? "linked" : Self.format(value, range: range, integer: integer) + unit)).font(Theme.mono).foregroundStyle(driven ? Theme.textFaint : Theme.textDim).lineLimit(1)
                 }
                 .font(Theme.fontSmall)
                 .padding(.horizontal, 5)
@@ -70,7 +70,7 @@ struct RecipeLayerPicker: View {
                 }
             }
         } label: {
-            Text(current?.name ?? (selected.isEmpty ? (allowNone ? "This Layer" : "Choose…") : "Missing layer")).font(Theme.font)
+            Text(tr(current?.name ?? (selected.isEmpty ? (allowNone ? "This Layer" : "Choose…") : "Missing layer"))).font(Theme.font)
                 .foregroundStyle(current == nil && !selected.isEmpty ? Color.orange : Theme.text)
         }
         .menuStyle(.borderlessButton)
@@ -114,14 +114,14 @@ struct RecipeParamControl: View {
             Toggle2(label: title, on: Binding(get: { number > 0.5 }, set: { v in edit { $0.numbers[spec.key] = v ? 1 : 0 }; commit() }))
         case .choice(let opts):
             HStack {
-                Text(title).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading).lineLimit(1)
+                Text(tr(title)).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading).lineLimit(1)
                 Picker("", selection: Binding(get: { min(max(0, Int(number)), max(0, opts.count - 1)) }, set: { v in edit { $0.numbers[spec.key] = Double(v) }; commit() })) {
-                    ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(o).tag(i) }
+                    ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(tr(o)).tag(i) }
                 }.labelsHidden()
             }
         case .color:
             HStack {
-                Text(title).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading).lineLimit(1)
+                Text(tr(title)).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading).lineLimit(1)
                 ColorWell(color: Binding(get: { node.colors[spec.key] ?? spec.defColor }, set: { v in edit { $0.colors[spec.key] = v } }), size: 18, showAlpha: true, onCommit: commit)
                 Text("#" + (node.colors[spec.key] ?? spec.defColor).hex).font(Theme.mono).foregroundStyle(Theme.textFaint)
                 Spacer()
@@ -138,10 +138,10 @@ struct RecipeParamControl: View {
             let g = node.gradients[spec.key] ?? spec.defGradient ?? .twoColor(.black, .white)
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(title).foregroundStyle(Theme.textDim)
+                    Text(tr(title)).foregroundStyle(Theme.textDim)
                     Spacer()
                     Menu("Presets") {
-                        ForEach(AppModel.shared.gradients) { pg in Button(pg.name) { edit { $0.gradients[spec.key] = pg }; commit() } }
+                        ForEach(AppModel.shared.gradients) { pg in Button(tr(pg.name)) { edit { $0.gradients[spec.key] = pg }; commit() } }
                         Divider()
                         Button("Reverse") { let r = g.reversed(); edit { $0.gradients[spec.key] = r }; commit() }
                         if let d = spec.defGradient { Button("Reset") { edit { $0.gradients[spec.key] = d }; commit() } }
@@ -152,7 +152,7 @@ struct RecipeParamControl: View {
         case .curve:
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(title).foregroundStyle(Theme.textDim)
+                    Text(tr(title)).foregroundStyle(Theme.textDim)
                     Spacer()
                     Button("Reset") { edit { $0.curves[spec.key] = CurvePoints() }; commit() }.buttonStyle(.plain).foregroundStyle(Theme.textDim)
                 }
@@ -162,15 +162,15 @@ struct RecipeParamControl: View {
             }
         case .text:
             HStack {
-                Text(title).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading)
+                Text(tr(title)).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading)
                 TextField("", text: Binding(get: { node.strings[spec.key] ?? spec.defString }, set: { v in edit { $0.strings[spec.key] = v } }))
                     .textFieldStyle(.roundedBorder).onSubmit(commit)
             }
         case .file:
             let path = node.strings[spec.key] ?? ""
             HStack {
-                Text(title).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading)
-                Text(path.isEmpty ? "None" : (path as NSString).lastPathComponent).lineLimit(1).truncationMode(.middle).help(path)
+                Text(tr(title)).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading)
+                Text(tr(path.isEmpty ? "None" : (path as NSString).lastPathComponent)).lineLimit(1).truncationMode(.middle).help(path)
                 Spacer()
                 Button("Choose…") {
                     let p = NSOpenPanel()
@@ -180,7 +180,7 @@ struct RecipeParamControl: View {
             }
         case .layer:
             HStack {
-                Text(title).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading).lineLimit(1)
+                Text(tr(title)).foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading).lineLimit(1)
                 RecipeLayerPicker(layers: layers, selected: node.strings[spec.key] ?? "", allowNone: spec.label.contains("empty")) { v in
                     edit { $0.strings[spec.key] = v }; commit()
                 }

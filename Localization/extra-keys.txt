@@ -1,0 +1,35 @@
+# Strings built at runtime that the extractor cannot see as literals (one per line, %@ for a value).
+# History step names and status messages of the MCP server (stored in English, shown through tr()):
+MCP: %@
+MCP wrote %@
+# Menu titles the app builds from tables of tuples (the l10n self test lists any it finds untranslated in the menu bar)
+Artboard Names
+Background: White
+Background: Black
+Background: Transparent
+Background: Other…
+Delete Artboard
+Delete Artboard Only (Keep Contents)
+Export Artboard As…
+Phone
+Watch
+Social
+Tablet
+Desktop
+Print
+Bulleted List •
+Dash List –
+Circle List ◦
+Numbered List 1.
+Lettered List a.
+Lettered List A.
+Roman List i.
+Roman List I.
+Guilloché
+Normal Map from Height
+Ambient Occlusion
+Make Seamless Tile
+Color Ramp Mapping
+New Brush Preset from Current Settings…
+Foreground to Transparent
+Web/UI

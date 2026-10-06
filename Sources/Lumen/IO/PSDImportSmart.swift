@@ -127,7 +127,8 @@ enum PSDSmart {
                 if let inst = filter(f) { var i = inst; i.enabled = on; mapped.append(i) } else if on { names.append(name) }
             }
             if !names.isEmpty && (fx.bool("enab") ?? true) {
-                return fallback("Smart filter\(names.count == 1 ? "" : "s") \(names.map { "“\($0)”" }.joined(separator: ", ")) \(names.count == 1 ? "has" : "have") no ImageCrat equivalent.", name: fileName)
+                let list = names.map { "“\($0)”" }.joined(separator: ", ")
+                return fallback(names.count == 1 ? "Smart filter \(list) has no ImageCrat equivalent." : "Smart filters \(list) have no ImageCrat equivalent.", name: fileName)
             }
             so.filters = mapped.reversed()   // Photoshop lists the top filter first; Lumen applies bottom → top
             so.filtersEnabled = fx.bool("enab") ?? true

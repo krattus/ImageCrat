@@ -42,6 +42,8 @@ struct PaletteItem: Identifiable {
     var enabled = true
     /// Extra text the search also looks at.
     var keywords: String = ""
+    /// The English title (search finds a command by its English and its translated name; menu ids use it).
+    var altTitle: String = ""
     /// Hints put text into the search field instead of running something.
     var insertText: String? = nil
     var run: () -> Void = {}
@@ -309,8 +311,8 @@ enum PaletteVerb: Equatable {
         case .feather(let r, let d): return "Feather selection \(PaletteCalc.format(r)) px" + (d.map { " (\($0.rawValue.lowercased()))" } ?? "")
         case .expand(let r): return "Expand selection by \(PaletteCalc.format(r)) px"
         case .contract(let r): return "Contract selection by \(PaletteCalc.format(r)) px"
-        case .export(let f): return "Export as \(f.rawValue)…"
-        case .blend(let m): return "Set blend mode to \(m.displayName)"
+        case .export(let f): return "Export as \(tr(f.rawValue))…"
+        case .blend(let m): return "Set blend mode to \(tr(m.displayName))"
         case .rotateCanvas(let d): return "Rotate canvas \(d)°"
         case .flipCanvas(let h): return "Flip canvas \(h ? "horizontally" : "vertically")"
         case .brushSize(let s): return "Set brush size to \(PaletteCalc.format(s)) px"
@@ -671,24 +673,26 @@ enum PaletteIndex {
     }
 
     /// Every leaf item of a menu tree (submenus included). Disabled items are returned with `enabled == false`.
-    static func menuItems(_ menu: NSMenu, path: [String] = []) -> [PaletteItem] {
+    static func menuItems(_ menu: NSMenu, path: [String] = [], shownPath: [String] = []) -> [PaletteItem] {
         var out: [PaletteItem] = []
         menu.update()      // validates the items so `isEnabled` is current
         for item in menu.items {
             if item.isSeparatorItem || item.isHidden { continue }
             let title = cleanTitle(item.title)
             if title.isEmpty { continue }
+            // ids and de-duplication use the English title, whatever language the menu bar shows
+            let english = cleanTitle(L10nMenus.english(of: item.title, item: item))
             if let sub = item.submenu {
-                if skippedMenus.contains(title) { continue }
+                if skippedMenus.contains(english) { continue }
                 // the application menu's title is the app name: present it as "Lumen"
-                out += menuItems(sub, path: path + [title])
+                out += menuItems(sub, path: path + [english], shownPath: shownPath + [title])
                 continue
             }
-            if title == "Command Palette…" { continue }
-            let full = (path + [title]).joined(separator: " ▸ ")
-            out.append(PaletteItem(id: "menu:" + full, title: title, subtitle: path.joined(separator: " ▸ "), category: .menu,
+            if english == "Command Palette…" { continue }
+            let full = (path + [english]).joined(separator: " ▸ ")
+            out.append(PaletteItem(id: "menu:" + full, title: title, subtitle: shownPath.joined(separator: " ▸ "), category: .menu,
                                    shortcut: item.keyEquivalent.isEmpty ? "" : shortcutString(key: item.keyEquivalent, modifiers: item.keyEquivalentModifierMask),
-                                   enabled: item.isEnabled, run: { [weak item] in
+                                   enabled: item.isEnabled, altTitle: english == title ? "" : english, run: { [weak item] in
                 guard let it = item, let m = it.menu else { return }
                 let i = m.index(of: it)
                 if i >= 0 { m.performActionForItem(at: i) }
@@ -703,8 +707,10 @@ enum PaletteIndex {
             if spec.title == "Command Palette…" { return nil }
             let parts = spec.menu.split(separator: "/").map(String.init) + (spec.submenu.map { [$0] } ?? [])
             let full = (parts + [spec.title]).joined(separator: " ▸ ")
-            return PaletteItem(id: "menu:" + full, title: spec.title, subtitle: parts.joined(separator: " ▸ "), category: .menu,
-                               shortcut: spec.key.map { shortcutString($0, spec.modifiers) } ?? "", enabled: spec.enabled(), run: spec.action)
+            let shown = tr(spec.title)
+            return PaletteItem(id: "menu:" + full, title: shown, subtitle: parts.map { tr($0) }.joined(separator: " ▸ "), category: .menu,
+                               shortcut: spec.key.map { shortcutString($0, spec.modifiers) } ?? "", enabled: spec.enabled(),
+                               altTitle: shown == spec.title ? "" : spec.title, run: spec.action)
         }
     }
 
@@ -718,9 +724,10 @@ enum PaletteIndex {
         var seenTitles = Set<String>()
         func add(_ it: PaletteItem, dedupeTitle: Bool = false) {
             guard !seenIDs.contains(it.id) else { return }
-            if dedupeTitle, seenTitles.contains(normalized(it.title)) { return }
+            let key = normalized(it.altTitle.isEmpty ? it.title : it.altTitle)
+            if dedupeTitle, seenTitles.contains(key) { return }
             seenIDs.insert(it.id)
-            if it.category == .menu { seenTitles.insert(normalized(it.title)) }
+            if it.category == .menu { seenTitles.insert(key) }
             items.append(it)
         }
 
@@ -739,30 +746,32 @@ enum PaletteIndex {
 
         // 2. tools
         for t in ToolKind.allCases {
-            add(PaletteItem(id: "tool:" + t.rawValue, title: t.displayName, subtitle: "Switch tool", category: .tool, shortcut: t.shortcut, symbol: t.symbol,
-                            keywords: t.rawValue) { app.tool = t })
+            add(PaletteItem(id: "tool:" + t.rawValue, title: tr(t.displayName), subtitle: tr("Switch tool"), category: .tool, shortcut: t.shortcut, symbol: t.symbol,
+                            keywords: t.rawValue, altTitle: L10n.shared.isEnglish ? "" : t.displayName) { app.tool = t })
         }
         // 3. filters & adjustments (skipped when the menu already has them)
         for k in FilterKind.allCases where k != .neuralFilter && k != .liquify {
-            add(PaletteItem(id: "filter:" + k.rawValue, title: k.displayName + (k.isImmediate ? "" : "…"), subtitle: "Filter ▸ " + k.category.rawValue, category: .filter,
-                            enabled: hasDoc, keywords: k.rawValue) { FilterLauncher.launch(k) }, dedupeTitle: true)
+            let en = k.displayName + (k.isImmediate ? "" : "…")
+            add(PaletteItem(id: "filter:" + k.rawValue, title: tr(en), subtitle: tr("Filter") + " ▸ " + tr(k.category.rawValue), category: .filter,
+                            enabled: hasDoc, keywords: k.rawValue, altTitle: L10n.shared.isEnglish ? "" : en) { FilterLauncher.launch(k) }, dedupeTitle: true)
         }
         for k in AdjustmentKind.allCases {
-            add(PaletteItem(id: "adjust:" + k.rawValue, title: k.displayName + "…", subtitle: "Image ▸ Adjustments", category: .adjustment, enabled: hasDoc,
-                            keywords: k.rawValue) { app.dialog = .adjustment(k) }, dedupeTitle: true)
+            add(PaletteItem(id: "adjust:" + k.rawValue, title: tr(k.displayName + "…"), subtitle: tr("Image") + " ▸ " + tr("Adjustments"), category: .adjustment, enabled: hasDoc,
+                            keywords: k.rawValue, altTitle: L10n.shared.isEnglish ? "" : k.displayName + "…") { app.dialog = .adjustment(k) }, dedupeTitle: true)
         }
         for k in AdjustmentKind.layerKinds {
-            add(PaletteItem(id: "adjlayer:" + k.rawValue, title: "New \(k.displayName) Adjustment Layer", subtitle: "Layer ▸ New Adjustment Layer", category: .adjustment,
-                            enabled: hasDoc, keywords: k.rawValue) { AppActions.newAdjustmentLayer(k) })
+            add(PaletteItem(id: "adjlayer:" + k.rawValue, title: tr("New \(tr(k.displayName)) Adjustment Layer"), subtitle: tr("Layer") + " ▸ " + tr("New Adjustment Layer"), category: .adjustment,
+                            enabled: hasDoc, keywords: k.rawValue, altTitle: L10n.shared.isEnglish ? "" : "New \(k.displayName) Adjustment Layer") { AppActions.newAdjustmentLayer(k) })
         }
         // 4. panels
         for p in PanelRegistry.defs {
-            add(PaletteItem(id: "panel:" + p.id, title: "\(p.title) Panel", subtitle: "Show panel", category: .panel, keywords: p.id) { WorkspaceManager.shared.reveal(p.id) })
+            add(PaletteItem(id: "panel:" + p.id, title: tr("\(tr(p.title)) Panel"), subtitle: tr("Show panel"), category: .panel, keywords: p.id,
+                            altTitle: L10n.shared.isEnglish ? "" : "\(p.title) Panel") { WorkspaceManager.shared.reveal(p.id) })
         }
         // 5. layers, documents, versions, branches
         if let d = doc {
             for (l, _) in d.state.layers.flattenedForDisplay(includeCollapsed: true) {
-                add(PaletteItem(id: "layer:\(d.id):\(l.id)", title: l.name, subtitle: "Select layer · \(l.kindName)" + (l.isVisible ? "" : " · hidden"), category: .layer) {
+                add(PaletteItem(id: "layer:\(d.id):\(l.id)", title: l.name, subtitle: "Select layer · \(tr(l.kindName))" + (l.isVisible ? "" : " · hidden"), category: .layer) {
                     d.selectLayer(l.id)
                     WorkspaceManager.shared.reveal("layers")
                 })
@@ -866,8 +875,13 @@ enum PaletteSearch {
         }
         var scored: [PaletteResult] = []
         for it in items {
-            let secondary = it.subtitle + " " + it.keywords + " " + it.category.rawValue
-            guard let m = Fuzzy.match(q, title: it.title, secondary: secondary) else { continue }
+            let secondary = it.subtitle + " " + it.keywords + " " + it.category.rawValue + " " + tr(it.category.rawValue)
+            // the translated title first (its letters are highlighted); the English one finds the command too
+            var match = Fuzzy.match(q, title: it.title, secondary: secondary)
+            if !it.altTitle.isEmpty, let e = Fuzzy.match(q, title: it.altTitle, secondary: secondary), e.score > (match?.score ?? -.infinity) {
+                match = (e.score, [])
+            }
+            guard let m = match else { continue }
             var s = m.score + (frecency?.boost(it.id, now: now) ?? 0) - Double(it.title.count) * 0.004
             if !it.enabled { s -= 3 }
             if it.category == .hint { s -= 0.4 }

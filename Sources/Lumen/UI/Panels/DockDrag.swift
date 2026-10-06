@@ -269,10 +269,15 @@ final class FloatingPanel: NSPanel, NSWindowDelegate {
     func update(_ g: DockGroup) {
         panelIDs = g.panels
         selectedPanel = g.selected
-        title = g.panels.map(PanelRegistry.title).joined(separator: " · ")
-        setAccessibilityLabel(title + " (floating panel)")
+        refreshTitle()
         groupView.update(g)
         if g.collapsed { styleMask.remove(.resizable) } else { styleMask.insert(.resizable) }
+    }
+
+    /// The panels' titles in the interface language.
+    func refreshTitle() {
+        title = panelIDs.map(PanelRegistry.title).joined(separator: " · ")
+        setAccessibilityLabel(tr("\(title) (floating panel)"))
     }
 
     func refreshTheme() {

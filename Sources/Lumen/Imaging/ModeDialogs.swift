@@ -15,12 +15,12 @@ struct ImagingDialogFrame<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 13, weight: .semibold))
+            Text(tr(title)).font(.system(size: 13, weight: .semibold))
             content
             HStack {
                 Spacer()
                 Button("Cancel") { onCancel?(); AppModel.shared.dialog = nil }.buttonStyle(PanelButtonStyle()).keyboardShortcut(.cancelAction)
-                Button(okTitle) { FieldEdits.commit(); onOK() }.buttonStyle(PanelButtonStyle(prominent: true)).keyboardShortcut(.defaultAction).disabled(okDisabled)
+                Button(tr(okTitle)) { FieldEdits.commit(); onOK() }.buttonStyle(PanelButtonStyle(prominent: true)).keyboardShortcut(.defaultAction).disabled(okDisabled)
             }
         }
         .font(Theme.font)
@@ -44,15 +44,15 @@ struct BitmapDialog: View {
             Text("Input: \(Int(inRes)) Pixels/Inch").foregroundStyle(Theme.textDim)
             ValueSlider(label: "Output", value: $o.outputResolution, range: 10...1200, unit: "ppi", labelWidth: 60)
             Caption("Method")
-            Picker("Use", selection: $o.method) { ForEach(BitmapMethod.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Use", selection: $o.method) { ForEach(BitmapMethod.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if o.method == .halftone {
                 ValueSlider(label: "Frequency", value: $o.frequency, range: 1...400, unit: "lpi", labelWidth: 70)
                 ValueSlider(label: "Angle", value: $o.angle, range: -180...180, unit: "°", labelWidth: 70)
-                Picker("Shape", selection: $o.shape) { ForEach(HalftoneShape.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("Shape", selection: $o.shape) { ForEach(HalftoneShape.allCases) { Text(tr($0.rawValue)).tag($0) } }
             }
             if o.method == .custom {
                 Picker("Pattern", selection: $o.patternID) {
-                    ForEach(PatternDef.builtIn + AppModel.shared.customPatterns) { Text($0.name).tag($0.id) }
+                    ForEach(PatternDef.builtIn + AppModel.shared.customPatterns) { Text(tr($0.name)).tag($0.id) }
                 }
             }
             if let d = AppActions.doc, d.state.layers.count > 1 {
@@ -78,7 +78,7 @@ struct IndexedColorDialog: View {
             d.displayOverride = nil
             ColorModes.convertToIndexed(d, o)
         }, onCancel: { AppActions.doc?.displayOverride = nil; AppActions.doc?.setNeedsRender() }) {
-            Picker("Palette", selection: $o.palette) { ForEach(PaletteKind.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Palette", selection: $o.palette) { ForEach(PaletteKind.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if o.palette == .custom {
                 HStack {
                     Text("\((o.custom ?? []).count) colours").foregroundStyle(Theme.textDim)
@@ -90,7 +90,7 @@ struct IndexedColorDialog: View {
                 ValueSlider(label: "Colors", value: Binding(get: { Double(o.colors) }, set: { o.colors = Int($0) }), range: 2...256, step: 1, labelWidth: 70)
                     .disabled(o.palette == .exact)
             }
-            Picker("Forced", selection: $o.forced) { ForEach(ForcedColors.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Forced", selection: $o.forced) { ForEach(ForcedColors.allCases) { Text(tr($0.rawValue)).tag($0) } }
             HStack {
                 Toggle2(label: "Transparency", on: $o.transparency)
                 Spacer()
@@ -98,7 +98,7 @@ struct IndexedColorDialog: View {
                 ColorWell(color: $o.matte, size: 18)
             }
             Caption("Options")
-            Picker("Dither", selection: $o.dither) { ForEach(DitherKind.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Dither", selection: $o.dither) { ForEach(DitherKind.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if o.dither != .none {
                 ValueSlider(label: "Amount", value: Binding(get: { o.amount * 100 }, set: { o.amount = $0 / 100 }), range: 1...100, unit: "%", labelWidth: 70)
                 Toggle2(label: "Preserve Exact Colors", on: $o.preserveExact)
@@ -106,7 +106,7 @@ struct IndexedColorDialog: View {
             HStack {
                 Toggle2(label: "Preview", on: $preview)
                 Spacer()
-                Text(info).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                Text(tr(info)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
         }
         .onAppear { schedule() }
@@ -157,7 +157,7 @@ struct ColorTableDialog: View {
             if let d = AppActions.doc { ColorModes.applyColorTable(d, table, transparentIndex: transparent) }
         }) {
             Picker("Table", selection: Binding(get: { "Custom" }, set: { v in applyPreset(v) })) {
-                ForEach(["Custom", "Black Body", "Grayscale", "Spectrum", "System (Mac OS)", "System (Windows)", "Web"], id: \.self) { Text($0).tag($0) }
+                ForEach(["Custom", "Black Body", "Grayscale", "Spectrum", "System (Mac OS)", "System (Windows)", "Web"], id: \.self) { Text(tr($0)).tag($0) }
             }
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(15), spacing: 2), count: 16), spacing: 2) {
                 ForEach(Array(table.enumerated()), id: \.offset) { i, c in
@@ -175,7 +175,7 @@ struct ColorTableDialog: View {
                     Text("Entry \(s)").foregroundStyle(Theme.textDim)
                     ColorWell(color: Binding(get: { editColor }, set: { editColor = $0; table[s] = $0.withAlpha(1) }), size: 18)
                     Spacer()
-                    Button(transparent == s ? "Opaque" : "Make Transparent") { transparent = transparent == s ? nil : s }.buttonStyle(PanelButtonStyle())
+                    Button(tr(transparent == s ? "Opaque" : "Make Transparent")) { transparent = transparent == s ? nil : s }.buttonStyle(PanelButtonStyle())
                 }
             }
             HStack {
@@ -240,10 +240,10 @@ struct DuotoneDialog: View {
             HStack {
                 Picker("Preset", selection: Binding(get: { "" }, set: { n in if let p = DuotoneSettings.presets.first(where: { $0.0 == n }) { s = p.1 } })) {
                     Text("Custom").tag("")
-                    ForEach(DuotoneSettings.presets, id: \.0) { Text($0.0).tag($0.0) }
+                    ForEach(DuotoneSettings.presets, id: \.0) { Text(tr($0.0)).tag($0.0) }
                 }
             }
-            Picker("Type", selection: Binding(get: { s.type }, set: { setType($0) })) { ForEach(DuotoneType.allCases) { Text($0.name).tag($0) } }
+            Picker("Type", selection: Binding(get: { s.type }, set: { setType($0) })) { ForEach(DuotoneType.allCases) { Text(tr($0.name)).tag($0) } }
             ForEach(Array(s.inks.enumerated()), id: \.element.id) { i, ink in
                 HStack(spacing: 8) {
                     Text("Ink \(i + 1):").foregroundStyle(Theme.textDim).frame(width: 44, alignment: .leading)
@@ -396,7 +396,7 @@ struct ImagingChannelRows: View {
                     Color.white
                     if let img = SpotThumbs.image(ch, info: info, doc: doc) { Image(decorative: img, scale: 2).resizable().aspectRatio(contentMode: .fit) }
                 }.frame(width: 30, height: 30).clipShape(RoundedRectangle(cornerRadius: 2))
-                Text(ch.name).font(Theme.font)
+                Text(tr(ch.name)).font(Theme.font)
                 Spacer()
                 RoundedRectangle(cornerRadius: 2).fill(Color(nsColor: info.ink.nsColor)).frame(width: 10, height: 10)
             }

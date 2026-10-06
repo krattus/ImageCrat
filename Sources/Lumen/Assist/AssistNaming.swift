@@ -415,7 +415,7 @@ struct AssistLayerContextMenu: View {
 
     var body: some View {
         let many = doc.orderedSelection.count > 1 && doc.selectedLayerIDs.contains(layerID)
-        Button(many ? "Name \(doc.orderedSelection.count) Layers Automatically" : "Name Automatically") {
+        Button(tr(many ? "Name \(doc.orderedSelection.count) Layers Automatically" : "Name Automatically")) {
             if !many { doc.selectLayer(layerID) }
             AssistNaming.autoNameAction(selectionOnly: true)
         }
@@ -424,7 +424,7 @@ struct AssistLayerContextMenu: View {
             AssistSearch.selectSimilarAction()
         }
         if let l = doc.state.layer(layerID), l.isRaster || l.isSmartObject {
-            Button(many ? "Remove Backgrounds" : "Remove Background (mask)") {
+            Button(tr(many ? "Remove Backgrounds" : "Remove Background (mask)")) {
                 if !many { doc.selectLayer(layerID) }
                 AssistSubject.removeBackgroundsAction()
             }

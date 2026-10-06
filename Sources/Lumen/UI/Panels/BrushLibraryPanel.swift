@@ -90,13 +90,13 @@ struct BrushLibraryBrowser: View {
             Button("All Folders") { folderFilter = nil }
             Divider()
             ForEach(lib.index.allFolders, id: \.id) { f in
-                Button((folderFilter == f.id ? "✓ " : "") + String(repeating: "   ", count: f.path.count - 1) + (f.path.last ?? "")) { folderFilter = f.id }
+                Button(tr((folderFilter == f.id ? "✓ " : "") + String(repeating: "   ", count: f.path.count - 1) + (f.path.last ?? ""))) { folderFilter = f.id }
             }
         } label: {
             Image(systemName: folderFilter == nil ? "folder" : "folder.fill")
         }
         .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-        .help(folderFilter.flatMap { lib.index.folder($0)?.name }.map { "Showing “\($0)”" } ?? "Filter by folder")
+        .help(tr(folderFilter.flatMap { lib.index.folder($0)?.name }.map { "Showing “\($0)”" } ?? "Filter by folder"))
     }
 
     private var viewMenu: some View {
@@ -118,8 +118,8 @@ struct BrushLibraryBrowser: View {
                 Button("As ImageCrat Brushes (.icbrushes)…") { lib.exportWithPanel(lib.index.orderedBrushIDs, suggestedName: "ImageCrat Brushes", format: .imageCrat) }
             }
             Divider()
-            Button(lib.undoName.map { "Undo \($0)" } ?? "Undo") { lib.undo() }.disabled(lib.undoName == nil)
-            Button(lib.redoName.map { "Redo \($0)" } ?? "Redo") { lib.redo() }.disabled(lib.redoName == nil)
+            Button(tr(lib.undoName.map { "Undo \($0)" } ?? "Undo")) { lib.undo() }.disabled(lib.undoName == nil)
+            Button(tr(lib.redoName.map { "Redo \($0)" } ?? "Redo")) { lib.redo() }.disabled(lib.redoName == nil)
             Divider()
             Toggle("Keep Current Size When Switching", isOn: $lib.prefs.keepSize)
             Toggle("Apply Preset Colors", isOn: $lib.prefs.applyColor)
@@ -157,7 +157,7 @@ struct BrushLibraryBrowser: View {
             HStack(spacing: 4) {
                 Image(systemName: lib.prefs[keyPath: collapsed] ? "chevron.right" : "chevron.down").font(.system(size: 8)).frame(width: 10)
                 Image(systemName: symbol).font(.system(size: 9)).foregroundStyle(title == "Favorites" ? Color.yellow : Theme.textDim)
-                Text(title).font(Theme.fontBold).foregroundStyle(Theme.textDim)
+                Text(tr(title)).font(Theme.fontBold).foregroundStyle(Theme.textDim)
                 Spacer()
             }
             .contentShape(Rectangle())
@@ -172,7 +172,7 @@ struct BrushLibraryBrowser: View {
             HStack(spacing: 4) {
                 Image(systemName: f.expanded ? "chevron.down" : "chevron.right").font(.system(size: 8)).frame(width: 10)
                 Image(systemName: f.expanded ? "folder" : "folder.fill").font(.system(size: 10)).foregroundStyle(Theme.textDim)
-                Text(f.name).font(Theme.fontBold).foregroundStyle(Theme.text).lineLimit(1)
+                Text(tr(f.name)).font(Theme.fontBold).foregroundStyle(Theme.text).lineLimit(1)
                 Text("\(count)").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 Spacer(minLength: 0)
             }
@@ -185,7 +185,7 @@ struct BrushLibraryBrowser: View {
                 drop(providers, folder: f.id, before: nil)
             }
             .contextMenu { folderMenu(f) }
-            .help("\(f.name): \(count) brush\(count == 1 ? "" : "es") — drag brushes or folders here, or drop brush files to import into it")
+            .help(tr("\(tr(f.name)): \(count) brush\(count == 1 ? "" : "es") — drag brushes or folders here, or drop brush files to import into it"))
             if f.expanded {
                 ForEach(f.folders) { s in folderSection(s, depth: depth + 1) }
                 if !f.brushes.isEmpty { brushes(f.brushes, folder: f.id).padding(.leading, CGFloat(depth) * 10 + 6) }
@@ -218,7 +218,7 @@ struct BrushLibraryBrowser: View {
                 }
             }
             .frame(width: thumb, height: thumb * 0.78)
-            Text(r.map { "\(Int($0.params.size))" } ?? "").font(.system(size: 8)).foregroundStyle(Theme.textFaint).lineLimit(1)
+            Text(tr(r.map { "\(Int($0.params.size))" } ?? "")).font(.system(size: 8)).foregroundStyle(Theme.textFaint).lineLimit(1)
         }
         .frame(width: thumb, height: thumb)
         .background(RoundedRectangle(cornerRadius: 4).fill(isActive(id) ? Theme.selection : (selection.contains(id) ? Theme.selection.opacity(0.55) : Theme.fieldBG)))
@@ -229,7 +229,7 @@ struct BrushLibraryBrowser: View {
             if isActive(id) && lib.isActivePresetModified { Text("*").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.accent).padding(.leading, 3) }
         }
         .contentShape(Rectangle())
-        .help(tooltip(id))
+        .help(tr(tooltip(id)))
         .modifier(BrushItemInteractions(id: id, folder: folder, browser: self))
     }
 
@@ -241,10 +241,10 @@ struct BrushLibraryBrowser: View {
                 if !strokes, let img = lib.thumbnail(id, size: 40, color: ink) {
                     Image(decorative: img, scale: 2).resizable().aspectRatio(contentMode: .fit).frame(width: 20, height: 20)
                 }
-                Text((r?.name ?? "") + (isActive(id) && lib.isActivePresetModified ? " *" : "")).foregroundStyle(Theme.text).lineLimit(1).truncationMode(.middle)
+                Text(tr((r?.name ?? "") + (isActive(id) && lib.isActivePresetModified ? " *" : ""))).foregroundStyle(Theme.text).lineLimit(1).truncationMode(.middle)
                 if lib.isFavorite(id) { Image(systemName: "star.fill").font(.system(size: 7)).foregroundStyle(.yellow) }
                 Spacer(minLength: 2)
-                Text(r.map { "\(Int($0.params.size))" } ?? "").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                Text(tr(r.map { "\(Int($0.params.size))" } ?? "")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
             if strokes {
                 GeometryReader { g in
@@ -258,7 +258,7 @@ struct BrushLibraryBrowser: View {
         .padding(.horizontal, 4).padding(.vertical, 2)
         .background(RoundedRectangle(cornerRadius: 4).fill(isActive(id) ? Theme.selection : (selection.contains(id) ? Theme.selection.opacity(0.55) : Color.clear)))
         .contentShape(Rectangle())
-        .help(tooltip(id))
+        .help(tr(tooltip(id)))
         .modifier(BrushItemInteractions(id: id, folder: folder, browser: self))
     }
 
@@ -314,9 +314,9 @@ struct BrushLibraryBrowser: View {
         Button("Use Brush") { lib.select(id) }
         Button("Rename…") { if let n = BrushLibraryBrowser.ask("Rename Brush", initial: r?.name ?? "") { lib.rename(id, to: n) } }
         Button("Duplicate") { _ = lib.duplicate(id) }
-        Button(ids.count > 1 ? "Delete \(ids.count) Brushes…" : "Delete…") { lib.delete(ids); selection = [] }
+        Button(tr(ids.count > 1 ? "Delete \(ids.count) Brushes…" : "Delete…")) { lib.delete(ids); selection = [] }
         Divider()
-        Button(lib.isFavorite(id) ? "Remove from Favorites" : "Add to Favorites") { for i in ids { lib.setFavorite(i, !lib.isFavorite(id)) } }
+        Button(tr(lib.isFavorite(id) ? "Remove from Favorites" : "Add to Favorites")) { for i in ids { lib.setFavorite(i, !lib.isFavorite(id)) } }
         Menu("Move to Folder") {
             Button("Top Level") { lib.move(ids, to: BrushLibraryIndex.rootID) }
             ForEach(lib.index.allFolders, id: \.id) { f in
@@ -348,7 +348,7 @@ struct BrushLibraryBrowser: View {
             Button("As Photoshop Brushes (.abr)…") { lib.exportWithPanel(ids, suggestedName: f.name, format: .abr) }.disabled(ids.isEmpty)
             Button("As ImageCrat Brushes (.icbrushes)…") { lib.exportWithPanel(ids, suggestedName: f.name, format: .imageCrat) }.disabled(ids.isEmpty)
         }
-        Button("Import Brushes into “\(f.name)”…") {
+        Button("Import Brushes into “\(tr(f.name))”…") {
             let panel = NSOpenPanel()
             panel.allowsMultipleSelection = true
             panel.allowedContentTypes = (Array(BrushImport.supportedExtensions) + Array(BrushLibrary.imageExtensions)).compactMap { UTType(filenameExtension: $0) }
@@ -361,11 +361,11 @@ struct BrushLibraryBrowser: View {
     /// One-line text prompt (headless runs take the initial text).
     static func ask(_ title: String, initial: String) -> String? {
         let a = NSAlert()
-        a.messageText = title
+        a.messageText = tr(title)
         let f = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
         f.stringValue = initial
         a.accessoryView = f
-        a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK")); a.addButton(withTitle: tr("Cancel"))
         a.window.initialFirstResponder = f
         guard UIBlock.run(a) == .alertFirstButtonReturn else { return nil }
         let s = f.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -174,7 +174,7 @@ struct BlurGalleryDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(st.inst.kind.displayName + (st.smartLayer != nil ? " (Smart Filter)" : AppActions.filterTargetSuffix(AppActions.doc))).font(.system(size: 13, weight: .semibold))
+            Text(tr(st.inst.kind.displayName + (st.smartLayer != nil ? " (Smart Filter)" : AppActions.filterTargetSuffix(AppActions.doc)))).font(.system(size: 13, weight: .semibold))
             switch st.inst.kind {
             case .fieldBlur:
                 if let i = st.inst.points.firstIndex(where: { $0.id == st.selectedPin }) {
@@ -204,7 +204,7 @@ struct BlurGalleryDialog: View {
         let b = Binding(get: { st.inst.values[p.key] ?? p.defaultValue }, set: { st.inst.values[p.key] = $0 })
         switch p.kind {
         case .slider(let r): ValueSlider(label: p.label, value: b, range: r, unit: p.unit, format: r.upperBound <= 2 ? "%.2f" : "%.0f", labelWidth: 70)
-        case .angle: HStack { Text(p.label).foregroundStyle(Theme.textDim).frame(width: 70, alignment: .leading); AngleDial(angle: b); NumberField(label: "", value: b, width: 44) }
+        case .angle: HStack { Text(tr(p.label)).foregroundStyle(Theme.textDim).frame(width: 70, alignment: .leading); AngleDial(angle: b); NumberField(label: "", value: b, width: 44) }
         default: EmptyView()
         }
     }

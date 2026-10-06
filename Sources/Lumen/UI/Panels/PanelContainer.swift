@@ -30,7 +30,7 @@ struct PanelGroup: View {
             HStack(spacing: 0) {
                 ForEach(tabs) { t in
                     let active = (selected.isEmpty ? tabs.first?.id : selected) == t.id
-                    Text(t.title)
+                    Text(tr(t.title))
                         .font(active ? Theme.fontBold : Theme.font)
                         .foregroundStyle(active ? Theme.text : Theme.textDim)
                         .padding(.horizontal, 10)
@@ -40,7 +40,7 @@ struct PanelGroup: View {
                         .contentShape(Rectangle())
                         .onTapGesture { selected = t.id; collapsed = false }
                         .contextMenu {
-                            Button("Float “\(t.title)” in Window") { ws.float(t.id) }
+                            Button("Float “\(tr(t.title))” in Window") { ws.float(t.id) }
                             Button("Move to \(secondary ? "Main" : "Secondary") Column") { ws.dock(t.id, secondary: !secondary) }
                             if groupIndex > 0 { Button("Move to Group Above") { ws.move(t.id, toGroup: groupIndex - 1, secondary: secondary) } }
                             Button("Move to Group Below") { ws.move(t.id, toGroup: groupIndex + 1, secondary: secondary) }

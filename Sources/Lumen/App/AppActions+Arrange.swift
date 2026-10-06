@@ -144,7 +144,7 @@ struct BatchRenameDialog: View {
 
     var body: some View {
         DialogFrame(title: "Rename Layers", width: 460, okTitle: "Rename", onOK: { BatchRename.apply(s) }) {
-            Picker("", selection: $s.mode) { ForEach(BatchRenameSettings.Mode.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("", selection: $s.mode) { ForEach(BatchRenameSettings.Mode.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 .pickerStyle(.segmented).labelsHidden()
             switch s.mode {
             case .template:
@@ -163,7 +163,7 @@ struct BatchRenameDialog: View {
                 numbering
             }
             HStack {
-                Picker("Case", selection: $s.letterCase) { ForEach(BatchRenameSettings.Case.allCases) { Text($0.rawValue).tag($0) } }.frame(width: 190)
+                Picker("Case", selection: $s.letterCase) { ForEach(BatchRenameSettings.Case.allCases) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 190)
                 Toggle2(label: "Remove “copy”", on: $s.stripCopy)
             }
             Picker("Order", selection: $s.topToBottom) { Text("Top to bottom").tag(true); Text("Bottom to top").tag(false) }.frame(width: 220)
@@ -176,9 +176,9 @@ struct BatchRenameDialog: View {
                     VStack(alignment: .leading, spacing: 2) {
                         ForEach(Array(zip(layers, new).enumerated()), id: \.offset) { _, pair in
                             HStack(spacing: 6) {
-                                Text(pair.0.name).foregroundStyle(Theme.textDim).lineLimit(1).frame(width: 190, alignment: .leading)
+                                Text(tr(pair.0.name)).foregroundStyle(Theme.textDim).lineLimit(1).frame(width: 190, alignment: .leading)
                                 Image(systemName: "arrow.right").font(.system(size: 8)).foregroundStyle(Theme.textFaint)
-                                Text(pair.1).lineLimit(1)
+                                Text(tr(pair.1)).lineLimit(1)
                             }
                         }
                     }
@@ -485,7 +485,7 @@ struct ArrangeOnShapeDialog: View {
             if ids.count < 2 {
                 Text("Select two or more layers in the Layers panel (⌘-click or ⇧-click), then choose Arrange on Shape.").foregroundStyle(Theme.textFaint)
             } else {
-                Picker("Shape", selection: $s.shape) { ForEach(ArrangeSettings.Shape.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("Shape", selection: $s.shape) { ForEach(ArrangeSettings.Shape.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 if s.shape == .custom {
                     HStack { Text("Custom shape").foregroundStyle(Theme.textDim); ShapeLibraryPicker(id: $s.customID) }
                 }
@@ -518,8 +518,8 @@ struct ArrangeOnShapeDialog: View {
                         if [.square, .rectangle, .triangle, .polygon, .star].contains(s.shape) { Toggle2(label: "On corners", on: $s.atCorners) }
                     }
                 }
-                Picker("Order", selection: $s.order) { ForEach(ArrangeSettings.Order.allCases) { Text($0.rawValue).tag($0) } }
-                Picker("Layers", selection: $s.facing) { ForEach(ArrangeSettings.Facing.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("Order", selection: $s.order) { ForEach(ArrangeSettings.Order.allCases) { Text(tr($0.rawValue)).tag($0) } }
+                Picker("Layers", selection: $s.facing) { ForEach(ArrangeSettings.Facing.allCases) { Text(tr($0.rawValue)).tag($0) } }
                 DisclosureGroup("More") {
                     ValueSlider(label: "Extra rotation", value: $s.extraRotation, range: -180...180, unit: "°", labelWidth: 96)
                     ValueSlider(label: "Size at end", value: $s.scaleEnd, range: 10...300, unit: "%", labelWidth: 96)

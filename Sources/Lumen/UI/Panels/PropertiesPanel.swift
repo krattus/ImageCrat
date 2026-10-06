@@ -44,7 +44,7 @@ struct PropertiesContent: View {
 
     var body: some View {
         HStack {
-            Text(layer.kindName).font(Theme.fontBold)
+            Text(tr(layer.kindName)).font(Theme.fontBold)
             Spacer()
             Text(layer.name).foregroundStyle(Theme.textDim).lineLimit(1)
         }
@@ -61,7 +61,7 @@ struct PropertiesContent: View {
                 Divider()
                 WrappingHStack {
                     Button("Reset") { live { $0.adjustment = AdjustmentSettings(kind: a.kind) }; commit() }.buttonStyle(PanelButtonStyle())
-                    Button(layer.isClipped ? "Unclip" : "Clip to Layer") { live { $0.isClipped.toggle() }; commit("Clipping Mask") }.buttonStyle(PanelButtonStyle())
+                    Button(tr(layer.isClipped ? "Unclip" : "Clip to Layer")) { live { $0.isClipped.toggle() }; commit("Clipping Mask") }.buttonStyle(PanelButtonStyle())
                 }
             case .text(let t):
                 TextProperties(t: Binding(get: { t }, set: { v in live { $0.text = v } }), onCommit: { commit("Edit Type") })
@@ -112,7 +112,7 @@ struct PropertiesContent: View {
         FeatherDirectionPicker(direction: Binding(get: { m.featherDirection ?? .centered }, set: { v in live { $0.mask?.featherDirection = v }; commit("Mask Feather Direction") }), labelWidth: 60)
         WrappingHStack {
             Button("Invert") { AppActions.invertMask() }.buttonStyle(PanelButtonStyle())
-            Button(m.isEnabled ? "Disable" : "Enable") { AppActions.toggleMaskEnabled() }.buttonStyle(PanelButtonStyle())
+            Button(tr(m.isEnabled ? "Disable" : "Enable")) { AppActions.toggleMaskEnabled() }.buttonStyle(PanelButtonStyle())
             Button("Apply") { AppActions.applyMask() }.buttonStyle(PanelButtonStyle())
         }
         WrappingHStack {
@@ -212,7 +212,7 @@ struct SmartObjectProperties: View {
         Caption("Smart Object")
         HStack {
             Image(systemName: "doc.on.doc").foregroundStyle(Theme.textDim)
-            Text(so.sourceName).lineLimit(1)
+            Text(tr(so.sourceName)).lineLimit(1)
             Spacer()
             Text("\(Int(so.source.size.width))×\(Int(so.source.size.height))").foregroundStyle(Theme.textDim)
         }
@@ -228,12 +228,12 @@ struct SmartObjectProperties: View {
             doc.updateLayer(layerID) { $0.smart?.contentFit = v == .fit ? nil : v }
             doc.commit("Smart Object Contents Fit")
         })) {
-            ForEach(SmartContentFit.allCases, id: \.self) { Text($0.label).tag($0) }
+            ForEach(SmartContentFit.allCases, id: \.self) { Text(tr($0.label)).tag($0) }
         }
         .help("When the contents are replaced or relinked to a file of another size: fit it into the current box (aspect ratio kept, centred, rotation and perspective kept), or keep the object's scale so its size follows the file's pixel size, as Photoshop does")
         let sc = AppActions.smartObjectScale(so)
         WrappingHStack {
-            Text(String(format: "Scale %.0f%% × %.0f%%", sc.x * 100, sc.y * 100)).foregroundStyle(abs(sc.x - 1) < 0.005 && abs(sc.y - 1) < 0.005 ? Theme.textDim : Theme.text)
+            Text(tr(String(format: "Scale %.0f%% × %.0f%%", sc.x * 100, sc.y * 100))).foregroundStyle(abs(sc.x - 1) < 0.005 && abs(sc.y - 1) < 0.005 ? Theme.textDim : Theme.text)
             Spacer()
             Button("100%") { AppActions.resetSmartObject([layerID], keepRotation: true) }.buttonStyle(PanelButtonStyle())
                 .help("Reset to the original size, keeping the rotation")
@@ -256,9 +256,9 @@ struct SmartObjectProperties: View {
                     doc.updateLayer(layerID) { $0.smart?.filters[i].enabled.toggle() }
                     doc.commit("Toggle Smart Filter")
                 } label: { Image(systemName: f.enabled ? "eye" : "eye.slash").foregroundStyle(Theme.textDim) }.buttonStyle(.plain)
-                Text(f.kind.displayName)
+                Text(tr(f.kind.displayName))
                 Spacer()
-                Text(f.blendMode == .normal && f.opacity >= 0.999 ? "" : "\(f.blendMode.displayName) \(Int(f.opacity * 100))%").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                Text(tr(f.blendMode == .normal && f.opacity >= 0.999 ? "" : "\(tr(f.blendMode.displayName)) \(Int(f.opacity * 100))%")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 Button { AppModel.shared.dialog = .filter(f.kind, smartLayer: layerID, editingFilter: f.id) } label: { Image(systemName: "slider.horizontal.3") }.buttonStyle(.plain).help("Edit")
                 Button {
                     doc.updateLayer(layerID) { $0.smart?.filters.remove(at: i) }
@@ -285,7 +285,7 @@ struct AdjustmentsPanel: View {
                                 .background(RoundedRectangle(cornerRadius: 4).fill(Theme.fieldBG))
                         }
                         .buttonStyle(.plain)
-                        .help(k.displayName)
+                        .help(tr(k.displayName))
                     }
                 }
                 Divider()

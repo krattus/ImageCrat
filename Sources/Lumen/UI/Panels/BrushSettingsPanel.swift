@@ -89,7 +89,7 @@ struct TipPickerGrid: View {
                         .frame(width: 30, height: 30)
                         .background(RoundedRectangle(cornerRadius: 3).fill(tipID == id ? Theme.selection : Theme.fieldBG))
                         .onTapGesture { tipID = id }
-                        .help(library.tipName(id))
+                        .help(tr(library.tipName(id)))
                 }
             }
         }
@@ -141,7 +141,7 @@ struct BrushPresetHeader: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 4) {
                 Image(systemName: "paintbrush.pointed").font(.system(size: 10)).foregroundStyle(Theme.textDim)
-                Text(preset?.name ?? "No preset").font(Theme.fontBold).foregroundStyle(preset == nil ? Theme.textFaint : Theme.text).lineLimit(1).truncationMode(.middle)
+                Text(tr(preset?.name ?? "No preset")).font(Theme.fontBold).foregroundStyle(preset == nil ? Theme.textFaint : Theme.text).lineLimit(1).truncationMode(.middle)
                 if modified { Text("*").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.accent).help("Changed since the preset was chosen") }
                 Spacer(minLength: 0)
             }
@@ -176,7 +176,7 @@ struct BrushSettingsEditor: View {
                 ForEach(BrushSettingsSection.allCases) { sec in sectionRow(sec) }
             }
             .background(RoundedRectangle(cornerRadius: 4).fill(Theme.fieldBG))
-            Text(section.rawValue).font(Theme.fontBold).foregroundStyle(Theme.text)
+            Text(tr(section.rawValue)).font(Theme.fontBold).foregroundStyle(Theme.text)
             content(section)
             Divider()
             BrushStrokePreviewView(settings: settings).frame(height: 70)
@@ -211,7 +211,7 @@ struct BrushSettingsEditor: View {
             } else {
                 Color.clear.frame(width: 14, height: 14)
             }
-            Text(sec.rawValue).foregroundStyle(section == sec ? Theme.text : Theme.textDim)
+            Text(tr(sec.rawValue)).foregroundStyle(section == sec ? Theme.text : Theme.textDim)
             Spacer()
         }
         .padding(.horizontal, 6).frame(height: 20)
@@ -235,7 +235,7 @@ struct BrushSettingsEditor: View {
         WrappingHStack(spacing: 6) {
             Text("Control").foregroundStyle(Theme.textDim).frame(width: lw, alignment: .leading)
             Picker("", selection: Binding(get: { settings[keyPath: kp].source }, set: { settings[keyPath: kp].source = $0 })) {
-                ForEach(options) { Text($0.displayName).tag($0) }
+                ForEach(options) { Text(tr($0.displayName)).tag($0) }
             }.labelsHidden().frame(minWidth: 70, maxWidth: 120)
             if settings[keyPath: kp].source == .fade {
                 NumberField(label: "", value: Binding(get: { settings[keyPath: kp].fadeSteps }, set: { settings[keyPath: kp].fadeSteps = max(1, min(9999, $0)) }), width: 40)
@@ -248,7 +248,7 @@ struct BrushSettingsEditor: View {
         HStack(spacing: 6) {
             Text("Mode").foregroundStyle(Theme.textDim).frame(width: lw, alignment: .leading)
             Picker("", selection: Binding(get: { settings[keyPath: kp] }, set: { settings[keyPath: kp] = $0 })) {
-                ForEach(modes) { Text($0.displayName).tag($0) }
+                ForEach(modes) { Text(tr($0.displayName)).tag($0) }
             }.labelsHidden().frame(minWidth: 70, maxWidth: 130)
         }
     }
@@ -389,7 +389,7 @@ struct BrushSettingsEditor: View {
     private func note(_ text: String, on: Binding<Bool>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Toggle2(label: "Enabled", on: on)
-            Text(text).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
+            Text(tr(text)).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         }
     }
 }

@@ -136,9 +136,9 @@ struct FilterCenterSection: View {
         let mode = f.centerMode ?? .canvas
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(f.kind == .spotlight ? "Target" : "Center").foregroundStyle(Theme.textDim).frame(width: 52, alignment: .leading)
+                Text(tr(f.kind == .spotlight ? "Target" : "Center")).foregroundStyle(Theme.textDim).frame(width: 52, alignment: .leading)
                 Picker("", selection: Binding(get: { mode }, set: { m in setMode(m) })) {
-                    ForEach(FilterCenterMode.allCases) { m in Text(m.title).tag(m) }
+                    ForEach(FilterCenterMode.allCases) { m in Text(tr(m.title)).tag(m) }
                 }
                 .pickerStyle(.segmented).labelsHidden().controlSize(.small)
                 .help("Object: the middle of the layer's content · Selection: the middle of the selection · Canvas: the middle of the document · Custom: a point you pick")

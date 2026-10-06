@@ -294,11 +294,11 @@ struct ImageSizeProDialog: View {
                         }
                     HStack {
                         NumberField(label: "Width", value: Binding(get: { width }, set: { v in width = v; if constrain { height = percent ? v : (v / ratio).rounded() }; refresh() }), width: 64)
-                        Text(percent ? "%" : "px").foregroundStyle(Theme.textFaint)
+                        Text(tr(percent ? "%" : "px")).foregroundStyle(Theme.textFaint)
                     }
                     HStack {
                         NumberField(label: "Height", value: Binding(get: { height }, set: { v in height = v; if constrain { width = percent ? v : (v * ratio).rounded() }; refresh() }), width: 64)
-                        Text(percent ? "%" : "px").foregroundStyle(Theme.textFaint)
+                        Text(tr(percent ? "%" : "px")).foregroundStyle(Theme.textFaint)
                     }
                     Toggle2(label: "Constrain Proportions", on: $constrain)
                 }
@@ -307,7 +307,7 @@ struct ImageSizeProDialog: View {
             Toggle2(label: "Scale Styles", on: $scaleStyles)
             Toggle2(label: "Resample", on: $resample)
             if resample {
-                Picker("Resample", selection: $method) { ForEach(ResampleMethod.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("Resample", selection: $method) { ForEach(ResampleMethod.allCases) { Text(tr($0.rawValue)).tag($0) } }
                     .onChange(of: method) { _, _ in refresh() }
                 if method == .preserveDetails || method == .preserveDetails2 || (method == .automatic && newW > ow) {
                     ValueSlider(label: "Reduce Noise", value: $noise, range: 0...100, unit: "%", labelWidth: 86, onCommit: refresh)

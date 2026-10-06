@@ -58,6 +58,8 @@ final class Autosave {
     private var lastRun = Date()
     private var observers: [NSObjectProtocol] = []
     private(set) var started = false
+    /// Quitting to restart (L10nRestart): the session folder stays, so its documents are offered for recovery.
+    var keepSessionOnQuit = false
 
     init(root: URL? = nil, sessionID: String = UUID().uuidString, pid: Int32 = ProcessInfo.processInfo.processIdentifier) {
         rootOverride = root
@@ -90,6 +92,7 @@ final class Autosave {
             if p.autosaveEnabled, p.autosaveOnDeactivate { self?.saveAll() }
         })
         observers.append(nc.addObserver(forName: NSApplication.willTerminateNotification, object: nil, queue: nil) { [weak self] _ in
+            if self?.keepSessionOnQuit == true { self?.flush(); return }
             self?.endSession()
         })
         timer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in self?.tick() }
@@ -327,10 +330,10 @@ struct RecoveryDialog: View {
                             }
                             .frame(width: 56, height: 42).clipShape(RoundedRectangle(cornerRadius: 3))
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(it.entry.name).font(Theme.fontBold).lineLimit(1)
+                                Text(tr(it.entry.name)).font(Theme.fontBold).lineLimit(1)
                                 Text(verbatim: "Autosaved \(Workflow2Util.timeString(it.entry.date)) · \(it.entry.width)×\(it.entry.height) · \(Workflow2Util.byteString(it.bytes))")
                                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
-                                Text(it.entry.originalPath.map { ($0 as NSString).abbreviatingWithTildeInPath } ?? "Never saved")
+                                Text(tr(it.entry.originalPath.map { ($0 as NSString).abbreviatingWithTildeInPath } ?? "Never saved"))
                                     .font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1).truncationMode(.middle)
                             }
                             Spacer()

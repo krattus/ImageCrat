@@ -93,12 +93,12 @@ struct ToolModePicker: View {
         let cur = ToolModes.current(tool)
         // a pop-up naming the mode (Photoshop's "Shape ▾"): the options to its right change with it
         Picker("", selection: Binding(get: { ToolModes.current(tool) }, set: { ToolModes.set($0, for: tool) })) {
-            ForEach(modes, id: \.self) { m in Label(m.rawValue, systemImage: ToolModes.symbol(m)).tag(m).help(ToolModes.help(m)) }
+            ForEach(modes, id: \.self) { m in Label(tr(m.rawValue), systemImage: ToolModes.symbol(m)).tag(m).help(tr(ToolModes.help(m))) }
         }
         .pickerStyle(.menu)
         .frame(width: 92)
         .labelsHidden()
-        .help("Tool mode: \(cur.rawValue)\n" + modes.map(ToolModes.help).joined(separator: "\n"))
+        .help(tr("Tool mode: \(tr(cur.rawValue))\n" + modes.map(ToolModes.help).joined(separator: "\n")))
         if ToolModes.current(tool) == .path { PathMakeButtons() }
     }
 }
@@ -426,7 +426,7 @@ struct FillPathDialog: View {
     @State private var o = PathOps.FillOptions()
     var body: some View {
         DialogFrame(title: "Fill Path", width: 340, onOK: { if let d = AppActions.doc { PathOps.fill(d, nil, o) } }) {
-            Picker("Contents", selection: $o.contents) { ForEach(PathOps.FillContents.allCases, id: \.self) { Text($0.rawValue).tag($0) } }
+            Picker("Contents", selection: $o.contents) { ForEach(PathOps.FillContents.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }
             ValueSlider(label: "Opacity", value: $o.opacity, range: 0...100, unit: "%")
             ValueSlider(label: "Feather", value: $o.feather, range: 0...250, unit: "px", format: "%.1f")
             Toggle2(label: "Anti-alias", on: $o.antialias)
@@ -440,7 +440,7 @@ struct StrokePathDialog: View {
     var body: some View {
         DialogFrame(title: "Stroke Path", width: 320, onOK: { if let d = AppActions.doc { PathOps.stroke(d, nil, o) } }) {
             Picker("Tool", selection: $o.tool) {
-                ForEach(PathOps.strokeTools, id: \.self) { k in Text(k.displayName.replacingOccurrences(of: " Tool", with: "")).tag(k) }
+                ForEach(PathOps.strokeTools, id: \.self) { k in Text(tr(k.displayName.replacingOccurrences(of: " Tool", with: ""))).tag(k) }
             }
             Toggle2(label: "Simulate Pressure", on: $o.simulatePressure)
             Text("Uses the tool's current brush settings.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -570,7 +570,7 @@ struct PathsPanelView: View {
                 }
             } else {
                 // the temporary Work Path and a shape's own path are in italics, as in Photoshop
-                Text(name).font(id == nil || name == PathOps.workPathName ? Theme.font.italic() : Theme.font)
+                Text(tr(name)).font(id == nil || name == PathOps.workPathName ? Theme.font.italic() : Theme.font)
             }
             Spacer()
         }
@@ -585,8 +585,8 @@ struct PathsPanelView: View {
         .simultaneousGesture(TapGesture().onEnded {
             if let id { PathOps.selectPath(d, id) } else { PathOps.deselectPath(d) }   // the shape's path is shown with its layer
         })
-        .help(id == nil ? "The active layer's own path: a shape's outline or the path of type on a path (Duplicate Path copies it into a saved path)" :
-              name == PathOps.workPathName ? "Temporary: the next new path replaces it. Double-click to save it." : "Double-click to rename")
+        .help(tr(id == nil ? "The active layer's own path: a shape's outline or the path of type on a path (Duplicate Path copies it into a saved path)" :
+              name == PathOps.workPathName ? "Temporary: the next new path replaces it. Double-click to save it." : "Double-click to rename"))
         .contextMenu {
             if let id {
                 if name == PathOps.workPathName { Button("Save Path") { if let nid = PathOps.saveWorkPath(d) { startRename(nid, d) } } }

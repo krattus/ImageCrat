@@ -16,8 +16,8 @@ struct GenModelPicker: View {
         let avail = ProviderRouter.shared.available(for: feature)
         let auto = (try? ProviderRouter.shared.resolve(feature))?.1.name
         Picker("Model", selection: $selection) {
-            Text("Automatic" + (auto.map { " (\($0))" } ?? " — no key")).tag("")
-            ForEach(avail) { m in Text("\(m.provider.displayName): \(m.name)").tag(m.id) }
+            Text(tr("Automatic" + (auto.map { " (\($0))" } ?? " — no key"))).tag("")
+            ForEach(avail) { m in Text("\(tr(m.provider.displayName)): \(m.name)").tag(m.id) }
         }
         .font(Theme.font)
         if avail.isEmpty && !GenAIKeychain.shared.presenceKnown {
@@ -80,11 +80,11 @@ struct GenCostHint: View {
         let _ = settings.keysRevision
         let _ = usage.records.count
         if let (t, decision) = Self.text(feature: feature, model: model) {
-            Text(t).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+            Text(tr(t)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             switch decision {
             case .allow: EmptyView()
-            case .warn(let msg): Label(msg, systemImage: "exclamationmark.triangle.fill").font(Theme.fontSmall).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
-            case .block(let msg): Label(msg, systemImage: "xmark.octagon.fill").font(Theme.fontSmall).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+            case .warn(let msg): Label(tr(msg), systemImage: "exclamationmark.triangle.fill").font(Theme.fontSmall).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            case .block(let msg): Label(tr(msg), systemImage: "xmark.octagon.fill").font(Theme.fontSmall).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -161,9 +161,9 @@ struct GenDialog: View {
             case .generateImage:
                 TextField("Prompt", text: $prompt, axis: .vertical).lineLimit(2...5).genField()
                 TextField("Avoid (negative prompt, where supported)", text: $negative).genField()
-                Picker("Content Type", selection: $content) { ForEach(ContentType.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
-                Picker("Style", selection: $style) { ForEach(Self.styles, id: \.self) { Text($0).tag($0) } }
-                Picker("Aspect Ratio", selection: $aspect) { ForEach(["1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9"], id: \.self) { Text($0).tag($0) } }
+                Picker("Content Type", selection: $content) { ForEach(ContentType.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented)
+                Picker("Style", selection: $style) { ForEach(Self.styles, id: \.self) { Text(tr($0)).tag($0) } }
+                Picker("Aspect Ratio", selection: $aspect) { ForEach(["1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9"], id: \.self) { Text(tr($0)).tag($0) } }
                 GenReferencePicker(image: $reference)
             case .promptEdit:
                 TextField("e.g. make it golden hour, turn the car red", text: $prompt, axis: .vertical).lineLimit(2...4).genField()
@@ -178,12 +178,12 @@ struct GenDialog: View {
                 Text("The subject is found automatically (Select Subject).").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             case .harmonize:
                 TextField("Optional guidance (e.g. warm sunset light)", text: $prompt).genField()
-                Picker("Light From", selection: $light) { ForEach(["above", "left", "right", "below"], id: \.self) { Text($0.capitalized).tag($0) } }.pickerStyle(.segmented)
+                Picker("Light From", selection: $light) { ForEach(["above", "left", "right", "below"], id: \.self) { Text(tr($0.capitalized)).tag($0) } }.pickerStyle(.segmented)
                 Text("Relights the active layer to match the layers below and adds a contact shadow. The original layer is hidden, not changed.")
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             case .upscale:
                 Picker("Scale", selection: $factor) { Text("2×").tag(2.0); Text("4×").tag(4.0) }.pickerStyle(.segmented)
-                Picker("Content", selection: $content) { ForEach(ContentType.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
+                Picker("Content", selection: $content) { ForEach(ContentType.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented)
                 Text("Opens the upscaled image as a new document.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             case .sky:
                 TextField("Describe the sky (e.g. dramatic sunset clouds)", text: $prompt).genField()

@@ -87,16 +87,16 @@ final class PrintAccessoryController: NSViewController, NSPrintPanelAccessorizin
 
     override func loadView() {
         let v = NSView(frame: NSRect(x: 0, y: 0, width: 320, height: 90))
-        fitBox = NSButton(checkboxWithTitle: "Scale to Fit Media", target: self, action: #selector(changed))
+        fitBox = NSButton(checkboxWithTitle: tr("Scale to Fit Media"), target: self, action: #selector(changed))
         fitBox.frame = NSRect(x: 20, y: 60, width: 280, height: 20)
-        let l = NSTextField(labelWithString: "Scale:")
+        let l = NSTextField(labelWithString: tr("Scale:"))
         l.frame = NSRect(x: 20, y: 33, width: 50, height: 18)
         scaleField = NSTextField(string: String(format: "%g", settings.scalePercent))
         scaleField.frame = NSRect(x: 72, y: 31, width: 60, height: 22)
         scaleField.target = self; scaleField.action = #selector(changed)
-        let pct = NSTextField(labelWithString: "%")
+        let pct = NSTextField(labelWithString: tr("%"))
         pct.frame = NSRect(x: 136, y: 33, width: 20, height: 18)
-        centerBox = NSButton(checkboxWithTitle: "Center Image", target: self, action: #selector(changed))
+        centerBox = NSButton(checkboxWithTitle: tr("Center Image"), target: self, action: #selector(changed))
         centerBox.frame = NSRect(x: 20, y: 4, width: 280, height: 20)
         for s in [fitBox, l, scaleField, pct, centerBox] as [NSView] { v.addSubview(s) }
         view = v

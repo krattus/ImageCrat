@@ -371,7 +371,7 @@ struct GlyphsPanel: View {
             }
             HStack(spacing: 4) {
                 Picker("", selection: $m.category) {
-                    ForEach(GlyphCategory.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(GlyphCategory.allCases) { Text(tr($0.rawValue)).tag($0) }
                 }
                 .labelsHidden()
                 .frame(minWidth: 80, idealWidth: 150, maxWidth: 150)
@@ -440,7 +440,7 @@ struct GlyphsPanel: View {
                     Image(nsImage: GlyphImage.image(fontName: c.fontName, glyph: c.glyph, side: side, color: NSColor(Theme.text)))
                         .frame(width: side, height: side)
                         .background(RoundedRectangle(cornerRadius: 3).fill(m.selected == c.glyph ? Theme.selection : Theme.fieldBG))
-                        .help(helpText(c))
+                        .help(tr(helpText(c)))
                         .onTapGesture(count: 2) { activate(c) }
                         .onTapGesture { m.selected = c.glyph }
                         .onDrag { GlyphInsert.dragProvider(fontName: c.fontName, glyph: c.glyph, text: c.text) }
@@ -449,7 +449,7 @@ struct GlyphsPanel: View {
         }
         .frame(minHeight: 120)
         if list.isEmpty {
-            Text(m.category == .alternates ? "Select a character in the type editor to see its alternates." : "No glyphs").foregroundStyle(Theme.textFaint)
+            Text(tr(m.category == .alternates ? "Select a character in the type editor to see its alternates." : "No glyphs")).foregroundStyle(Theme.textFaint)
         }
     }
 
@@ -532,7 +532,7 @@ final class GlyphAlternatesPopup {
                             .background(RoundedRectangle(cornerRadius: 3).fill(current == a.extra ? Color.accentColor.opacity(0.7) : Color(white: 0.25)))
                     }
                     .buttonStyle(.plain)
-                    .help(a.label)
+                    .help(tr(a.label))
                 }
             }
             .padding(3)

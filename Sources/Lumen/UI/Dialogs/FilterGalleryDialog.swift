@@ -57,11 +57,11 @@ struct FilterGalleryDialog: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Filter Gallery" + (smartLayer != nil ? " (Smart Filter)" : AppActions.filterTargetSuffix(AppActions.doc))).font(.system(size: 13, weight: .semibold))
+            Text(tr("Filter Gallery" + (smartLayer != nil ? " (Smart Filter)" : AppActions.filterTargetSuffix(AppActions.doc)))).font(.system(size: 13, weight: .semibold))
             HStack(alignment: .top, spacing: 12) {
                 // Looks
                 VStack(alignment: .leading, spacing: 6) {
-                    Picker("", selection: $category) { ForEach(GalleryFilter.categories, id: \.self) { Text($0).tag($0) } }.labelsHidden().frame(width: 280)
+                    Picker("", selection: $category) { ForEach(GalleryFilter.categories, id: \.self) { Text(tr($0)).tag($0) } }.labelsHidden().frame(width: 280)
                     ScrollView {
                         LazyVGrid(columns: Array(repeating: GridItem(.fixed(84), spacing: 8), count: 3), spacing: 8) {
                             ForEach(GalleryFilter.allCases.filter { $0.category == category }) { f in
@@ -72,7 +72,7 @@ struct FilterGalleryDialog: View {
                                     }
                                     .frame(width: 84, height: 60).clipped()
                                     .overlay(RoundedRectangle(cornerRadius: 3).stroke(currentFilter == f ? Theme.accent : Color(white: 0.3), lineWidth: currentFilter == f ? 2 : 0.5))
-                                    Text(f.displayName).font(.system(size: 9)).foregroundStyle(Theme.textDim).lineLimit(1)
+                                    Text(tr(f.displayName)).font(.system(size: 9)).foregroundStyle(Theme.textDim).lineLimit(1)
                                 }
                                 .onTapGesture { choose(f) }
                             }
@@ -84,7 +84,7 @@ struct FilterGalleryDialog: View {
                 // Settings + effect stack
                 VStack(alignment: .leading, spacing: 8) {
                     if let i = inst.gallery.firstIndex(where: { $0.id == selected }) {
-                        Text(inst.gallery[i].filter.displayName).font(Theme.fontBold)
+                        Text(tr(inst.gallery[i].filter.displayName)).font(Theme.fontBold)
                         ForEach(inst.gallery[i].filter.params) { p in paramControl(p, entryIndex: i) }
                     } else {
                         Text("Add an effect layer").foregroundStyle(Theme.textFaint)
@@ -97,7 +97,7 @@ struct FilterGalleryDialog: View {
                                 Button { if let i = inst.gallery.firstIndex(where: { $0.id == e.id }) { inst.gallery[i].visible.toggle() } } label: {
                                     Image(systemName: e.visible ? "eye" : "eye.slash").font(.system(size: 10))
                                 }.buttonStyle(.plain)
-                                Text(e.filter.displayName)
+                                Text(tr(e.filter.displayName))
                                 Spacer()
                             }
                             .padding(5)
@@ -147,13 +147,13 @@ struct FilterGalleryDialog: View {
         case .slider(let r):
             ValueSlider(label: p.label, value: b, range: r, unit: p.unit, format: r.upperBound - r.lowerBound <= 20 ? "%.1f" : "%.0f", labelWidth: 96)
         case .choice(let opts):
-            Picker(p.label, selection: Binding(get: { Int(b.wrappedValue) }, set: { b.wrappedValue = Double($0) })) {
-                ForEach(Array(opts.enumerated()), id: \.offset) { k, o in Text(o).tag(k) }
+            Picker(tr(p.label), selection: Binding(get: { Int(b.wrappedValue) }, set: { b.wrappedValue = Double($0) })) {
+                ForEach(Array(opts.enumerated()), id: \.offset) { k, o in Text(tr(o)).tag(k) }
             }
         case .toggle:
             Toggle2(label: p.label, on: Binding(get: { b.wrappedValue > 0.5 }, set: { b.wrappedValue = $0 ? 1 : 0 }))
         case .angle:
-            HStack { Text(p.label).foregroundStyle(Theme.textDim).frame(width: 96, alignment: .leading); AngleDial(angle: b); NumberField(label: "", value: b, width: 44) }
+            HStack { Text(tr(p.label)).foregroundStyle(Theme.textDim).frame(width: 96, alignment: .leading); AngleDial(angle: b); NumberField(label: "", value: b, width: 44) }
         case .percentPoint:
             ValueSlider(label: p.label, value: Binding(get: { b.wrappedValue * 100 }, set: { b.wrappedValue = $0 / 100 }), range: 0...100, unit: "%", labelWidth: 96)
         }

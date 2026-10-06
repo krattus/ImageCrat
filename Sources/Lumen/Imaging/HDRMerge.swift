@@ -234,7 +234,7 @@ struct HDRProDialog: View {
                     Caption("Source Images")
                     ForEach(items.indices, id: \.self) { i in
                         HStack {
-                            Text(items[i].name).lineLimit(1).frame(width: 130, alignment: .leading)
+                            Text(tr(items[i].name)).lineLimit(1).frame(width: 130, alignment: .leading)
                             NumberField(label: "EV", value: Binding(get: { items.indices.contains(i) ? items[i].ev : 0 }, set: { if items.indices.contains(i) { items[i].ev = $0; radiance = nil; refresh() } }), width: 44, format: "%.2f")
                             Button { if items.indices.contains(i) { items.remove(at: i) }; radiance = nil; refresh() } label: { Image(systemName: "minus.circle") }.buttonStyle(.plain)
                         }
@@ -245,7 +245,7 @@ struct HDRProDialog: View {
                     }
                     Toggle2(label: "Attempt to Automatically Align Source Images", on: Binding(get: { align }, set: { align = $0; radiance = nil; refresh() }))
                     Toggle2(label: "Remove ghosts", on: Binding(get: { ghosts }, set: { ghosts = $0; radiance = nil; refresh() }))
-                    Picker("Mode", selection: Binding(get: { mode }, set: { mode = $0; refresh() })) { ForEach(HDRMode.allCases) { Text($0.rawValue).tag($0) } }
+                    Picker("Mode", selection: Binding(get: { mode }, set: { mode = $0; refresh() })) { ForEach(HDRMode.allCases) { Text(tr($0.rawValue)).tag($0) } }
                     if mode != .bits32 {
                         HDRToningControls(s: $adj, doc: nil, onCommit: { refresh() })
                     } else {
@@ -260,7 +260,7 @@ struct HDRProDialog: View {
                         if busy { ProgressView().controlSize(.small) }
                     }
                     .frame(width: 230, height: 180)
-                    Text(items.count < 2 ? "Add two or more bracketed exposures." : "Preview").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                    Text(tr(items.count < 2 ? "Add two or more bracketed exposures." : "Preview")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 }
             }
         }

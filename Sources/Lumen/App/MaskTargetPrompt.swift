@@ -26,13 +26,13 @@ enum MaskTargetPrompt {
         else if choice != .ask { answer = choice }
         else {
             let a = NSAlert()
-            a.messageText = "Apply \(command) to the image or to the layer mask?"
-            a.informativeText = "The layer mask of “\(l.name)” is selected, so the filter would change the mask, not the picture."
-            a.addButton(withTitle: "Image")
-            a.addButton(withTitle: "Layer Mask")
-            a.addButton(withTitle: "Cancel")
+            a.messageText = tr("Apply \(command) to the image or to the layer mask?")
+            a.informativeText = tr("The layer mask of “\(l.name)” is selected, so the filter would change the mask, not the picture.")
+            a.addButton(withTitle: tr("Image"))
+            a.addButton(withTitle: tr("Layer Mask"))
+            a.addButton(withTitle: tr("Cancel"))
             a.showsSuppressionButton = true
-            a.suppressionButton?.title = "Remember my choice (change it in Preferences ▸ General)"
+            a.suppressionButton?.title = tr("Remember my choice (change it in Preferences ▸ General)")
             let r = UIBlock.run(a)
             switch r {
             case .alertFirstButtonReturn: answer = .image

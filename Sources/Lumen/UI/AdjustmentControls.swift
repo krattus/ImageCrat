@@ -139,7 +139,7 @@ struct AdjustmentControls: View {
                 Toggle2(label: "Reverse", on: Binding(get: { s.gradientReverse }, set: { s.gradientReverse = $0; onCommit() }))
             case .selectiveColor:
                 Picker("Colors", selection: $selColor) {
-                    ForEach(Array(["Reds", "Yellows", "Greens", "Cyans", "Blues", "Magentas", "Whites", "Neutrals", "Blacks"].enumerated()), id: \.offset) { i, n in Text(n).tag(i) }
+                    ForEach(Array(["Reds", "Yellows", "Greens", "Cyans", "Blues", "Magentas", "Whites", "Neutrals", "Blacks"].enumerated()), id: \.offset) { i, n in Text(tr(n)).tag(i) }
                 }
                 let e = $s.selective[selColor]
                 ValueSlider(label: "Cyan", value: e.cyan, range: -100...100, unit: "%", onCommit: onCommit)
@@ -155,7 +155,7 @@ struct AdjustmentControls: View {
                 ValueSlider(label: "Radius", value: $s.shRadius, range: 1...100, unit: "px", onCommit: onCommit)
             case .colorLookup:
                 Picker("Look", selection: Binding(get: { s.lookName }, set: { s.lookName = $0; onCommit() })) {
-                    ForEach(AdjustmentSettings.lookNames, id: \.self) { Text($0).tag($0) }
+                    ForEach(AdjustmentSettings.lookNames, id: \.self) { Text(tr($0)).tag($0) }
                 }
             case .replaceColor:
                 ReplaceColorControls(s: $s, doc: doc, onCommit: onCommit)

@@ -12,7 +12,7 @@ SSH=(ssh -i "$KEY" -o BatchMode=yes -o ConnectTimeout=10 "$VM")
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 mkdir -p "$T/imagecrat/Sources"
 cp Package.swift "$T/imagecrat/"
-rsync -a --exclude '._*' Sources/ImageCratCore "$T/imagecrat/Sources/"
+for d in ImageCratCore ImageCratWinSupport ImageCratCLI ImageCratPreview; do rsync -a --exclude '._*' "Sources/$d" "$T/imagecrat/Sources/"; done
 rsync -a --exclude '._*' Tests "$T/imagecrat/"
 (cd "$T" && COPYFILE_DISABLE=1 tar czf core.tgz imagecrat)
 scp -i "$KEY" -q "$T/core.tgz" "$VM:imagecrat-core.tgz"

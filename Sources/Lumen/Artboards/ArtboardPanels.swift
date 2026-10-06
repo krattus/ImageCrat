@@ -121,12 +121,12 @@ struct ArtboardMenuItems: View {
             case .divider: Divider()
             case .action(let t, let enabled, let checked, let f):
                 if let c = checked {
-                    Toggle(t, isOn: Binding(get: { c }, set: { _ in f() })).disabled(!enabled)
+                    Toggle(tr(t), isOn: Binding(get: { c }, set: { _ in f() })).disabled(!enabled)
                 } else {
-                    Button(t, action: f).disabled(!enabled)
+                    Button(tr(t), action: f).disabled(!enabled)
                 }
             case .submenu(let t, let sub):
-                Menu(t) { AnyView(ArtboardMenuItems(items: sub)) }
+                Menu(tr(t)) { AnyView(ArtboardMenuItems(items: sub)) }
             }
         }
     }
@@ -170,7 +170,7 @@ struct ArtboardLayerRow: View {
                     .foregroundStyle(layer.isVisible ? Theme.text : Theme.textFaint)
                     .frame(width: 22, height: Self.height)
             }.buttonStyle(.plain)
-            .accessibilityLabel((layer.isVisible ? "Hide " : "Show ") + layer.name)
+            .accessibilityLabel(tr((layer.isVisible ? "Hide " : "Show ") + layer.name))
             Rectangle().fill(Theme.border).frame(width: 1)
             Button {
                 doc.updateLayer(layer.id) { $0.isExpanded.toggle() }
@@ -317,11 +317,11 @@ struct ArtboardPresetMenu: View {
     var body: some View {
         Menu {
             ForEach(Artboard.presetGroups, id: \.0) { g in
-                Section(g.0) {
-                    ForEach(g.1, id: \.0) { p in Button(Artboard.menuTitle(p.0, p.1)) { pick(p.0, p.1) } }
+                Section(tr(g.0)) {
+                    ForEach(g.1, id: \.0) { p in Button(tr(Artboard.menuTitle(p.0, p.1))) { pick(p.0, p.1) } }
                 }
             }
-        } label: { Text(title).lineLimit(1) }
+        } label: { Text(tr(title)).lineLimit(1) }
         .menuStyle(.borderlessButton).fixedSize()
     }
 }

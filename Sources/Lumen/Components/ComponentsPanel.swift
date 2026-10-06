@@ -10,13 +10,13 @@ enum ComponentPrompts {
     static func text(_ title: String, info: String = "", initial: String = "", ok: String = "OK") -> String? {
         if FilesModule.headless { return nil }
         let a = NSAlert()
-        a.messageText = title
-        a.informativeText = info
+        a.messageText = tr(title)
+        a.informativeText = tr(info)
         let f = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 24))
         f.stringValue = initial
         a.accessoryView = f
-        a.addButton(withTitle: ok)
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr(ok))
+        a.addButton(withTitle: tr("Cancel"))
         a.window.initialFirstResponder = f
         guard a.runModal() == .alertFirstButtonReturn else { return nil }
         let s = f.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -26,8 +26,8 @@ enum ComponentPrompts {
     static func image() -> (PixelBuffer, String)? {
         let p = NSOpenPanel()
         p.allowedContentTypes = [.png, .jpeg, .tiff, .heic, .gif, .bmp, .image]
-        p.prompt = "Replace"
-        p.message = "Choose an image for this instance only"
+        p.prompt = tr("Replace")
+        p.message = tr("Choose an image for this instance only")
         guard p.runModal() == .OK, let u = p.url, let (cg, _) = DocumentIO.loadImage(url: u) else { return nil }
         return (PixelBuffer(cgImage: cg), u.lastPathComponent)
     }
@@ -358,7 +358,7 @@ struct ComponentCell: View {
         Button("Edit Main Component") { ComponentActions.editMain(doc, component: master.id, variant: nil) }
         Menu("Variants") {
             ForEach(Array(master.variantChoices.enumerated()), id: \.offset) { _, v in
-                Menu(v.name) {
+                Menu(tr(v.name)) {
                     Button("Insert Instance") { ComponentActions.insertInstance(doc, component: master.id, variant: v.id) }
                     Button("Edit…") { ComponentActions.editMain(doc, component: master.id, variant: v.id) }
                     Button("Rename…") {
@@ -389,7 +389,7 @@ struct ComponentCell: View {
         }
         if newer { Button("Update from Library") { ComponentCommands.updateFromLibrary(doc, master.id) } }
         Divider()
-        Button(usage == 0 ? "Delete" : "Delete (used by \(usage))…") { ComponentCommands.deleteComponent(doc, master.id) }
+        Button(tr(usage == 0 ? "Delete" : "Delete (used by \(usage))…")) { ComponentCommands.deleteComponent(doc, master.id) }
     }
 }
 
@@ -416,7 +416,7 @@ struct ComponentLibraryBrowser: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "books.vertical")
-                        Text(current?.deletingPathExtension().lastPathComponent ?? "No libraries").lineLimit(1)
+                        Text(tr(current?.deletingPathExtension().lastPathComponent ?? "No libraries")).lineLimit(1)
                     }
                 }
                 .menuStyle(.borderlessButton)
@@ -473,10 +473,10 @@ struct ComponentLibraryBrowser: View {
                     if let d = inDoc {
                         Image(systemName: (d.library?.version ?? 0) < m.version ? "arrow.triangle.2.circlepath.circle.fill" : "checkmark.circle.fill")
                             .font(.system(size: 11)).foregroundStyle((d.library?.version ?? 0) < m.version ? .orange : .green).padding(3)
-                            .help((d.library?.version ?? 0) < m.version ? "This document has an older version" : "Already in this document")
+                            .help(tr((d.library?.version ?? 0) < m.version ? "This document has an older version" : "Already in this document"))
                     }
                 }
-            Text(m.name).font(Theme.fontSmall).lineLimit(1).truncationMode(.middle)
+            Text(tr(m.name)).font(Theme.fontSmall).lineLimit(1).truncationMode(.middle)
         }
         .padding(4)
         .background(RoundedRectangle(cornerRadius: 6).fill(sel ? Theme.selection : Color.clear))
@@ -541,7 +541,7 @@ struct InstanceEditor: View {
             HStack(spacing: 6) {
                 Text("Variant").foregroundStyle(Theme.textDim).frame(width: 52, alignment: .leading)
                 Picker("", selection: Binding(get: { inst.variantID }, set: { ComponentActions.setVariant(doc, layer: layerID, $0) })) {
-                    ForEach(Array(master.variantChoices.enumerated()), id: \.offset) { _, v in Text(v.name).tag(v.id) }
+                    ForEach(Array(master.variantChoices.enumerated()), id: \.offset) { _, v in Text(tr(v.name)).tag(v.id) }
                 }.labelsHidden().controlSize(.small)
             }
         }
@@ -550,7 +550,7 @@ struct InstanceEditor: View {
                 .help("Edit Main Component: opens it as a document; saving (⌘S) updates every instance")
             Menu {
                 if others.isEmpty { Text("No other components in this document") }
-                ForEach(others) { o in Button(o.name) { ComponentActions.swap(doc, layer: layerID, to: o.id) } }
+                ForEach(others) { o in Button(tr(o.name)) { ComponentActions.swap(doc, layer: layerID, to: o.id) } }
             } label: { Text("Swap").font(Theme.font) }
             .menuStyle(.borderlessButton).controlSize(.small).fixedSize()
             .help("Swap Component: overrides are kept where a layer of the same name exists")
@@ -647,14 +647,14 @@ struct OverrideRow: View {
                 Button { ComponentActions.setVisible(doc, layer: layerID, inner: inner, !visible) } label: {
                     Image(systemName: visible ? "eye" : "eye.slash").font(.system(size: 10)).frame(width: 14)
                         .foregroundStyle(inst.override(inner.id, .visible) != nil ? Theme.accent : Theme.textDim)
-                }.buttonStyle(.plain).help(visible ? "Hide in this instance" : "Show in this instance")
+                }.buttonStyle(.plain).help(tr(visible ? "Hide in this instance" : "Show in this instance"))
                 Image(systemName: symbol).font(.system(size: 9)).foregroundStyle(Theme.textDim).frame(width: 12)
-                Text(inner.name).lineLimit(1).foregroundStyle(visible ? Theme.text : Theme.textFaint)
+                Text(tr(inner.name)).lineLimit(1).foregroundStyle(visible ? Theme.text : Theme.textFaint)
                 Spacer(minLength: 2)
                 if kinds.contains(.fill) { colorWell(.fill) }
                 if kinds.contains(.stroke) { colorWell(.stroke) }
                 if kinds.contains(.image) {
-                    Button(inst.override(inner.id, .image) == nil ? "Replace…" : "Replaced") {
+                    Button(tr(inst.override(inner.id, .image) == nil ? "Replace…" : "Replaced")) {
                         if let (img, name) = ComponentPrompts.image() { ComponentActions.setImage(doc, layer: layerID, inner: inner, img, name: name) }
                     }
                     .buttonStyle(.plain).font(Theme.fontSmall)
@@ -666,7 +666,7 @@ struct OverrideRow: View {
             }
             if kinds.contains(.text) {
                 // typed text also counts when a button is clicked straight after typing (see FieldEdits)
-                TextField(inner.text?.text ?? "", text: Binding(get: { text }, set: { v in
+                TextField(tr(inner.text?.text ?? ""), text: Binding(get: { text }, set: { v in
                     text = v
                     FieldEdits.edited(fieldID, commit: commitText, discard: { text = inst.override(inner.id, .text)?.text ?? inner.text?.text ?? "" })
                 }))
@@ -683,7 +683,7 @@ struct OverrideRow: View {
                 ForEach(mine) { o in
                     HStack(spacing: 4) {
                         Circle().fill(Theme.accent).frame(width: 5, height: 5)
-                        Text("\(o.kind.label): \(o.summary)").font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
+                        Text("\(tr(o.kind.label)): \(o.summary)").font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
                         Spacer()
                         Button { ComponentActions.resetOverride(doc, layer: layerID, inner: inner.id, kind: o.kind) } label: {
                             Image(systemName: "arrow.uturn.backward").font(.system(size: 9))
@@ -711,7 +711,7 @@ struct OverrideRow: View {
             ComponentActions.setColor(doc, layer: layerID, inner: inner, kind: kind, c, commit: false)
         }), size: 14, onCommit: { doc.commit("Override \(kind.label)") })
         .overlay(RoundedRectangle(cornerRadius: 3).stroke(over != nil ? Theme.accent : Color.clear, lineWidth: 1.5))
-        .help(kind == .stroke ? "Stroke colour in this instance" : "Fill colour in this instance")
+        .help(tr(kind == .stroke ? "Stroke colour in this instance" : "Fill colour in this instance"))
     }
 }
 
@@ -726,7 +726,7 @@ struct ComponentLayerBadge: View {
                 Image(systemName: "rhombus.fill").font(.system(size: 8)).foregroundStyle(InstanceEditor.purple)
                 if inst.hasOverrides { Circle().fill(Theme.accent).frame(width: 4, height: 4) }
             }
-            .help(inst.hasOverrides ? "Component instance with \(inst.overrideCount) override\(inst.overrideCount == 1 ? "" : "s")" : "Component instance")
+            .help(tr(inst.hasOverrides ? "Component instance with \(inst.overrideCount) override\(inst.overrideCount == 1 ? "" : "s")" : "Component instance"))
         }
     }
 }
@@ -739,7 +739,7 @@ struct ComponentLayerContextMenu: View {
             let others = ComponentEngine.sorted(doc.state.components).filter { $0.id != inst.componentID }
             Button("Edit Main Component") { ComponentActions.editMain(doc, component: inst.componentID, variant: inst.variantID) }
             Menu("Swap Component") {
-                ForEach(others) { o in Button(o.name) { ComponentActions.swap(doc, layer: layerID, to: o.id) } }
+                ForEach(others) { o in Button(tr(o.name)) { ComponentActions.swap(doc, layer: layerID, to: o.id) } }
             }.disabled(others.isEmpty)
             Button("Reset All Overrides") { ComponentActions.resetAll(doc, layer: layerID) }.disabled(!inst.hasOverrides)
             Button("Push Overrides to Main") { doc.selectLayer(layerID); ComponentCommands.push() }.disabled(inst.overrides.isEmpty)

@@ -60,6 +60,13 @@ if [ ! -f "$DOCICON" ]; then
     || { echo "✗ Could not generate Resources/ImageCratDocument.icns (needs Python 3 with Pillow)"; exit 1; }
 fi
 cp "$DOCICON" "$APP/Contents/Resources/ImageCratDocument.icns"
+# Interface languages (Localization/README.md): Resources/<lang>.lproj/Localizable.strings, keyed by the English text.
+# English is the development language (its table is empty: the keys are the text); Estonian is et.lproj.
+echo "▸ Localizations…"
+for L in "$ROOT"/Resources/*.lproj(N); do
+  plutil -lint -s "$L/Localizable.strings" || { echo "✗ $L/Localizable.strings does not parse"; exit 1; }
+  ditto "$L" "$APP/Contents/Resources/$(basename "$L")"
+done
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -67,6 +74,9 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <plist version="1.0">
 <dict>
   <key>CFBundleName</key><string>$NAME</string>
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
+  <key>CFBundleLocalizations</key><array><string>en</string><string>et</string></array>
+  <key>CFBundleAllowMixedLocalizations</key><true/>
   <key>CFBundleDisplayName</key><string>$NAME</string>
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleExecutable</key><string>$NAME</string>

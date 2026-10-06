@@ -124,7 +124,7 @@ struct DialogFrame<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title).font(.system(size: 13, weight: .semibold))
+            Text(tr(title)).font(.system(size: 13, weight: .semibold))
             content
             HStack {
                 extraButtons
@@ -132,7 +132,7 @@ struct DialogFrame<Content: View>: View {
                 Button("Cancel") { onCancel?(); AppModel.shared.dialog = nil }
                     .buttonStyle(PanelButtonStyle())
                     .keyboardShortcut(.cancelAction)
-                Button(okTitle) { FieldEdits.commit(); onOK(); AppModel.shared.dialog = nil }
+                Button(tr(okTitle)) { FieldEdits.commit(); onOK(); AppModel.shared.dialog = nil }
                     .buttonStyle(PanelButtonStyle(prominent: true))
                     .keyboardShortcut(.defaultAction)
             }
@@ -177,7 +177,7 @@ struct NewDocumentDialog: View {
                         Button { width = Double(p.w); height = Double(p.h); res = p.res } label: {
                             HStack {
                                 Image(systemName: p.w >= p.h ? "rectangle" : "rectangle.portrait").foregroundStyle(Theme.textDim)
-                                Text(p.name)
+                                Text(tr(p.name))
                                 Spacer()
                             }
                             .padding(.vertical, 4).padding(.horizontal, 6)
@@ -247,11 +247,11 @@ struct ImageSizeDialog: View {
                 }
             HStack {
                 NumberField(label: "Width", value: Binding(get: { width }, set: { v in width = v; if constrain { height = percent ? v : (v / ratio).rounded() } }), width: 70)
-                Text(percent ? "%" : "px").foregroundStyle(Theme.textFaint)
+                Text(tr(percent ? "%" : "px")).foregroundStyle(Theme.textFaint)
             }
             HStack {
                 NumberField(label: "Height", value: Binding(get: { height }, set: { v in height = v; if constrain { width = percent ? v : (v * ratio).rounded() } }), width: 70)
-                Text(percent ? "%" : "px").foregroundStyle(Theme.textFaint)
+                Text(tr(percent ? "%" : "px")).foregroundStyle(Theme.textFaint)
             }
             Toggle2(label: "Constrain Proportions", on: $constrain)
             HStack { NumberField(label: "Resolution", value: $res, width: 50); Text("ppi").foregroundStyle(Theme.textFaint) }
@@ -388,7 +388,7 @@ struct FilterDialog: View {
             ValueSlider(label: p.label, value: b, range: r, unit: p.unit, format: fmt, labelWidth: 96)
         case .angle:
             HStack {
-                Text(p.label).foregroundStyle(Theme.textDim).frame(width: 96, alignment: .leading)
+                Text(tr(p.label)).foregroundStyle(Theme.textDim).frame(width: 96, alignment: .leading)
                 AngleDial(angle: b)
                 NumberField(label: "", value: b, width: 44)
                 Text("°").foregroundStyle(Theme.textFaint)
@@ -396,8 +396,8 @@ struct FilterDialog: View {
         case .toggle:
             Toggle2(label: p.label, on: Binding(get: { b.wrappedValue > 0.5 }, set: { b.wrappedValue = $0 ? 1 : 0 }))
         case .choice(let opts):
-            Picker(p.label, selection: Binding(get: { Int(b.wrappedValue) }, set: { b.wrappedValue = Double($0) })) {
-                ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(o).tag(i) }
+            Picker(tr(p.label), selection: Binding(get: { Int(b.wrappedValue) }, set: { b.wrappedValue = Double($0) })) {
+                ForEach(Array(opts.enumerated()), id: \.offset) { i, o in Text(tr(o)).tag(i) }
             }
         case .percentPoint:
             ValueSlider(label: p.label, value: Binding(get: { b.wrappedValue * 100 }, set: { b.wrappedValue = $0 / 100 }), range: 0...100, unit: "%", labelWidth: 96)
@@ -494,7 +494,7 @@ struct ExportDialog: View {
 
     var body: some View {
         DialogFrame(title: "Export As", width: 360, okTitle: "Export…", onOK: export) {
-            Picker("Format", selection: $format) { ForEach(ExportFormat.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Format", selection: $format) { ForEach(ExportFormat.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if format.supportsQuality {
                 ValueSlider(label: "Quality", value: $quality, range: 1...100, unit: "%")
             }
@@ -551,7 +551,7 @@ struct FillDialog: View {
         DialogFrame(title: "Fill", width: 340, onOK: {
             AppActions.fill(contents, color: color, patternID: patternID, opacity: opacity / 100, mode: mode, preserveTransparency: preserve)
         }) {
-            Picker("Contents", selection: $contents) { ForEach(FillContents.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Contents", selection: $contents) { ForEach(FillContents.allCases) { Text(tr($0.rawValue)).tag($0) } }
             if contents == .color { HStack { Text("Color").foregroundStyle(Theme.textDim); ColorWell(color: $color) } }
             if contents == .pattern { HStack { Text("Pattern").foregroundStyle(Theme.textDim); PatternPicker(patternID: $patternID) } }
             HStack { Text("Mode").foregroundStyle(Theme.textDim); BlendModePicker(mode: $mode) }
@@ -574,7 +574,7 @@ struct StrokeDialog: View {
         }) {
             ValueSlider(label: "Width", value: $width, range: 1...250, unit: "px")
             HStack { Text("Color").foregroundStyle(Theme.textDim); ColorWell(color: $color) }
-            Picker("Location", selection: $location) { ForEach(StrokeLocation.allCases) { Text($0.rawValue).tag($0) } }.pickerStyle(.segmented)
+            Picker("Location", selection: $location) { ForEach(StrokeLocation.allCases) { Text(tr($0.rawValue)).tag($0) } }.pickerStyle(.segmented)
             HStack { Text("Mode").foregroundStyle(Theme.textDim); BlendModePicker(mode: $mode) }
             ValueSlider(label: "Opacity", value: $opacity, range: 0...100, unit: "%")
         }
@@ -589,16 +589,16 @@ struct ModifySelectionDialog: View {
     @State private var preview = true
 
     var body: some View {
-        DialogFrame(title: "\(kind.rawValue) Selection", width: kind == .feather ? 340 : 300, onOK: {
+        DialogFrame(title: "\(tr(kind.rawValue)) Selection", width: kind == .feather ? 340 : 300, onOK: {
             restore()
             if kind == .feather { AppModel.shared.featherDirection = direction }
             AppActions.modifySelection(kind, amount: amount, direction: direction)
         }, onCancel: { restore() }) {
-            ValueSlider(label: kind == .feather ? "Feather Radius" : kind == .border ? "Width" : kind == .smooth ? "Sample Radius" : "\(kind.rawValue) By",
+            ValueSlider(label: kind == .feather ? "Feather Radius" : kind == .border ? "Width" : kind == .smooth ? "Sample Radius" : "\(tr(kind.rawValue)) By",
                         value: $amount, range: 0...250, unit: "px", format: "%.1f", labelWidth: 96)
             if kind == .feather {
                 FeatherDirectionPicker(direction: $direction, labelWidth: 96)
-                Text(direction.help).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                Text(tr(direction.help)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 Toggle2(label: "Preview (quick mask)", on: $preview)
             }
         }
@@ -637,7 +637,7 @@ struct FeatherDirectionPicker: View {
         WrappingHStack(spacing: 6) {   // (in a narrow panel the choices go under the label, as a menu if need be)
             Text("Direction").foregroundStyle(Theme.textDim).frame(width: labelWidth, alignment: .leading)
             Picker("", selection: $direction) {
-                ForEach(FeatherDirection.allCases) { Text($0.rawValue).tag($0) }
+                ForEach(FeatherDirection.allCases) { Text(tr($0.rawValue)).tag($0) }
             }
             .labelsHidden().segmentedOrMenu()
         }
@@ -650,13 +650,13 @@ struct FeatherDirectionMenu: View {
     var body: some View {
         Menu {
             ForEach(FeatherDirection.allCases) { d in
-                Button((direction == d ? "✓ " : "    ") + d.rawValue + " — " + d.help) { direction = d }
+                Button((direction == d ? "✓ " : "    ") + tr(d.rawValue) + " — " + tr(d.help)) { direction = d }
             }
         } label: {
-            Text(direction.rawValue)
+            Text(tr(direction.rawValue))
         }
         .menuStyle(.borderlessButton).fixedSize()
-        .help("Feather direction: " + direction.help)
+        .help(tr("Feather direction: " + direction.help))
     }
 }
 
@@ -775,8 +775,8 @@ struct AboutDialog: View {
                 Image(systemName: "camera.aperture").font(.system(size: 48, weight: .thin))
                     .foregroundStyle(LinearGradient(colors: [Color(red: 0.4, green: 0.7, blue: 1), Color(red: 0.7, green: 0.4, blue: 1)], startPoint: .topLeading, endPoint: .bottomTrailing))
             }
-            Text(Brand.name).font(.system(size: 22, weight: .light))
-            Text(AppInfo.versionLine).foregroundStyle(Theme.textDim).textSelection(.enabled)   // CFBundleShortVersionString (CFBundleVersion)
+            Text(tr(Brand.name)).font(.system(size: 22, weight: .light))
+            Text(tr(AppInfo.versionLine)).foregroundStyle(Theme.textDim).textSelection(.enabled)   // CFBundleShortVersionString (CFBundleVersion)
             Text("A layered image editor for macOS built on Core Image & Metal.").multilineTextAlignment(.center).foregroundStyle(Theme.textDim)
             Text("macOS \(AppInfo.macOS.replacingOccurrences(of: "Version ", with: "")) · \(AppInfo.chip)").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             HStack {
@@ -815,8 +815,8 @@ struct ShortcutsDialog: View {
                 Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 4) {
                     ForEach(rows, id: \.0) { r in
                         GridRow {
-                            Text(r.0).font(Theme.mono).foregroundStyle(Theme.accent)
-                            Text(r.1)
+                            Text(tr(r.0)).font(Theme.mono).foregroundStyle(Theme.accent)
+                            Text(tr(r.1))
                         }
                     }
                 }

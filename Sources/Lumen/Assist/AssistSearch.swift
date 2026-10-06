@@ -514,7 +514,7 @@ struct AssistFindLayersPanel: View {
                     if m.query.isEmpty {
                         Text("Describe what you are looking for:").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                         ForEach(examples, id: \.self) { e in
-                            Button(e) { m.query = e; m.run() }.buttonStyle(.plain).font(Theme.font).foregroundStyle(Theme.accent)
+                            Button(tr(e)) { m.query = e; m.run() }.buttonStyle(.plain).font(Theme.font).foregroundStyle(Theme.accent)
                         }
                     } else if !m.indexing {
                         Text("No matching layers.").font(Theme.font).foregroundStyle(Theme.textFaint)
@@ -530,7 +530,7 @@ struct AssistFindLayersPanel: View {
                     .frame(maxHeight: 260)
                 }
                 HStack(spacing: 6) {
-                    if m.indexing { ProgressView().controlSize(.mini); Text(m.progress.isEmpty ? "Indexing…" : m.progress).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+                    if m.indexing { ProgressView().controlSize(.mini); Text(tr(m.progress.isEmpty ? "Indexing…" : m.progress)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
                     Spacer()
                     if !m.hits.isEmpty {
                         Button("Select All") {
@@ -543,7 +543,7 @@ struct AssistFindLayersPanel: View {
                 }
                 Toggle2(label: "Describe pixels with Florence-2 (slower, better)", on: $m.deep)
                     .disabled(!AssistCaptioner.shared.isAvailable)
-                    .help(AssistCaptioner.shared.isAvailable ? "Captions each image layer on-device" : "Florence-2 is not installed: using Vision labels")
+                    .help(tr(AssistCaptioner.shared.isAvailable ? "Captions each image layer on-device" : "Florence-2 is not installed: using Vision labels"))
             } else {
                 Text("Open a document to search its layers.").font(Theme.font).foregroundStyle(Theme.textFaint)
             }
@@ -562,7 +562,7 @@ struct AssistFindLayersPanel: View {
             .frame(width: 30, height: 30).clipShape(RoundedRectangle(cornerRadius: 2))
             VStack(alignment: .leading, spacing: 1) {
                 Text(l.name).font(Theme.font).lineLimit(1)
-                Text(h.reasons.isEmpty ? h.summary : h.reasons.joined(separator: " · ")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
+                Text(tr(h.reasons.isEmpty ? h.summary : h.reasons.joined(separator: " · "))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1)
             }
             Spacer()
             Text("\(Int((h.score * 100).rounded()))%").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -575,6 +575,6 @@ struct AssistFindLayersPanel: View {
             d.selectLayer(l.id, extend: ext)
             AssistSearch.reveal(d, ids: [l.id])
         }
-        .help(h.summary)
+        .help(tr(h.summary))
     }
 }

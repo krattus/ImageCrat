@@ -136,11 +136,11 @@ enum RecipeActions {
             return
         }
         let a = NSAlert()
-        a.messageText = "Recipe filters are non-destructive smart filters."
-        a.informativeText = "Convert “\(l.name)” to a Smart Object to keep the recipe editable" + (l.isRaster ? ", or apply it to the pixels once." : ".")
-        a.addButton(withTitle: "Convert to Smart Object")
-        if l.isRaster { a.addButton(withTitle: "Apply to Pixels") }
-        a.addButton(withTitle: "Cancel")
+        a.messageText = tr("Recipe filters are non-destructive smart filters.")
+        a.informativeText = tr("Convert “\(l.name)” to a Smart Object to keep the recipe editable" + (l.isRaster ? ", or apply it to the pixels once." : "."))
+        a.addButton(withTitle: tr("Convert to Smart Object"))
+        if l.isRaster { a.addButton(withTitle: tr("Apply to Pixels")) }
+        a.addButton(withTitle: tr("Cancel"))
         let r = a.runModal()
         if r == .alertFirstButtonReturn {
             AppActions.convertToSmartObject()

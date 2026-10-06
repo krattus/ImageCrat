@@ -352,14 +352,14 @@ struct SplitWarpOptions: View {
             Text("Custom").tag(SplitWarpStyle.custom)
             Text("Cylinder").tag(SplitWarpStyle.cylinder)
             Divider()
-            ForEach(WarpStyle.allCases.filter { $0 != .none }) { Text($0.displayName).tag(SplitWarpStyle.preset($0)) }
+            ForEach(WarpStyle.allCases.filter { $0 != .none }) { Text(tr($0.displayName)).tag(SplitWarpStyle.preset($0)) }
         }.frame(width: 150)
         if w.style != .custom {
             CompactSlider(label: "Bend", value: Binding(get: { w.bend * 100 }, set: { w.bend = $0 / 100; bump() }), range: -100...100, unit: "%")
             CompactSlider(label: "H", value: Binding(get: { w.hDistort * 100 }, set: { w.hDistort = $0 / 100; bump() }), range: -100...100, unit: "%")
             CompactSlider(label: "V", value: Binding(get: { w.vDistort * 100 }, set: { w.vDistort = $0 / 100; bump() }), range: -100...100, unit: "%")
         } else {
-            Text(w.splitMode == nil ? "Drag points · ⌥-click a split line to remove it" : "Click on the mesh to split").foregroundStyle(Theme.textFaint)
+            Text(tr(w.splitMode == nil ? "Drag points · ⌥-click a split line to remove it" : "Click on the mesh to split")).foregroundStyle(Theme.textFaint)
         }
     }
 }

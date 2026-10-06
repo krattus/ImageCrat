@@ -35,7 +35,7 @@ struct MatchFontDialog: View {
                     .onSubmit { session.run() }
                 Button("Match") { session.run() }.buttonStyle(PanelButtonStyle()).disabled(session.running || session.text.isEmpty)
             }
-            if !session.message.isEmpty { Text(session.message).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
+            if !session.message.isEmpty { Text(tr(session.message)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint) }
             if session.running {
                 ProgressView(value: session.progress).controlSize(.small)
                 Text("Comparing installed fonts…").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -61,7 +61,7 @@ struct MatchFontDialog: View {
                 }
             }
             .frame(height: 300)
-            Text(TypeEdit.activeTextLayer != nil ? "The font is applied to the selected type layer." : "A new type layer is created over the text.")
+            Text(tr(TypeEdit.activeTextLayer != nil ? "The font is applied to the selected type layer." : "A new type layer is created over the text."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
         .onAppear {

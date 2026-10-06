@@ -144,17 +144,17 @@ struct LayerStyleDialog: View {
                 if s != .blending && !enabledBinding(s, i, fx).wrappedValue { enabledBinding(s, i, fx).wrappedValue = true }
             } label: {
                 HStack {
-                    Text(s.rawValue).font(selected ? Theme.fontBold : Theme.font).foregroundStyle(Theme.text)
+                    Text(tr(s.rawValue)).font(selected ? Theme.fontBold : Theme.font).foregroundStyle(Theme.text)
                     Spacer()
                 }.contentShape(Rectangle())
             }.buttonStyle(.plain)
             if s.allowsMultiple {
                 if i > 0 {
                     Button { removeInstance(s, i, fx) } label: { Image(systemName: "minus").font(.system(size: 9, weight: .bold)) }
-                        .buttonStyle(.plain).foregroundStyle(Theme.textDim).help("Delete this \(s.rawValue)")
+                        .buttonStyle(.plain).foregroundStyle(Theme.textDim).help("Delete this \(tr(s.rawValue))")
                 }
                 Button { addInstance(s, after: i, fx) } label: { Image(systemName: "plus").font(.system(size: 9, weight: .bold)) }
-                    .buttonStyle(.plain).foregroundStyle(Theme.textDim).help("Add another \(s.rawValue)")
+                    .buttonStyle(.plain).foregroundStyle(Theme.textDim).help("Add another \(tr(s.rawValue))")
             }
         }
         .padding(.vertical, 5).padding(.horizontal, 6)
@@ -292,9 +292,9 @@ struct LayerStyleDialog: View {
             Caption("Advanced Blending")
             ValueSlider(label: "Fill Opacity", value: Binding(get: { lb.wrappedValue.fillOpacity * 100 }, set: { lb.wrappedValue.fillOpacity = $0 / 100 }), range: 0...100, unit: "%")
                 .disabled(l.locks.propertiesLocked)
-            Text(l.effects.enabled && l.effects.hasAny
+            Text(tr(l.effects.enabled && l.effects.hasAny
                  ? "Fill fades the layer's own pixels but not its effects (with Blend Interior Effects as Group it fades the inner effects too). Opacity fades everything."
-                 : "Fill fades the layer's own pixels but not its effects; Opacity fades both. This layer has no effects, so the two look the same.")
+                 : "Fill fades the layer's own pixels but not its effects; Opacity fades both. This layer has no effects, so the two look the same."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 10) {
                 Text("Channels:").foregroundStyle(Theme.textDim)
@@ -302,7 +302,7 @@ struct LayerStyleDialog: View {
                 Toggle2(label: "G", on: lb.channelG)
                 Toggle2(label: "B", on: lb.channelB)
             }
-            Picker("Knockout", selection: lb.knockout) { ForEach(Knockout.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.frame(width: 220)
+            Picker("Knockout", selection: lb.knockout) { ForEach(Knockout.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 220)
             Toggle2(label: "Blend Interior Effects as Group", on: lb.blendInteriorEffectsAsGroup)
             Toggle2(label: "Blend Clipped Layers as Group", on: lb.blendClippedAsGroup)
             Toggle2(label: "Layer Mask Hides Effects", on: lb.layerMaskHidesEffects)
@@ -310,7 +310,7 @@ struct LayerStyleDialog: View {
             Toggle2(label: "Layer effects enabled", on: Binding(get: { lb.wrappedValue.effects.enabled }, set: { lb.wrappedValue.effects.enabled = $0 }))
             Toggle2(label: "Clip to layer below", on: lb.isClipped)
             Caption("Blend If")
-            Picker("", selection: lb.blendIf.channel) { ForEach(BlendIfChannel.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.labelsHidden().frame(width: 100)
+            Picker("", selection: lb.blendIf.channel) { ForEach(BlendIfChannel.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.labelsHidden().frame(width: 100)
             Text("This Layer:").foregroundStyle(Theme.textDim)
             BlendIfSlider(low: lb.blendIf.thisLow, high: lb.blendIf.thisHigh, channel: lb.wrappedValue.blendIf.channel)
             Text("Underlying Layer:").foregroundStyle(Theme.textDim)
@@ -362,7 +362,7 @@ struct LayerStyleDialog: View {
 
     func contourRow(_ label: String, _ c: Binding<Contour>) -> some View {
         HStack {
-            Text(label).foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
+            Text(tr(label)).foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
             ContourPicker(contour: c)
             Toggle2(label: "Anti-aliased", on: c.antialias)
         }
@@ -411,8 +411,8 @@ struct LayerStyleDialog: View {
 
     @ViewBuilder func bevelView(_ b: Binding<BevelEffect>) -> some View {
         Caption("Structure")
-        Picker("Style", selection: b.style) { ForEach(BevelStyle.allCases, id: \.self) { Text($0.displayName).tag($0) } }
-        Picker("Technique", selection: b.technique) { ForEach(BevelTechnique.allCases, id: \.self) { Text($0.displayName).tag($0) } }
+        Picker("Style", selection: b.style) { ForEach(BevelStyle.allCases, id: \.self) { Text(tr($0.displayName)).tag($0) } }
+        Picker("Technique", selection: b.technique) { ForEach(BevelTechnique.allCases, id: \.self) { Text(tr($0.displayName)).tag($0) } }
         ValueSlider(label: "Depth", value: b.depth, range: 1...1000, unit: "%")
         Picker("Direction", selection: b.directionUp) { Text("Up").tag(true); Text("Down").tag(false) }.pickerStyle(.segmented)
         ValueSlider(label: "Size", value: b.size, range: 0...250, unit: "px")
@@ -469,7 +469,7 @@ struct LayerStyleDialog: View {
     @ViewBuilder func strokeView(_ s: Binding<StrokeEffect>) -> some View {
         Caption("Structure")
         ValueSlider(label: "Size", value: s.size, range: 1...250, unit: "px")
-        Picker("Position", selection: s.position) { ForEach(StrokePosition.allCases, id: \.self) { Text($0.rawValue.capitalized).tag($0) } }.pickerStyle(.segmented)
+        Picker("Position", selection: s.position) { ForEach(StrokePosition.allCases, id: \.self) { Text(tr($0.rawValue.capitalized)).tag($0) } }.pickerStyle(.segmented)
         modeRow(s.blendMode, color: nil)
         pct("Opacity", s.opacity)
         Caption("Fill Type")
@@ -512,7 +512,7 @@ struct ContourPicker: View {
                         ContourThumb(contour: Contour(preset: p)).frame(width: 40, height: 34)
                             .overlay(RoundedRectangle(cornerRadius: 2).stroke(contour.preset == p ? Theme.accent : .clear, lineWidth: 2))
                             .onTapGesture { contour.preset = p }
-                            .help(p.displayName)
+                            .help(tr(p.displayName))
                     }
                 }
                 Caption("Custom")

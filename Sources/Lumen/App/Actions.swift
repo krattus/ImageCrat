@@ -26,7 +26,7 @@ enum ActionStep: Codable, Equatable {
         switch self {
         case .filter(let f): return f.kind.displayName
         case .adjustment(let a): return a.kind.displayName
-        case .adjustmentLayer(let k): return "Make \(k.displayName) Layer"
+        case .adjustmentLayer(let k): return "Make \(tr(k.displayName)) Layer"
         case .imageSize(let w, let h, _, _): return "Image Size \(w)×\(h)"
         case .imageSizePercent(let p): return "Image Size \(Int(p))%"
         case .canvasSize(let w, let h, _, _, _): return "Canvas Size \(w)×\(h)"
@@ -45,7 +45,7 @@ enum ActionStep: Codable, Equatable {
         case .deselect: return "Deselect"
         case .inverseSelection: return "Inverse Selection"
         case .layerStyle: return "Set Layer Style"
-        case .colorMode(let m): return "Convert Mode: \(m.short)"
+        case .colorMode(let m): return "Convert Mode: \(tr(m.short))"
         case .stop(let m): return "Stop: \(m)"
         }
     }
@@ -166,8 +166,8 @@ final class ActionRecorder {
             if case .stop(let msg) = step {
                 if !interactive { continue }
                 let al = NSAlert()
-                al.messageText = msg
-                al.addButton(withTitle: "Continue"); al.addButton(withTitle: "Stop")
+                al.messageText = tr(msg)
+                al.addButton(withTitle: tr("Continue")); al.addButton(withTitle: tr("Stop"))
                 if UIBlock.run(al) != .alertFirstButtonReturn { return false }
                 continue
             }
@@ -301,7 +301,7 @@ struct ActionsPanel: View {
                     ForEach(rec.sets) { set in
                         HStack(spacing: 4) {
                             Image(systemName: "folder").font(.system(size: 10)).foregroundStyle(Theme.textDim)
-                            Text(set.name).font(Theme.fontBold)
+                            Text(tr(set.name)).font(Theme.fontBold)
                             Spacer()
                             Menu {
                                 Button("Save Set…") { rec.exportSet(set) }
@@ -365,7 +365,7 @@ struct ActionsPanel: View {
                     renaming = nil
                 }
             } else {
-                Text(a.name).lineLimit(1)
+                Text(tr(a.name)).lineLimit(1)
             }
             Spacer()
             Text("\(a.steps.count)").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -387,8 +387,8 @@ struct ActionsPanel: View {
                             }
                         }
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(step.title).lineLimit(1)
-                        if let d = step.detail { Text(d).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1) }
+                        Text(tr(step.title)).lineLimit(1)
+                        if let d = step.detail { Text(tr(d)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).lineLimit(1) }
                     }
                     Spacer()
                 }
@@ -403,11 +403,11 @@ struct ActionsPanel: View {
     func insertStop() {
         guard let id = rec.selectedActionID else { return }
         let al = NSAlert()
-        al.messageText = "Record Stop"
+        al.messageText = tr("Record Stop")
         let f = NSTextField(frame: NSRect(x: 0, y: 0, width: 260, height: 24))
-        f.placeholderString = "Message"
+        f.placeholderString = tr("Message")
         al.accessoryView = f
-        al.addButton(withTitle: "OK"); al.addButton(withTitle: "Cancel")
+        al.addButton(withTitle: tr("OK")); al.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(al) == .alertFirstButtonReturn else { return }
         rec.update(id) { a in
             let at = selectedStep?.0 == id ? selectedStep!.1 + 1 : a.steps.count
@@ -426,7 +426,7 @@ struct BatchDialog: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Batch").font(.system(size: 13, weight: .semibold))
             Picker("Action", selection: $s.actionID) {
-                ForEach(ActionRecorder.shared.sets.flatMap(\.actions)) { a in Text(a.name).tag(Optional(a.id)) }
+                ForEach(ActionRecorder.shared.sets.flatMap(\.actions)) { a in Text(tr(a.name)).tag(Optional(a.id)) }
             }
             HStack {
                 Text("Source").frame(width: 80, alignment: .leading)
@@ -443,12 +443,12 @@ struct BatchDialog: View {
                 Button("Choose…") { s.destination = chooseFolder() }.buttonStyle(PanelButtonStyle())
             }
             HStack {
-                Picker("Format", selection: $s.format) { ForEach(ExportFormat.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.frame(width: 200)
+                Picker("Format", selection: $s.format) { ForEach(ExportFormat.allCases, id: \.self) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 200)
                 TextField("File name suffix", text: $s.suffix).frame(width: 120)
             }
             if s.format.supportsQuality { ValueSlider(label: "Quality", value: $s.quality, range: 0.1...1, format: "%.2f", labelWidth: 80) }
             if s.source != nil { Text("\(BatchRunner.files(in: s.source!, recursive: s.includeSubfolders).count) files").foregroundStyle(Theme.textFaint) }
-            if !progressText.isEmpty { Text(progressText).foregroundStyle(Theme.textDim) }
+            if !progressText.isEmpty { Text(tr(progressText)).foregroundStyle(Theme.textDim) }
             HStack {
                 Spacer()
                 Button("Cancel") { AppModel.shared.dialog = nil }.buttonStyle(PanelButtonStyle()).keyboardShortcut(.cancelAction)

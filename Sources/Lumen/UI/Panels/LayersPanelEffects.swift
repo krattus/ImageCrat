@@ -208,15 +208,15 @@ struct LayerEffectsRows: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(axLabel)
-            .help(axLabel)
+            .accessibilityLabel(tr(axLabel))
+            .help(tr(axLabel))
             Rectangle().fill(Theme.border).frame(width: 1)
             HStack(spacing: 4) {
                 Spacer().frame(width: CGFloat(depth) * 14 + 20 + indent)
                 if indent == 0 {
                     Text("fx").font(.system(size: 10, weight: .bold, design: .serif)).italic().foregroundStyle(labelDim ? Theme.textFaint : Theme.textDim)
                 }
-                Text(label).font(Theme.fontSmall).foregroundStyle(labelDim ? Theme.textFaint : Theme.textDim).lineLimit(1)
+                Text(tr(label)).font(Theme.fontSmall).foregroundStyle(labelDim ? Theme.textFaint : Theme.textDim).lineLimit(1)
                 Spacer(minLength: 0)
             }
             .frame(maxHeight: .infinity)
@@ -249,7 +249,7 @@ struct ScaleEffectsDialog: View {
                 percent = clamp(v, 1, 1000)
                 if let d = AppActions.doc { LayerFX.scaleEffects(d, base: base, factor: percent / 100) }
             }), range: 1...1000, unit: "%")
-            Text(base.isEmpty ? "The selected layers have no layer style." : "Scales sizes, distances and pattern scale of \(base.count == 1 ? "the layer’s style" : "\(base.count) layer styles").")
+            Text(tr(base.isEmpty ? "The selected layers have no layer style." : "Scales sizes, distances and pattern scale of \(base.count == 1 ? "the layer’s style" : "\(base.count) layer styles")."))
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         }
         .onAppear {

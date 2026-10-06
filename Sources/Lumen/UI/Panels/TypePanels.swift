@@ -156,7 +156,7 @@ struct FeatureToggle: View {
     @State private var hovering = false
     var body: some View {
         Button { on.toggle(); onCommit() } label: {
-            Text(label)
+            Text(tr(label))
                 .font(.system(size: 11, weight: .medium, design: .serif))
                 .italic(italic)
                 .frame(minWidth: 24, minHeight: 22)
@@ -166,7 +166,7 @@ struct FeatureToggle: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(help)
+        .help(tr(help))
         .onHover { hovering = $0 }
     }
 }
@@ -201,7 +201,7 @@ struct ParagraphControls: View {
                 IconButton(symbol: a.symbol, help: a.displayName, active: t.alignment == a) { t.alignment = a; onCommit() }
                     .overlay(alignment: .bottom) {
                         if a == .justifyCenter || a == .justifyAll {
-                            Text(a == .justifyCenter ? "c" : "a").font(.system(size: 7, weight: .bold)).foregroundStyle(Theme.textFaint).offset(y: 3)
+                            Text(tr(a == .justifyCenter ? "c" : "a")).font(.system(size: 7, weight: .bold)).foregroundStyle(Theme.textFaint).offset(y: 3)
                         }
                     }
             }
@@ -251,7 +251,7 @@ struct TextProperties: View {
         HStack {
             Caption("Character")
             Spacer()
-            if let tg, tg.editing { Text(tg.hasSelection ? "Selection" : "Typing").font(Theme.fontSmall).foregroundStyle(Theme.accent) }
+            if let tg, tg.editing { Text(tr(tg.hasSelection ? "Selection" : "Typing")).font(Theme.fontSmall).foregroundStyle(Theme.accent) }
         }
         CharacterControls(t: b, onCommit: commit)
         Caption("Paragraph")
@@ -384,7 +384,7 @@ struct WarpTextDialog: View {
             HStack {
                 Text("Style").foregroundStyle(Theme.textDim).frame(width: 78, alignment: .leading)
                 Picker("", selection: $warp.style) {
-                    ForEach(WarpStyle.allCases) { Text($0.displayName).tag($0) }
+                    ForEach(WarpStyle.allCases) { Text(tr($0.displayName)).tag($0) }
                 }
                 .labelsHidden()
             }

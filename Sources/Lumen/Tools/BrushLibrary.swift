@@ -661,8 +661,8 @@ final class BrushLibrary {
         let big = added.count >= 20 || results.count > 1 || results.contains { !$0.skipped.isEmpty }
         if failed || big {
             let a = NSAlert()
-            a.messageText = added.isEmpty ? "No brushes were imported." : "Imported \(added.count) brush\(added.count == 1 ? "" : "es")."
-            a.informativeText = text
+            a.messageText = tr(added.isEmpty ? "No brushes were imported." : "Imported \(added.count) brush\(added.count == 1 ? "" : "es").")
+            a.informativeText = tr(text)
             UIBlock.run(a)
         }
     }
@@ -670,8 +670,8 @@ final class BrushLibrary {
     /// Open panel for every importable brush format.
     static func importBrushes() {
         let panel = NSOpenPanel()
-        panel.title = "Import Brushes"
-        panel.message = "Photoshop (.abr, .tpl), Procreate (.brush, .brushset), GIMP (.gbr, .gih), Krita (.kpp), ImageCrat (.icbrushes) or an image"
+        panel.title = tr("Import Brushes")
+        panel.message = tr("Photoshop (.abr, .tpl), Procreate (.brush, .brushset), GIMP (.gbr, .gih), Krita (.kpp), ImageCrat (.icbrushes) or an image")
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.allowedContentTypes = (Array(BrushImport.supportedExtensions) + Array(imageExtensions)).compactMap { UTType(filenameExtension: $0) }
@@ -733,7 +733,7 @@ final class BrushLibrary {
     func exportWithPanel(_ ids: [String], suggestedName: String, format: ExportFormat) {
         guard !ids.isEmpty else { return }
         let panel = NSSavePanel()
-        panel.title = format == .abr ? "Export Brushes as Photoshop ABR" : "Export ImageCrat Brushes"
+        panel.title = tr(format == .abr ? "Export Brushes as Photoshop ABR" : "Export ImageCrat Brushes")
         let ext = format == .abr ? "abr" : "icbrushes"
         if let t = UTType(filenameExtension: ext) { panel.allowedContentTypes = [t] }
         panel.nameFieldStringValue = suggestedName + "." + ext
@@ -750,7 +750,7 @@ final class BrushLibrary {
             }
         } catch {
             let a = NSAlert()
-            a.messageText = "The brushes could not be exported."
+            a.messageText = tr("The brushes could not be exported.")
             a.informativeText = error.localizedDescription
             UIBlock.run(a)
         }
@@ -865,10 +865,10 @@ final class BrushLibrary {
 
     static func confirm(_ title: String, _ info: String) -> Bool {
         let a = NSAlert()
-        a.messageText = title
-        a.informativeText = info
-        a.addButton(withTitle: "Delete")
-        a.addButton(withTitle: "Cancel")
+        a.messageText = tr(title)
+        a.informativeText = tr(info)
+        a.addButton(withTitle: tr("Delete"))
+        a.addButton(withTitle: tr("Cancel"))
         return UIBlock.run(a) == .alertFirstButtonReturn
     }
 }

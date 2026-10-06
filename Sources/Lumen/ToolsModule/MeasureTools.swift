@@ -288,7 +288,7 @@ struct NotesPanel: View {
             VStack(alignment: .leading, spacing: 6) {
                 if let id = ts.selectedNoteID, let n = notes.first(where: { $0.id == id }) {
                     HStack {
-                        Text(n.author.isEmpty ? "Note" : n.author).font(Theme.fontBold)
+                        Text(tr(n.author.isEmpty ? "Note" : n.author)).font(Theme.fontBold)
                         Spacer()
                         Text(n.date, style: .date).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
                     }
@@ -317,7 +317,7 @@ struct NotesPanel: View {
                             ForEach(Array(notes.enumerated()), id: \.element.id) { i, n in
                                 HStack {
                                     Image(systemName: "note.text").foregroundStyle(Color(nsColor: n.color.nsColor))
-                                    Text("\(i + 1). " + (n.text.isEmpty ? "(empty)" : n.text.replacingOccurrences(of: "\n", with: " "))).lineLimit(1)
+                                    Text(tr("\(i + 1). " + (n.text.isEmpty ? "(empty)" : n.text.replacingOccurrences(of: "\n", with: " ")))).lineLimit(1)
                                     Spacer()
                                 }
                                 .font(Theme.font)
@@ -646,10 +646,10 @@ struct MeasurementLogPanel: View {
             ScrollView([.horizontal, .vertical]) {
                 Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 3) {
                     GridRow {
-                        ForEach(MeasurementRecord.columns, id: \.self) { Text($0).font(Theme.fontBold).foregroundStyle(Theme.textDim) }
+                        ForEach(MeasurementRecord.columns, id: \.self) { Text(tr($0)).font(Theme.fontBold).foregroundStyle(Theme.textDim) }
                     }
                     ForEach(log.records) { r in
-                        GridRow { ForEach(Array(r.values.enumerated()), id: \.offset) { _, v in Text(v).font(Theme.mono).lineLimit(1) } }
+                        GridRow { ForEach(Array(r.values.enumerated()), id: \.offset) { _, v in Text(tr(v)).font(Theme.mono).lineLimit(1) } }
                     }
                 }
                 .padding(4)
@@ -685,7 +685,7 @@ struct MeasurementScaleDialog: View {
                 Text("Logical Units").font(Theme.font).foregroundStyle(Theme.textDim)
                 TextField("", text: $units).textFieldStyle(.roundedBorder).frame(width: 110)
             }
-            Text(String(format: "1 pixel = %.4f %@", pixels > 0 ? length / pixels : 0, units)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+            Text(tr(String(format: "1 pixel = %.4f %@", pixels > 0 ? length / pixels : 0, units))).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
         }
     }
 }

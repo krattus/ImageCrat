@@ -11,7 +11,7 @@ struct PreferencesDialog: View {
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(sections, id: \.self) { s in
-                        Text(s).padding(.horizontal, 8).padding(.vertical, 4).frame(width: 150, alignment: .leading)
+                        Text(tr(s)).padding(.horizontal, 8).padding(.vertical, 4).frame(width: 150, alignment: .leading)
                             .background(RoundedRectangle(cornerRadius: 4).fill(section == s ? Theme.selection : .clear))
                             .contentShape(Rectangle())
                             .onTapGesture { section = s }
@@ -35,15 +35,16 @@ struct PreferencesDialog: View {
     @ViewBuilder var content: some View {
         switch section {
         case "General":
+            LanguagePreference()
             ValueSlider(label: "History States", value: Binding(get: { Double(app.prefs.historyStates) }, set: { app.prefs.historyStates = Int($0) }), range: 5...500, step: 1, labelWidth: 110)
             Toggle2(label: "Fit new/opened documents on screen", on: $app.prefs.autoFitOnOpen)
             MaskTargetPreference()
         case "Interface":
-            Picker("Color Theme", selection: $app.prefs.theme) { ForEach(InterfaceTheme.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Color Theme", selection: $app.prefs.theme) { ForEach(InterfaceTheme.allCases) { Text(tr($0.rawValue)).tag($0) } }
             Toggle2(label: "Show Tool Tips", on: $app.prefs.showToolTips)
             Text("Theme changes apply to panels immediately.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         case "Cursors":
-            Picker("Painting Cursors", selection: $app.prefs.brushCursor) { ForEach(BrushCursorStyle.allCases) { Text($0.rawValue).tag($0) } }
+            Picker("Painting Cursors", selection: $app.prefs.brushCursor) { ForEach(BrushCursorStyle.allCases) { Text(tr($0.rawValue)).tag($0) } }
             Toggle2(label: "Show Crosshair in Brush Tip", on: $app.prefs.showCrosshairInBrushTip)
             Text("Caps Lock shows the precise crosshair while it is on.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         case "Tablet":
@@ -59,8 +60,8 @@ struct PreferencesDialog: View {
         case "Radial Menu":
             RadialMenuPreferencesSection()
         case "Units":
-            Picker("Rulers", selection: $app.prefs.rulerUnits) { ForEach(RulerUnit.allCases) { Text($0.rawValue).tag($0) } }
-            Picker("Type", selection: $app.prefs.typeUnits) { ForEach(RulerUnit.allCases.filter { $0 != .percent }) { Text($0.rawValue).tag($0) } }
+            Picker("Rulers", selection: $app.prefs.rulerUnits) { ForEach(RulerUnit.allCases) { Text(tr($0.rawValue)).tag($0) } }
+            Picker("Type", selection: $app.prefs.typeUnits) { ForEach(RulerUnit.allCases.filter { $0 != .percent }) { Text(tr($0.rawValue)).tag($0) } }
             Text("Resolution comes from Image › Image Size (currently \(Int(app.activeDocument?.state.resolution ?? 72)) ppi).").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         case "AI Models":
             ModelsPreferencesView()
@@ -68,6 +69,8 @@ struct PreferencesDialog: View {
             ArtboardPreferencesSection()
         case "Workflow":
             Workflow2PrefsSection()
+        case MCPModule.preferencesSection:
+            MCPPreferencesSection()
         default:
             Toggle2(label: "Cache composite for large documents", on: $app.prefs.cacheLargeDocuments)
             ValueSlider(label: "Large Doc Threshold", value: $app.prefs.largeDocumentThreshold, range: 1...100, step: 1, unit: " MP", labelWidth: 120)

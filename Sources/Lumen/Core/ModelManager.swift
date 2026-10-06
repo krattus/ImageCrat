@@ -267,19 +267,19 @@ struct ModelsPreferencesView: View {
             if pack.isRunning {
                 HStack(spacing: 6) {
                     ProgressView(value: pack.fraction).frame(width: 110)
-                    Text(pack.message).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1).truncationMode(.middle)
+                    Text(tr(pack.message)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1).truncationMode(.middle)
                     Spacer()
                     Button("Cancel") { pack.cancel() }.buttonStyle(PanelButtonStyle())
                 }
             } else {
                 HStack(spacing: 6) {
-                    Button(chosen.isEmpty ? "Export All…" : "Export \(chosen.count) Selected…") { pack.chooseAndExport(ids: chosen.isEmpty ? installed : chosen) }
+                    Button(tr(chosen.isEmpty ? "Export All…" : "Export \(chosen.count) Selected…")) { pack.chooseAndExport(ids: chosen.isEmpty ? installed : chosen) }
                         .buttonStyle(PanelButtonStyle()).disabled(installed.isEmpty)
                     Button("Import Models…") { pack.chooseAndImport() }.buttonStyle(PanelButtonStyle())
                     Spacer()
                 }
             }
-            Text(pack.result ?? "A models pack is a folder of installed models with checksums, for installing them on a Mac that can't download them. Tick models to export only those.")
+            Text(tr(pack.result ?? "A models pack is a folder of installed models with checksums, for installing them on a Mac that can't download them. Tick models to export only those."))
                 .font(Theme.fontSmall).foregroundStyle(pack.result == nil ? Theme.textFaint : Theme.textDim)
                 .fixedSize(horizontal: false, vertical: true).lineLimit(5)
         }
@@ -289,12 +289,12 @@ struct ModelsPreferencesView: View {
         HStack(alignment: .top, spacing: 6) {
             Toggle("", isOn: Binding(get: { selected.contains(s.id) }, set: { if $0 { selected.insert(s.id) } else { selected.remove(s.id) } }))
                 .toggleStyle(.checkbox).labelsHidden().disabled(!installed).opacity(installed ? 1 : 0.3)
-                .help(installed ? "Include in Export" : "Not installed")
+                .help(tr(installed ? "Include in Export" : "Not installed"))
             VStack(alignment: .leading, spacing: 1) {
-                Text(s.name).font(Theme.fontBold)
-                Text(s.purpose).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                Text(tr(s.name)).font(Theme.fontBold)
+                Text(tr(s.purpose)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
                 Text("\(s.approxMB) MB · \(s.license)").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
-                if let e = mm.errors[s.id] { Text(e).font(Theme.fontSmall).foregroundStyle(.red) }
+                if let e = mm.errors[s.id] { Text(tr(e)).font(Theme.fontSmall).foregroundStyle(.red) }
             }
             Spacer()
             if let p = mm.progress[s.id] {

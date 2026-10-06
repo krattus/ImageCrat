@@ -277,7 +277,7 @@ struct TypePathHint: View {
             Text("Click a path to type on it · inside a closed path for area type · ⌘-drag to move or flip")
                 .foregroundStyle(Theme.textFaint)
                 .lineLimit(1)
-                .help(TypeOnPath.helpText)
+                .help(tr(TypeOnPath.helpText))
         }
     }
 }

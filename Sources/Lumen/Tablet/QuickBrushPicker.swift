@@ -30,7 +30,7 @@ enum QuickBrushPicker {
         let pop = NSPopover()
         pop.behavior = .transient
         pop.animates = false
-        let host = NSHostingController(rootView: QuickBrushPickerView(tool: kind, onPick: { [weak pop] in pop?.close() }))
+        let host = NSHostingController(rootView: QuickBrushPickerView(tool: kind, onPick: { [weak pop] in pop?.close() }).l10nRoot())
         pop.contentViewController = host
         pop.show(relativeTo: CGRect(x: p.x - 1, y: p.y - 1, width: 2, height: 2), of: canvas, preferredEdge: .maxY)
         popover = pop
@@ -91,7 +91,7 @@ struct QuickBrushPickerView: View {
                 }
             }
             if let a = active.flatMap({ lib.record($0) }) {
-                Text(a.name).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1).truncationMode(.middle)
+                Text(tr(a.name)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1).truncationMode(.middle)
             }
             if !favs.isEmpty { section("Favourites", favs, active: active) }
             if !recents.isEmpty { section("Recent", recents, active: active) }
@@ -108,7 +108,7 @@ struct QuickBrushPickerView: View {
     }
 
     @ViewBuilder private func section(_ title: String, _ brushes: [BrushRecord], active: String?) -> some View {
-        Text(title).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+        Text(tr(title)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
         grid(brushes, active: active)
     }
 
@@ -155,6 +155,6 @@ private struct QuickBrushCell: View {
             }
         }
         .onHover { hover = $0 }
-        .help(record.name)
+        .help(tr(record.name))
     }
 }

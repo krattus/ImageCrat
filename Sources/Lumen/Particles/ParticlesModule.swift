@@ -69,12 +69,12 @@ struct ParticleMenuItems: View {
         Divider()
         let subs = list.compactMap(\.submenu).reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }
         ForEach(subs.filter { $0 != "Tools" }, id: \.self) { s in
-            Menu(s) { ForEach(list.filter { $0.submenu == s }) { item in row(item) } }
+            Menu(tr(s)) { ForEach(list.filter { $0.submenu == s }) { item in row(item) } }
         }
         if !user.presets.isEmpty {
             Menu("User Presets") {
                 ForEach(user.presets) { e in
-                    Button(e.name + "…") { if let fx = user.load(e.url) { ParticleEditor.open(fx) } }.disabled(AppActions.doc == nil)
+                    Button(tr(e.name + "…")) { if let fx = user.load(e.url) { ParticleEditor.open(fx) } }.disabled(AppActions.doc == nil)
                 }
             }
         }
@@ -84,7 +84,7 @@ struct ParticleMenuItems: View {
 
     @ViewBuilder private func row(_ item: MenuItemSpec) -> some View {
         if item.dividerBefore { Divider() }
-        Button(item.title, action: item.action).disabled(!item.enabled())
+        Button(tr(item.title), action: item.action).disabled(!item.enabled())
     }
 }
 
@@ -195,12 +195,12 @@ enum ParticleActions {
 
     static func askName(_ title: String, initial: String) -> String? {
         let a = NSAlert()
-        a.messageText = title
+        a.messageText = tr(title)
         let f = NSTextField(frame: NSRect(x: 0, y: 0, width: 240, height: 22))
         f.stringValue = initial
         a.accessoryView = f
-        a.addButton(withTitle: "OK")
-        a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK"))
+        a.addButton(withTitle: tr("Cancel"))
         a.window.initialFirstResponder = f
         guard a.runModal() == .alertFirstButtonReturn else { return nil }
         let n = f.stringValue.trimmingCharacters(in: .whitespaces)
@@ -222,7 +222,7 @@ enum ParticleActions {
         let p = NSOpenPanel()
         p.allowedContentTypes = [.json]
         p.allowsMultipleSelection = true
-        p.message = "Choose particle preset files (.json)"
+        p.message = tr("Choose particle preset files (.json)")
         guard p.runModal() == .OK else { return }
         let n = ParticleUserPresets.shared.importFiles(p.urls)
         AppModel.shared.setStatus(n == 0 ? "No valid particle presets found." : "Imported \(n) particle preset\(n == 1 ? "" : "s").")
@@ -245,9 +245,9 @@ enum ParticleActions {
     static func exportSequence(_ editor: ParticleEditor) {
         let p = NSOpenPanel()
         p.canChooseDirectories = true; p.canChooseFiles = false; p.canCreateDirectories = true
-        p.prompt = "Export"
-        p.message = "Choose a folder for the PNG sequence"
-        let check = NSButton(checkboxWithTitle: "Composite over the document (otherwise particles on transparent)", target: nil, action: nil)
+        p.prompt = tr("Export")
+        p.message = tr("Choose a folder for the PNG sequence")
+        let check = NSButton(checkboxWithTitle: tr("Composite over the document (otherwise particles on transparent)"), target: nil, action: nil)
         p.accessoryView = check
         p.isAccessoryViewDisclosed = true
         guard p.runModal() == .OK, let url = p.url else { return }

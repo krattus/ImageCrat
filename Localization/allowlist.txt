@@ -1,0 +1,96 @@
+# Strings that stay English in every language (reviewed). One per line, exactly as in strings-en.json;
+# "re:" lines are regular expressions over the whole string. `scripts/check_l10n.sh` does not ask for these.
+#
+# file formats and codecs
+BMP
+CSS
+DICOM
+GIF
+HEIC
+HEVC
+HEVC (H.265)
+HTML
+JPEG
+JSON
+PDF
+PNG
+PSD
+SVG
+TIFF
+MP4 (%@)
+# colour models, channel letters, axes, metrics
+CMYK
+RGB
+A
+B
+G
+H
+K
+L
+Q
+R
+S
+V
+W
+X
+Y
+ X
+ Y
+EV
+SSIM
+AA
+AAA
+A, B, C
+I, II, III
+A4
+USD
+HD 1280×720
+HD 1920×1080
+re:[A-Z]{1,3}: %@(%%)?
+R %@  G %@  B %@
+W: %@  H: %@
+PV%@%@
+VP%@
+REC %@
+ MB
+ MP
+# product and provider names
+BFL
+ImageCrat
+Photoshop
+fal
+fal.ai
+OpenAI
+Gemini
+Replicate
+Stability AI
+Black Forest Labs
+re:.*\.(ai|com|io|org|net)
+# the bug report's own text (read by the developer) and log levels (log output stays English)
+ImageCrat bug report — ImageCrat %@ (%@)\n
+\nWhat happened:\n
+\nSteps to reproduce:\n
+\nWhat was expected:\n
+ERROR
+INFO
+STATUS
+WARN
+# internal names, keys and formats that the extractor sees in display-like positions
+Lumen
+Content-Type
+__other
+MMM d
+# device and screen presets (product names with pixel sizes)
+re:.*\d+ ?× ?\d+.*
+re:(iPhone|iPad|Android|Galaxy|Pixel|Apple Watch|Mac|MacBook|iMac).*
+TikTok
+YouTube Shorts
+
+# status-bar chip labels that are only numbers, units or names
+%@ × %@ px · %@ ppi
+%@m
+AI %@
+MCP
+MCP · :%@
+REC
+X %@  Y %@ px

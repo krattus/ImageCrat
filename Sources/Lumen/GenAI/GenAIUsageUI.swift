@@ -111,7 +111,7 @@ struct GenUsageChip: View {
                 HStack(spacing: 4) {
                     Image(systemName: GenUsageUI.symbol(level)).font(.system(size: 9))
                         .foregroundStyle(level == .normal ? Theme.accent : GenUsageUI.color(level))
-                    Text(GenUsageUI.chipText(today: store.today().cost, remaining: remaining)).font(Theme.fontSmall).monospacedDigit()
+                    Text(tr(GenUsageUI.chipText(today: store.today().cost, remaining: remaining))).font(Theme.fontSmall).monospacedDigit()
                         .foregroundStyle(level == .normal ? Theme.text : GenUsageUI.color(level))
                 }
                 .padding(.horizontal, 7).padding(.vertical, 2)
@@ -120,7 +120,7 @@ struct GenUsageChip: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help(tooltip(remaining, level))
+            .help(tr(tooltip(remaining, level)))
             .onAppear { GenBalanceService.shared.panelAppeared() }
             .onChange(of: settings.keysRevision) { _, _ in GenBalanceService.shared.keysChanged() }
         }
@@ -277,7 +277,7 @@ struct GenBudgetBar: View {
                     if level != .normal { Image(systemName: GenUsageUI.symbol(level)).font(.system(size: 9)).foregroundStyle(GenUsageUI.color(level)) }
                     Text("\(GenMoney.string(spent)) of \(GenMoney.string(budget)) used (\(Int((frac * 100).rounded())) %)").monospacedDigit()
                     Spacer()
-                    Text(budget - spent >= 0 ? "\(GenMoney.string(budget - spent)) left" : "\(GenMoney.string(spent - budget)) over").monospacedDigit()
+                    Text(tr(budget - spent >= 0 ? "\(GenMoney.string(budget - spent)) left" : "\(GenMoney.string(spent - budget)) over")).monospacedDigit()
                         .foregroundStyle(level == .normal ? Theme.textDim : GenUsageUI.color(level))
                 }
                 .font(Theme.fontSmall).foregroundStyle(Theme.textDim)
@@ -312,11 +312,11 @@ struct GenBalanceCard: View {
         let month = store.totals(from: store.monthStart(Date()), provider: provider.rawValue)
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Text(provider.displayName).font(Theme.fontBold)
+                Text(tr(provider.displayName)).font(Theme.fontBold)
                 tag(remaining)
                 Spacer()
                 if service.refreshing.contains(provider) { ProgressView().controlSize(.mini) }
-                else if live { IconButton(symbol: "arrow.clockwise", help: "Refresh \(provider.displayName) balance", size: 18) { service.refresh(provider, force: true) } }
+                else if live { IconButton(symbol: "arrow.clockwise", help: "Refresh \(tr(provider.displayName)) balance", size: 18) { service.refresh(provider, force: true) } }
             }
             if let r = remaining {
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
@@ -324,21 +324,21 @@ struct GenBalanceCard: View {
                         .foregroundStyle(level == .normal ? Theme.text : GenUsageUI.color(level))
                     Text("left").foregroundStyle(Theme.textDim)
                     if level != .normal {
-                        Label(level == .critical ? "Almost empty" : "Low balance", systemImage: GenUsageUI.symbol(level))
+                        Label(tr(level == .critical ? "Almost empty" : "Low balance"), systemImage: GenUsageUI.symbol(level))
                             .font(Theme.fontSmall).foregroundStyle(GenUsageUI.color(level))
                     }
                 }
-                Text(detail(r)).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
+                Text(tr(detail(r))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
             }
             Text("This month: \(GenMoney.string(month.cost)) · \(month.generations) generation\(month.generations == 1 ? "" : "s") (tracked here)")
                 .font(Theme.fontSmall).foregroundStyle(Theme.textDim)
             if provider == .fal, service.falNeedsAdmin { falAdmin }
             if remaining?.kind != .live { creditEditor }
             if let note = service.notes[provider], !(provider == .fal && service.falNeedsAdmin) {
-                Label(note, systemImage: "exclamationmark.triangle").font(Theme.fontSmall).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+                Label(tr(note), systemImage: "exclamationmark.triangle").font(Theme.fontSmall).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
             }
             if !live, let why = GenBalanceService.localOnlyReason(provider) {
-                Text(why + " Tracked locally.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
+                Text(tr(why) + tr(" Tracked locally.")).font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(8)
@@ -358,7 +358,7 @@ struct GenBalanceCard: View {
             default: return (live && !(provider == .fal && service.falNeedsAdmin) ? "NO BALANCE YET" : "LOCAL TRACKING", Theme.textFaint)
             }
         }()
-        Text(text).font(.system(size: 8, weight: .bold)).tracking(0.4).foregroundStyle(color)
+        Text(tr(text)).font(.system(size: 8, weight: .bold)).tracking(0.4).foregroundStyle(color)
             .padding(.horizontal, 4).padding(.vertical, 1.5)
             .overlay(RoundedRectangle(cornerRadius: 3).stroke(color.opacity(0.7), lineWidth: 0.75))
     }
@@ -381,7 +381,7 @@ struct GenBalanceCard: View {
 
     /// fal.ai without an admin-scope key: explain, and offer a field for a separate admin key.
     @ViewBuilder private var falAdmin: some View {
-        Label(GenBalanceService.falAdminMessage, systemImage: "lock").font(Theme.fontSmall).foregroundStyle(.orange)
+        Label(tr(GenBalanceService.falAdminMessage), systemImage: "lock").font(Theme.fontSmall).foregroundStyle(.orange)
         Text("fal's billing and usage APIs only accept keys created with the Admin scope (fal.ai ▸ Dashboard ▸ Keys). Add one here just for balance and usage; generation keeps using your normal key.")
             .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         HStack(spacing: 4) {
@@ -395,7 +395,7 @@ struct GenBalanceCard: View {
             }
             .buttonStyle(PanelButtonStyle()).disabled(adminKey.trimmingCharacters(in: .whitespaces).isEmpty)
         }
-        if !adminStatus.isEmpty { Text(adminStatus).font(Theme.fontSmall).foregroundStyle(.orange) }
+        if !adminStatus.isEmpty { Text(tr(adminStatus)).font(Theme.fontSmall).foregroundStyle(.orange) }
     }
 
     /// "Credit added": what the user bought and when → estimated remaining.
@@ -412,7 +412,7 @@ struct GenBalanceCard: View {
             DatePicker("", selection: $creditDate, in: ...Date(), displayedComponents: .date).labelsHidden().datePickerStyle(.field).controlSize(.mini)
                 .fixedSize()
             Button(action: applyCredit) { Image(systemName: "checkmark.circle.fill") }
-                .buttonStyle(.plain).foregroundStyle(Theme.accent).help(store.credits[provider.rawValue] == nil ? "Set the credit" : "Update the credit")
+                .buttonStyle(.plain).foregroundStyle(Theme.accent).help(tr(store.credits[provider.rawValue] == nil ? "Set the credit" : "Update the credit"))
             if store.credits[provider.rawValue] != nil {
                 Button { store.setCredit(nil, for: provider); creditText = "" } label: { Image(systemName: "xmark.circle.fill") }
                     .buttonStyle(.plain).foregroundStyle(Theme.textFaint).help("Forget this credit")
@@ -496,9 +496,9 @@ struct GenDailyChart: View {
             .background(GeometryReader { g in Color.clear.preference(key: GenChartWidthKey.self, value: g.size.width) })
             .onPreferenceChange(GenChartWidthKey.self) { width = $0 }
             HStack {
-                if let f = days.first { Text(Self.dayFormat.string(from: f.day)) }
+                if let f = days.first { Text(tr(Self.dayFormat.string(from: f.day))) }
                 Spacer()
-                if days.count > 2 { Text(Self.dayFormat.string(from: days[days.count / 2].day)) }
+                if days.count > 2 { Text(tr(Self.dayFormat.string(from: days[days.count / 2].day))) }
                 Spacer()
                 Text("Today")
             }
@@ -541,7 +541,7 @@ struct GenBreakdownTable: View {
         let rows = Self.folded(groups)
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                Text(title.uppercased()).frame(maxWidth: .infinity, alignment: .leading)
+                Text(tr(title).uppercased()).frame(maxWidth: .infinity, alignment: .leading)
                 Text("COUNT").frame(width: 38, alignment: .trailing)
                 Text("COST").frame(width: 50, alignment: .trailing)
                 Text("AVG").frame(width: 44, alignment: .trailing)
@@ -553,8 +553,8 @@ struct GenBreakdownTable: View {
             }
             ForEach(rows) { g in
                 HStack(spacing: 6) {
-                    Text(g.key == "__other" ? "Other" : label(g.key)).lineLimit(1).truncationMode(.tail).frame(maxWidth: .infinity, alignment: .leading)
-                        .help(g.key == "__other" ? "Remaining entries" : "\(label(g.key)) — \(g.images) images")
+                    Text(tr(g.key == "__other" ? "Other" : label(g.key))).lineLimit(1).truncationMode(.tail).frame(maxWidth: .infinity, alignment: .leading)
+                        .help(tr(g.key == "__other" ? "Remaining entries" : "\(label(g.key)) — \(g.images) images"))
                     Text("\(g.generations)").frame(width: 38, alignment: .trailing)
                     Text(GenMoney.string(g.cost)).frame(width: 50, alignment: .trailing)
                     Text(g.generations > 0 ? GenMoney.string(g.average) : "—").foregroundStyle(Theme.textDim).frame(width: 44, alignment: .trailing)
@@ -606,7 +606,7 @@ struct GenFalUsageSection: View {
                 ForEach(u.rows.prefix(10)) { r in
                     let est = GenBalanceService.localFalEstimate(endpoint: r.endpoint, since: u.start, store: store)
                     HStack(spacing: 6) {
-                        Text(r.endpoint.replacingOccurrences(of: "fal-ai/", with: "")).lineLimit(1).truncationMode(.middle).frame(maxWidth: .infinity, alignment: .leading)
+                        Text(tr(r.endpoint.replacingOccurrences(of: "fal-ai/", with: ""))).lineLimit(1).truncationMode(.middle).frame(maxWidth: .infinity, alignment: .leading)
                             .help("\(r.endpoint) — \(GenMoney.string(r.unitPrice)) per \(r.unit)")
                         Text("\(r.quantity.formatted(.number.precision(.fractionLength(0...2)))) \(Self.unit(r.unit))").frame(width: 48, alignment: .trailing).foregroundStyle(Theme.textDim)
                         Text(GenMoney.string(r.cost)).frame(width: 46, alignment: .trailing)
@@ -615,12 +615,12 @@ struct GenFalUsageSection: View {
                     .font(Theme.fontSmall).monospacedDigit()
                 }
                 if let note = GenBalanceService.differenceNote(billed: u.total, local: local) {
-                    Label(note, systemImage: "info.circle").font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
+                    Label(tr(note), systemImage: "info.circle").font(Theme.fontSmall).foregroundStyle(Theme.textDim).fixedSize(horizontal: false, vertical: true)
                 }
                 Text("Updated \(GenMoney.ago(u.fetched)). Covers your whole fal account.").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
             }
         } else if let n = service.falUsageNote {
-            Label(n, systemImage: "exclamationmark.triangle").font(Theme.fontSmall).foregroundStyle(.orange)
+            Label(tr(n), systemImage: "exclamationmark.triangle").font(Theme.fontSmall).foregroundStyle(.orange)
         }
     }
 }
@@ -667,7 +667,7 @@ struct FalAdminKeyRow: View {
                 if let u = URL(string: ProviderID.fal.keyURL) { Link("Create one", destination: u).font(Theme.fontSmall) }
             }
             HStack(spacing: 4) {
-                SecureField(has ? "•••••• stored in Keychain — paste to replace" : "Paste a key with Admin scope", text: $entry).genField().font(Theme.mono)
+                SecureField(tr(has ? "•••••• stored in Keychain — paste to replace" : "Paste a key with Admin scope"), text: $entry).genField().font(Theme.mono)
                 Button("Save") {
                     let st = GenAIKeychain.shared.set(entry, for: GenAIKeychain.falAdminAccount)
                     status = st == errSecSuccess ? "Saved to Keychain." : "Keychain error \(st)."
@@ -686,7 +686,7 @@ struct FalAdminKeyRow: View {
                     }.buttonStyle(PanelButtonStyle())
                 }
             }
-            if !status.isEmpty { Text(status).font(Theme.fontSmall).foregroundStyle(status.hasPrefix("Saved") ? .green : .orange) }
+            if !status.isEmpty { Text(tr(status)).font(Theme.fontSmall).foregroundStyle(status.hasPrefix("Saved") ? .green : .orange) }
             Text("Only needed for the live balance and billed usage in AI Usage: fal's billing APIs reject normal keys. Generation never uses this key.")
                 .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
         }

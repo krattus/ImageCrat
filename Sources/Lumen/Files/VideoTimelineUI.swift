@@ -295,11 +295,11 @@ final class VideoTimelineController {
 
     static func askNumber(_ title: String, _ current: Double) -> Double? {
         let a = NSAlert()
-        a.messageText = title
+        a.messageText = tr(title)
         let f = NSTextField(string: String(format: "%g", current))
         f.frame = NSRect(x: 0, y: 0, width: 120, height: 22)
         a.accessoryView = f
-        a.addButton(withTitle: "OK"); a.addButton(withTitle: "Cancel")
+        a.addButton(withTitle: tr("OK")); a.addButton(withTitle: tr("Cancel"))
         guard UIBlock.run(a) == .alertFirstButtonReturn, let v = Double(f.stringValue.replacingOccurrences(of: ",", with: ".")), v.isFinite else { return nil }
         return v
     }
@@ -325,7 +325,7 @@ struct VideoTimelineView: View {
             toolbar(tl)
             Rectangle().fill(Theme.border).frame(height: 1)
             HStack(spacing: 0) {
-                Text(VideoTimelineController.timecode(vt.currentTime(doc), fps: tl.frameRate))
+                Text(tr(VideoTimelineController.timecode(vt.currentTime(doc), fps: tl.frameRate)))
                     .font(Theme.mono).foregroundStyle(Theme.accent).padding(.leading, 8).frame(width: labelWidth, alignment: .leading)
                 RulerLane(doc: doc, tl: tl)
             }
@@ -354,7 +354,7 @@ struct VideoTimelineView: View {
                 }
                 Menu("Frame Rate") {
                     ForEach([12.0, 15, 23.976, 24, 25, 29.97, 30, 50, 60], id: \.self) { f in
-                        Button(String(format: "%g fps", f)) { vt.setFrameRate(doc, f) }
+                        Button(tr(String(format: "%g fps", f))) { vt.setFrameRate(doc, f) }
                     }
                 }
                 Divider()
@@ -407,12 +407,12 @@ struct VideoTimelineView: View {
                 Button { vt.toggleStopwatch(doc, l.id, p) } label: {
                     Image(systemName: "stopwatch").foregroundStyle(keys.isEmpty ? Theme.textFaint : Theme.accent)
                 }.buttonStyle(.plain).help("Enable keyframe animation")
-                Text(p.rawValue).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
+                Text(Lumen.tr(p.rawValue)).font(Theme.fontSmall).foregroundStyle(Theme.textDim)
                 Spacer()
                 if !keys.isEmpty {
                     Button { vt.toggleKeyframe(doc, l.id, p) } label: {
                         Image(systemName: atHead ? "diamond.fill" : "diamond").font(.system(size: 9)).foregroundStyle(Color.yellow)
-                    }.buttonStyle(.plain).help(atHead ? "Remove keyframe at playhead" : "Add keyframe at playhead")
+                    }.buttonStyle(.plain).help(Lumen.tr(atHead ? "Remove keyframe at playhead" : "Add keyframe at playhead"))
                 }
             }
             .padding(.leading, 26).padding(.trailing, 6).frame(width: labelWidth)
@@ -547,7 +547,7 @@ private struct KeyframeLane: View {
                         .contextMenu {
                             ForEach(KeyInterpolation.allCases, id: \.self) { i in
                                 Button { vt.setInterpolation(doc, layerID, property, k.id, i) } label: {
-                                    if k.interpolation == i { Label(i.rawValue, systemImage: "checkmark") } else { Text(i.rawValue) }
+                                    if k.interpolation == i { Label(tr(i.rawValue), systemImage: "checkmark") } else { Text(tr(i.rawValue)) }
                                 }
                             }
                             Divider()
@@ -598,7 +598,7 @@ enum VideoLayerImport {
     static func importPanel() {
         let p = NSOpenPanel()
         p.allowedContentTypes = [.movie, .mpeg4Movie, .quickTimeMovie, .video]
-        p.message = "Choose a video to add as a video layer"
+        p.message = tr("Choose a video to add as a video layer")
         guard UIBlock.run(p) == .OK, let url = p.url else { return }
         do {
             let d: Document
@@ -630,9 +630,9 @@ struct RenderVideoDialog: View {
         let d = AppModel.shared.activeDocument
         DialogFrame(title: "Render Video", width: 420, okTitle: "Render…", onOK: render) {
             VStack(alignment: .leading, spacing: 8) {
-                Picker("Format", selection: $codec) { ForEach(VideoCodecChoice.allCases) { Text($0.rawValue).tag($0) } }.frame(width: 300)
+                Picker("Format", selection: $codec) { ForEach(VideoCodecChoice.allCases) { Text(tr($0.rawValue)).tag($0) } }.frame(width: 300)
                 Picker("Size", selection: $sizeIndex) {
-                    Text("Document Size" + (d.map { " (\($0.state.width)×\($0.state.height))" } ?? "")).tag(0)
+                    Text(tr("Document Size" + (d.map { " (\($0.state.width)×\($0.state.height))" } ?? ""))).tag(0)
                     Text("50%").tag(1); Text("HD 1920×1080").tag(2); Text("HD 1280×720").tag(3)
                 }.frame(width: 300)
                 HStack {
@@ -644,9 +644,9 @@ struct RenderVideoDialog: View {
                 if let d {
                     let st = VideoRenderer.timeline(for: d.state)
                     let dur = st.videoTimeline?.duration ?? 0
-                    Text(String(format: "Duration %.2f s · %d frames", dur, Int((dur * VideoRenderer.validFrameRate(fps)).rounded()))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
+                    Text(tr(String(format: "Duration %.2f s · %d frames", dur, Int((dur * VideoRenderer.validFrameRate(fps)).rounded())))).font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
                 }
-                if !status.isEmpty { Text(status).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
+                if !status.isEmpty { Text(tr(status)).font(Theme.fontSmall).foregroundStyle(Theme.textDim) }
             }
         }
         .onAppear { if let r = d?.state.videoTimeline?.frameRate { fps = r } }

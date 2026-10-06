@@ -453,19 +453,19 @@ struct TimelapseExportDialog: View {
                     Image(systemName: tl.isRecording(d) ? "record.circle.fill" : "record.circle").foregroundStyle(tl.isRecording(d) ? Color.red : Theme.textDim)
                     Text("\(n) frame\(n == 1 ? "" : "s") recorded · \(Workflow2Util.byteString(Timelapse.bytes(files)))").foregroundStyle(Theme.textDim)
                     Spacer()
-                    Button(tl.isRecording(d) ? "Pause Recording" : "Start Recording") { tl.toggle(d) }.buttonStyle(PanelButtonStyle())
+                    Button(tr(tl.isRecording(d) ? "Pause Recording" : "Start Recording")) { tl.toggle(d) }.buttonStyle(PanelButtonStyle())
                 }
-                Picker("Length", selection: $o.length) { ForEach(TimelapseExportOptions.Length.allCases) { Text($0.rawValue).tag($0) } }
-                Picker("Resolution", selection: $o.resolution) { ForEach(TimelapseExportOptions.Resolution.allCases) { Text($0.rawValue).tag($0) } }
-                Picker("Format", selection: $o.codec) { ForEach(TimelapseExportOptions.Codec.allCases) { Text("MP4 (\($0.rawValue))").tag($0) } }
+                Picker("Length", selection: $o.length) { ForEach(TimelapseExportOptions.Length.allCases) { Text(tr($0.rawValue)).tag($0) } }
+                Picker("Resolution", selection: $o.resolution) { ForEach(TimelapseExportOptions.Resolution.allCases) { Text(tr($0.rawValue)).tag($0) } }
+                Picker("Format", selection: $o.codec) { ForEach(TimelapseExportOptions.Codec.allCases) { Text("MP4 (\(tr($0.rawValue)))").tag($0) } }
                 ValueSlider(label: "Hold Final Image", value: $o.holdFinal, range: 0...10, step: 0.5, unit: " s", format: "%.1f", labelWidth: 110)
                 Toggle2(label: "Fade out at the end", on: $o.fadeOut).disabled(o.holdFinal <= 0)
                 let plan = Timelapse.schedule(frameCount: max(1, n), options: o)
-                Text(n == 0 ? "Turn on recording (File ▸ Toggle Timelapse Recording) and keep working — a frame is stored as you edit."
-                     : String(format: "Video: %.1f s at %d fps", Double(plan.count) / Double(o.fps), o.fps))
+                Text(tr(n == 0 ? "Turn on recording (File ▸ Toggle Timelapse Recording) and keep working — a frame is stored as you edit."
+                     : String(format: "Video: %.1f s at %d fps", Double(plan.count) / Double(o.fps), o.fps)))
                     .font(Theme.fontSmall).foregroundStyle(Theme.textFaint).fixedSize(horizontal: false, vertical: true)
                 if running { ProgressView(value: progress).controlSize(.small) }
-                if !message.isEmpty { Text(message).font(Theme.fontSmall).foregroundStyle(Color.orange) }
+                if !message.isEmpty { Text(tr(message)).font(Theme.fontSmall).foregroundStyle(Color.orange) }
                 HStack {
                     Spacer()
                     Button("Close") { AppModel.shared.dialog = nil }.buttonStyle(PanelButtonStyle()).keyboardShortcut(.cancelAction)

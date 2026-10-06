@@ -1,6 +1,6 @@
 # ImageCrat for Windows: porting plan
 
-Status as of 2026-10-05: the portable core library `ImageCratCore` **builds and passes its unit tests on Windows 11 on Arm** (Swift 6.3.3, in the dev VM). Everything below the "Done" section is the plan.
+Status as of 2026-10-05: the portable core library `ImageCratCore` **builds and passes its unit tests on Windows 11 on Arm** (Swift 6.3.3, in the dev VM), and a first Windows program, **ImageCrat Preview** (a Win32 viewer, technical preview), ships as x64 and arm64 installers. Everything below the "Done" section is the plan.
 
 ## Why this is a port and not a recompile
 
@@ -105,8 +105,41 @@ Relative effort: Phase 0 = 1 unit, about 3–4 weeks of focused work.
 - **Tests:** `swift test` runs **62 tests, 0 failures**. The 63rd, which compares the stand-in with CoreGraphics, only runs on the Mac. That covers the document model and `PixelBuffer`, PSD byte read/write, the brush formats (ABR, GIMP, Procreate, Krita, `.icbrushes`, zip, inflate/deflate, PNG), inpaint and content-aware scale, and the stroke and pressure maths.
 - **From the Mac:** `scripts/test_core_windows.sh` copies the core into the VM, builds it and runs the tests.
 
+### Technical preview: ImageCrat Preview for Windows (2026-10-05)
+
+A first Windows program to try the core on real PCs. It only views files; nothing of the Mac app's UI, rendering or AI is
+ported yet.
+
+- **`ImageCratPreview.exe`** (`Sources/ImageCratPreview`): a Win32 GUI in Swift on `WinSDK` only (no UI framework).
+  - Opens `.psd`/`.psb` (the composite stored in the file; layer list with groups, kind, visibility, blend mode,
+    opacity, effects and thumbnails), `.png`, and brush files (`.abr`, `.gbr`, `.gih`, `.brush`, `.brushset`, `.kpp`,
+    `.icbrushes`) as a grid of tips.
+  - Zoom and pan over a checkerboard, rendered in software into one DIB per paint (premultiplied mip levels, bilinear
+    below 100 %), so it is flicker-free. Per-monitor DPI aware, common controls 6 through an embedded manifest.
+  - Help ▸ Run Self-Check runs the built-in battery; a last-resort exception filter reports internal errors and logs
+    them to `%LOCALAPPDATA%\ImageCrat\Preview\crash.log`.
+  - Hidden `--snapshot <png>` flag renders the window to PNG (screenshots and a GUI smoke test in the build VM, whose
+    SSH session has no compositor: only the client area is captured there). `windows/screenshots.ps1` takes a set.
+- **`imagecrat-cli.exe`** (`Sources/ImageCratCLI`, portable): `selfcheck`, `info`, `composite`, `brushes`,
+  `make-samples`, `--version`.
+- **`ImageCratWinSupport`** (portable): file loading, the self-check battery, synthetic sample files, build info.
+- **Core additions:** `PSDFile` (portable PSD/PSB structure reader: header, resources, layer records and kinds,
+  channel decoding raw/RLE/ZIP, the image-data composite in 8/16/32-bit RGB, grayscale, CMYK, Lab, indexed and
+  bitmap) and `PSDSimpleWriter` (layered 8/16-bit PSD/PSB writer for tests and samples), with
+  `Tests/ImageCratCoreTests/PSDFileReaderTests.swift` (69 tests in all on Windows).
+- **Building:** `scripts/build_windows.sh` (Mac) syncs to the VM and runs `windows/build.ps1`, which builds both
+  architectures from the one Arm64 toolchain (its Windows SDK has x86_64, aarch64 and i686 libraries; the x64 runtime
+  DLLs come from the toolchain's `Redistributables\6.3.3\rtl.amd64.msm`, unpacked by `windows/extract-msm.ps1`),
+  links icon/manifest/version resources, bundles the needed Swift and MSVC runtime DLLs (found by walking
+  `dumpbin /dependents`), runs the self-check and a GUI smoke test with `PATH` reduced to the Windows folders, and
+  makes Inno Setup installers (`windows/ImageCratPreview.iss`) and portable zips in `dist/windows`.
+- **Not yet:** code signing (SmartScreen warns), editing, recompositing layers, colour management, `.imagecrat` files
+  (needs LZFSE).
+
 ## Next steps
 1. ~~Build `ImageCratCore` and run `swift test` in the Windows VM~~ (done).
 2. Add a portable LZFSE decoder so the core can read Mac documents.
-3. Phase 0 spike: interface plumbing in the VM; GPU and AI timings need real Windows hardware.
+3. Phase 0 spike: interface plumbing in the VM; GPU and AI timings need real Windows hardware. (ImageCrat Preview
+   covers the Win32 plumbing: windows, menus, file dialogs, drag and drop, DPI, packaging.)
 4. Move the remaining Core Graphics drawing and `CGPath` code out of the core's callers, starting with path booleans and stroke geometry.
+5. Code-sign the Windows installers (see "Biggest risks" 4).

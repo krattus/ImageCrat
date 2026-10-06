@@ -96,7 +96,7 @@ struct ColorHarmonyPanel: View {
                     }
                     .frame(width: 130, height: 130)
                     VStack(alignment: .leading, spacing: 6) {
-                        Picker("", selection: $scheme) { ForEach(HarmonyScheme.allCases) { Text($0.title).tag($0) } }.labelsHidden()
+                        Picker("", selection: $scheme) { ForEach(HarmonyScheme.allCases) { Text(tr($0.title)).tag($0) } }.labelsHidden()
                         Text("Base #\(base.hex)").font(Theme.mono).foregroundStyle(Theme.textDim)
                         Button("Use Foreground") { base = app.foreground }.buttonStyle(PanelButtonStyle())
                         Text("Click a colour to make it the foreground (⌥-click: background).").font(Theme.fontSmall).foregroundStyle(Theme.textFaint)
@@ -173,7 +173,7 @@ struct PaletteFromImageDialog: View {
                         }.buttonStyle(PanelButtonStyle()).disabled(colors.count < 2)
                     })) {
             Picker("Source", selection: $source) {
-                ForEach(PaletteSource.allCases) { s in Text(s.title).tag(s) }
+                ForEach(PaletteSource.allCases) { s in Text(tr(s.title)).tag(s) }
             }.pickerStyle(.segmented)
             ValueSlider(label: "Colours", value: $count, range: 3...12, step: 1, onCommit: compute)
             PaletteStrip(entries: entries).frame(height: 54)
@@ -220,7 +220,7 @@ struct ArtistSwatchSections: View {
             ForEach(store.groups) { g in
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
-                        Text(g.name).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
+                        Text(tr(g.name)).font(Theme.fontSmall).foregroundStyle(Theme.textDim).lineLimit(1)
                         if settings.prefs.paletteJitter != .off && settings.prefs.paletteGroup == g.id {
                             Image(systemName: "paintbrush.pointed").font(.system(size: 8)).foregroundStyle(Theme.accent).help("Used for the brush's colour jitter")
                         }
@@ -269,12 +269,12 @@ struct GlobalColorsSection: View {
                         .padding(.horizontal, 3).background(RoundedRectangle(cornerRadius: 3).fill(Theme.fieldBG))
                         .onSubmit { GlobalColors.rename(doc, g.id, nameDraft); renaming = nil }
                 } else {
-                    Text(g.name).lineLimit(1).onTapGesture(count: 2) { nameDraft = g.name; renaming = g.id }
+                    Text(tr(g.name)).lineLimit(1).onTapGesture(count: 2) { nameDraft = g.name; renaming = g.id }
                         .onTapGesture { pick(g.color) }
                 }
                 Spacer(minLength: 2)
                 let n = GlobalColors.usageCount(doc.state, g.id)
-                Text(n == 1 ? "1 use" : "\(n) uses").font(Theme.fontSmall).foregroundStyle(n > 0 ? Theme.textDim : Theme.textFaint)
+                Text(tr(n == 1 ? "1 use" : "\(n) uses")).font(Theme.fontSmall).foregroundStyle(n > 0 ? Theme.textDim : Theme.textFaint)
                 Menu {
                     assignItems(g)
                     Divider()
@@ -294,7 +294,7 @@ struct GlobalColorsSection: View {
         if let l = doc.activeLayer {
             let base: [ColorSlot] = l.isShape ? [.shapeFill, .shapeStroke] : l.isText ? [.textColor] : l.isFill ? [.fillLayer] : []
             ForEach(base + [ColorSlot.colorOverlay, .dropShadow, .innerShadow, .outerGlow, .innerGlow, .strokeEffect]) { slot in
-                Button("Assign to \(slot.title) of “\(l.name)”") {
+                Button("Assign to \(tr(slot.title)) of “\(l.name)”") {
                     for id in doc.orderedSelection.isEmpty ? [l.id] : doc.orderedSelection { GlobalColors.assign(doc, layer: id, slot: slot, global: g.id, commit: false) }
                     doc.commit("Assign Global Colour")
                 }
@@ -321,11 +321,11 @@ struct ArtistLayerProperties: View {
                     let linked = GlobalColors.link(doc.state, layer: layer.id, slot: slot)
                     HStack(spacing: 6) {
                         SwatchChip(color: GlobalColors.color(layer, slot) ?? .black, size: 12)
-                        Text(slot.title).foregroundStyle(Theme.textDim)
+                        Text(tr(slot.title)).foregroundStyle(Theme.textDim)
                         Spacer(minLength: 2)
-                        Menu(linked?.name ?? "Not linked") {
+                        Menu(tr(linked?.name ?? "Not linked")) {
                             ForEach(globals) { g in
-                                Button(g.name) { GlobalColors.assign(doc, layer: layer.id, slot: slot, global: g.id) }
+                                Button(tr(g.name)) { GlobalColors.assign(doc, layer: layer.id, slot: slot, global: g.id) }
                             }
                             if linked != nil {
                                 Divider()
@@ -351,7 +351,7 @@ struct ContrastBadgeRow: View {
         if let r = ContrastChecker.cachedReport(doc, layerID: layerID) {
             HStack(spacing: 6) {
                 ContrastBadge(level: r.level)
-                Text(String(format: "Contrast %.2f : 1", r.worstRatio)).font(Theme.mono)
+                Text(tr(String(format: "Contrast %.2f : 1", r.worstRatio))).font(Theme.mono)
                 Spacer(minLength: 2)
                 if let s = r.suggestionAA {
                     Button { ContrastChecker.apply(doc, layerID: layerID, color: s) } label: {
@@ -369,7 +369,7 @@ struct ContrastBadge: View {
     let level: WCAG.Level
     var body: some View {
         let color: Color = level == .fail ? Color(red: 0.8, green: 0.2, blue: 0.2) : level == .aaLarge ? Color(red: 0.85, green: 0.55, blue: 0.1) : Color(red: 0.15, green: 0.6, blue: 0.3)
-        Text(level.rawValue.uppercased()).font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
+        Text(tr(level.rawValue).uppercased()).font(.system(size: 9, weight: .bold)).foregroundStyle(.white)
             .padding(.horizontal, 5).padding(.vertical, 2)
             .background(RoundedRectangle(cornerRadius: 3).fill(color))
     }
@@ -407,7 +407,7 @@ struct SimulationPicker: View {
     @Bindable var settings = ArtistSettings.shared
     var body: some View {
         Picker("", selection: Binding(get: { settings.simulation }, set: { settings.simulation = $0; ArtistModule.refreshCanvas() })) {
-            ForEach(VisionSimulation.allCases) { Text($0.title).tag($0) }
+            ForEach(VisionSimulation.allCases) { Text(tr($0.title)).tag($0) }
         }.labelsHidden()
     }
 }
@@ -443,7 +443,7 @@ struct ContrastDetails: View {
                     Text(String(format: "%.2f : 1", r.worstRatio)).font(.system(size: 15, weight: .semibold).monospacedDigit())
                     HStack(spacing: 4) {
                         ContrastBadge(level: r.level)
-                        Text(r.largeText ? "large text" : "normal text").foregroundStyle(Theme.textDim)
+                        Text(tr(r.largeText ? "large text" : "normal text")).foregroundStyle(Theme.textDim)
                     }
                 }
             }
@@ -467,9 +467,9 @@ struct ContrastDetails: View {
     func row(_ label: String, _ c: RGBA, _ extra: String = "") -> some View {
         HStack(spacing: 6) {
             SwatchChip(color: c, size: 14)
-            Text(label).foregroundStyle(Theme.textDim)
+            Text(tr(label)).foregroundStyle(Theme.textDim)
             Spacer(minLength: 2)
-            Text(extra.isEmpty ? "#\(c.hex)" : extra).font(Theme.mono)
+            Text(tr(extra.isEmpty ? "#\(c.hex)" : extra)).font(Theme.mono)
         }
     }
 
@@ -535,7 +535,7 @@ struct RecolorDialog: View {
             preview()
             doc?.commit("Recolour Artwork")
         }, onCancel: { doc?.revertUncommitted() }) {
-            Picker("Scope", selection: $scope) { ForEach(RecolorScope.allCases) { Text($0.title).tag($0) } }.pickerStyle(.segmented)
+            Picker("Scope", selection: $scope) { ForEach(RecolorScope.allCases) { Text(tr($0.title)).tag($0) } }.pickerStyle(.segmented)
             ValueSlider(label: "Colours", value: $count, range: 2...12, step: 1, onCommit: extract)
             VStack(spacing: 3) {
                 ForEach(Array(from.enumerated()), id: \.offset) { i, c in
@@ -562,7 +562,7 @@ struct RecolorDialog: View {
             HStack(spacing: 6) {
                 Menu("Harmony Rule") {
                     ForEach(HarmonyScheme.allCases) { s in
-                        Button(s.title + " from the foreground colour") { to = Recolor.harmonyTargets(from, scheme: s, base: AppModel.shared.foreground); preview() }
+                        Button(tr(s.title) + tr(" from the foreground colour")) { to = Recolor.harmonyTargets(from, scheme: s, base: AppModel.shared.foreground); preview() }
                     }
                 }.menuStyle(.borderlessButton).fixedSize()
                 Button("Rotate") { if to.count > 1 { to.append(to.removeFirst()); preview() } }.buttonStyle(PanelButtonStyle()).help("Shift every new colour to the next row")

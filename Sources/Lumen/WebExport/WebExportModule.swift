@@ -159,7 +159,7 @@ struct WebExportExportAsRow: View {
             Toggle2(label: "Use Ultra PNG when saving PNG (lossless, smaller)", on: $on)
                 .onChange(of: on) { _, v in WebExportPrefs.ultraPNGOnSave = v }
             if on {
-                Picker("Effort", selection: $effort) { ForEach(UPEffort.allCases) { Text($0.title).tag($0) } }
+                Picker("Effort", selection: $effort) { ForEach(UPEffort.allCases) { Text(tr($0.title)).tag($0) } }
                     .pickerStyle(.segmented).frame(width: 240)
                     .onChange(of: effort) { _, v in WebExportPrefs.onSaveEffort = v }
             }
